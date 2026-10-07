@@ -167,7 +167,7 @@ The battle is shown from the side: your plate on the left facing right, the enem
 2. **Start of battle:** flavor bonuses, then abilities marked `early`, then the other Start of battle abilities.
 3. **Each turn (up to 40):**
     1. Every front-row food attacks, following its attack pattern (below). Its main target is the enemy in its lane; **if that lane is empty, it attacks the nearest lane that has food** (the middle lane on ties). All attacks land at the same time. A Chilled food skips its attack and loses 1 Chill.
-    2. The struck food takes the hit: Tupperware may block it, Crust absorbs what it can (but an attack always does at least 1 HP damage), the rest comes off its HP, and its on-hit ability triggers. The food behind it can react (`friendAheadHit`), and the food behind each attacker can follow up (`friendAheadAttacks`).
+    2. The struck food takes the hit: Tupperware may block it, Crust blocks what it can, the rest comes off its HP, and its on-hit ability triggers. The food behind it can react (`friendAheadHit`), and the food behind each attacker can follow up (`friendAheadAttacks`).
     3. Foods at 0 HP are eaten (a fork comes down), then their "eaten" abilities fire, and their neighbours' `friendFaint` abilities.
     4. End of turn: "every N turns" abilities, turn abilities, Sweet healing and Salty Crust.
     5. Statuses tick: Burn and Rot deal their damage (ignoring Crust; not a hit). Burn then fades by 1.
@@ -243,7 +243,7 @@ There are no automatic pairings. Positioning comes from specific foods' abilitie
 
 ### Keyword: Crust
 
-- Crust X absorbs the next X damage aimed at that unit, then that much Crust is used up.
+- Crust X blocks the next X damage aimed at that unit completely, then that much Crust is used up. Only damage beyond it reaches HP.
 - Crust from multiple sources adds together. It resets at the end of each battle.
 - A hit fully absorbed by Crust still counts as a hit for on-hit abilities.
 
@@ -518,11 +518,12 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 - **Kitchen:** the market is a cabinet of cubbies (6 brown for foods, a teal one for the item and a gold-tagged special cubby), the plate is a platter on a wooden counter with the counter tray beside it, the fridge and freezer magnets (lives as pixel hearts, courses) are on the left, the tip jar shows gold with the interest you'd earn above it, and the spice rack (flavor counts) and chalkboard (flavor bonus tiers 2·4·6) are on the right. Press the service bell to Serve.
 - **Battle:** side view across a dining table, lanes receding into depth, foods lunging at each other and getting eaten by a fork; a plaque per team counts the foods left. Hits are built for impact: a slow wind-up, an accelerating dash, a short freeze on contact (hit-stop) while the target flashes white, a ring and sparks where they connect, then the target is knocked back and tipped away and springs back while the table jolts (big hits shake it). The damage number and the reaction wait for contact. Burn, Rot and Chill show as pixel flame, mould and snowflake badges on the food.
 - **Input:** drag and drop (mouse and touch) for buying, freezing, moving, merging, items, selling, opening specials and picking from packs. Clicking only selects, to read a food in the cookbook.
+- **Sound:** short synthesized blips (Web Audio, `src/ui/sound.ts`, no files), soft and pitched with a little random variation: a pop when you pick a food up, a plop when placed, a ka-ching to buy, a register and coins to sell, a bubbly pop to merge, arpeggios for level ups and a bigger one with sparkles for cooking, a whoosh for restocks, the bell, and a gentle "uh-uh" when something is refused. In battle: a bonk on contact (heavier for big hits), a chomp when a food is eaten, and up to three effect sounds a frame (sizzle, squelch, ice, heal, Crust tink...), then a fanfare or a "womp womp". Mute with the speaker button or `m`; the choice is remembered.
+- **Interest at a glance:** over the tip jar, a coin per +1 interest labelled with the gold that earns it (5, 10, 15), lit once reached, over the "+2g interest" tag. Coins past the base 3 come from foods that raise the cap. Hover or tap either for the rule and how much more to keep for the next coin.
 - **Phones:** played in landscape (held upright, a screen asks to turn the phone). Touch drags carry the food above the finger; a tap shows a tooltip until the next tap; holding a food in battle shows its card. On high-density screens the stage scales by whole device pixels, so the art stays crisp while filling more of the screen. `npm run build:single` bundles the game into one self-contained page for hosting.
 - **Pixel art only:** headings use a pixel font; every food, item and special is a 32x32 sprite in `art/` (see `art/README.md`), and every small icon (lives, flavors, stats, statuses, coins, warnings, the fork) is pixel art drawn from grids in `src/ui/icons.ts`. No emoji anywhere; a food without a sprite shows a covered dish.
 - **Growth:** permanent gains play out in the kitchen at the moment they happen, as a small visual only: the food glows and hops, its stat badges pop, a few sparkles fly, and a dotted line runs from the food that caused it. End of day growth plays when the bell rings, before the plate goes out; start of day growth plays on returning to the kitchen. The toast lists what grew.
 - **Tooltips:** hovering anything explained (flavor lines and jars, interest, lives, held items, rarity gems, props) opens a pixel text box. Cards and tooltips end with short notes on any keyword they mention (Burn, Rot, Chill, Crust, pierce, interest...), and keywords in the cookbook can be hovered on their own.
-- **Interest:** a green tag over the tip jar reads "+2g interest" with a coin per gold of interest you could earn (filled for what you would earn now). Hover it for the rule and how much more to keep for the next coin.
 
 ## Async multiplayer
 

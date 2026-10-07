@@ -63,10 +63,10 @@ describe('battle', () => {
     expect(r.outcome).toBe('win');
   });
 
-  it('Crust absorbs damage before HP', () => {
+  it('Crust blocks damage before HP', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 3, item: 'saltShaker' }) }), plate({ 0: unit('cheese', { attack: 3, hp: 50 }) }), 1);
     const round1 = r.frames.find((f) => f.text.startsWith('Turn 1'))!;
-    expect(round1.plates[0][0]!.hp).toBe(2); // 4 Crust soaked all but 1 of the 3-damage hit
+    expect(round1.plates[0][0]!.hp).toBe(3); // 4 Crust blocked the whole 3-damage hit
   });
 
   it('Egg cracks into a Yolk on its first hit', () => {
@@ -106,12 +106,13 @@ describe('battle', () => {
     expect(r.frames.some((f) => f.text.startsWith('Overtime!'))).toBe(true);
   });
 
-  it('an attack always gets at least 1 damage through Crust', () => {
-    // Salt Shaker gives 4 Crust; a 2-attack hit should still take 1 HP.
-    const r = simulateBattle(plate({ 0: unit('pretzel', { attack: 2, hp: 50 }) }), plate({ 0: unit('pretzel', { attack: 2, hp: 50, item: 'saltShaker' }) }), 1);
-    const first = r.frames.find((f) => f.round === 1 && f.marks.some((m) => m.side === 1 && m.kind === 'crust'))!;
-    expect(first.marks.find((m) => m.side === 1 && m.kind === 'crust')!.amount).toBe(-1);
-    expect(first.marks.find((m) => m.side === 1 && m.kind === 'hit')!.amount).toBe(1);
+  it('Crust blocks damage fully while it lasts; only what it cannot cover reaches HP', () => {
+    // Salt Shaker gives 4 Crust: a 3-attack hit is blocked completely, then the next one breaks through for 2.
+    const r = simulateBattle(plate({ 0: unit('pretzel', { attack: 3, hp: 50 }) }), plate({ 0: unit('pretzel', { attack: 1, hp: 50, item: 'saltShaker' }) }), 1);
+    const hits = r.frames.filter((f) => f.marks.some((m) => m.side === 1 && m.kind === 'crust' && (m.amount ?? 0) < 0));
+    const marks = (f: (typeof hits)[number], kind: string) => f.marks.find((m) => m.side === 1 && m.kind === kind)?.amount;
+    expect([marks(hits[0], 'crust'), marks(hits[0], 'hit')]).toEqual([-3, undefined]);
+    expect([marks(hits[1], 'crust'), marks(hits[1], 'hit')]).toEqual([-1, 2]);
   });
 });
 

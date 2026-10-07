@@ -432,7 +432,7 @@ class Battle {
         const burn = this.hasFlavor(attacker, 'spicy') ? this.bonus[attacker.side].spicyBurn : 0;
         for (let i = 0; i < times; i++) {
           for (const [t, dmg, main] of hits) {
-            this.hit(t, dmg, attacker, attacker.item === 'toothpick', false, true);
+            this.hit(t, dmg, attacker, attacker.item === 'toothpick');
             if (main && burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
           }
         }
@@ -820,12 +820,12 @@ class Battle {
   // ---- primitives ----
 
   /**
-   * One damage instance on a food: Tupperware may block it, Crust absorbs what it can, the rest comes off HP.
+   * One damage instance on a food: Tupperware may block it, Crust blocks damage point for point (all of it, while
+   * the Crust lasts), the rest comes off HP.
    * `reaction` marks damage dealt by an on-hit ability: it still lands, but isn't a "hit" itself, so two
    * retaliating foods (Bacon, Durian) can't set each other off forever.
-   * `attack`: a food's attack, which always gets at least 1 damage through Crust.
    */
-  private hit(target: BattleUnit, amount: number, source?: BattleUnit, ignoreCrust = false, reaction = false, attack = false) {
+  private hit(target: BattleUnit, amount: number, source?: BattleUnit, ignoreCrust = false, reaction = false) {
     if (amount <= 0 || !this.onPlate(target)) return;
     if (target.item === 'tupperware' && !target.tupperwareUsed) {
       target.tupperwareUsed = true;
@@ -834,7 +834,7 @@ class Battle {
     }
     let rest = amount;
     if (!ignoreCrust) {
-      const absorbed = Math.min(target.crust, attack ? amount - 1 : amount);
+      const absorbed = Math.min(target.crust, amount);
       target.crust -= absorbed;
       rest -= absorbed;
       if (absorbed > 0) this.mark(target, 'crust', -absorbed);

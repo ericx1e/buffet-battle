@@ -24,6 +24,7 @@ import {
   interestOn,
   INCOME,
   INTEREST_STEP,
+  BASE_INTEREST_CAP,
   isOver,
   migrateRun,
   moveUnit,
@@ -49,6 +50,7 @@ import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, beam, burst, capture, fling, floater, play, stagePos, wipe } from './motion';
+import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
 
 /** What's selected or being dragged: an offer, an owned food, the special cubby's offer, or a choice from an open pack. */
 type Selection = { kind: 'offer'; src: OfferSource } | { kind: 'unit'; loc: Loc } | { kind: 'special' } | { kind: 'pick'; index: number } | null;
@@ -102,7 +104,7 @@ const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[]
   { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1.' },
   { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Heals on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
-  { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'soaks up damage before HP (an attack still does at least 1). Gone after the battle.' },
+  { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
   { re: /\bsell value\b/i, icon: () => pix('coin'), name: 'Sell value', text: 'extra gold when you sell it, on top of half its price.' },
   { re: /\binterest\b/i, icon: () => pix('coin'), name: 'Interest', text: `+1 gold at the start of each day for every ${INTEREST_STEP} gold you kept, up to your cap.` },
@@ -172,7 +174,10 @@ function save() {
 
 // ---------- actions ----------
 
-function report(result: ActionResult) {
+function report(result: ActionResult, sound?: Sfx) {
+  if (!result.ok) sfx('deny');
+  else if (result.levelUp) sfx('merge');
+  else if (sound) sfx(sound);
   app.message = result.ok ? (result.message ?? '') : `${pix('warn')} ${result.error}`;
   // Growth with nothing else to say (Butter, Bone Broth...): name it, for good.
   if (result.ok && !result.message && app.run.growth.length) app.message = `For good: ${growthSummary(app.run.growth)}.`;
@@ -243,6 +248,7 @@ function playGrowth(delay = 0): number {
     const src = g.from !== undefined ? root.querySelector<HTMLElement>(`[data-k="u:${g.from}"]`) : null;
     if (src) beam(stage, stagePos(root, src), at, 'k-buff', { delay: t });
     burst(stage, [at[0], at[1] - 8], g.attack || g.hp ? 'star' : 'coin-spark', { delay: t + 160, count: 4, spread: 12 });
+    sfx('grow', t + 160);
     setTimeout(() => {
       const now = root.querySelector<HTMLElement>(`[data-k="u:${g.uid}"]`);
       if (!now) return;
@@ -266,6 +272,7 @@ function celebrate(lv: LevelUp) {
   const [x, y] = stagePos(root, food);
   const cooked = lv.level === 3;
   const delay = 180; // after the merge lands
+  sfx(cooked ? 'cook' : 'levelUp', delay);
   burst(stage, [x, y - 4], 'ray', { delay, count: cooked ? 18 : 12, spread: cooked ? 34 : 26 });
   burst(stage, [x, y - 4], 'star', { delay: delay + 120, count: 6, spread: 18 });
   for (const [i, cls] of ['lvl-ring', 'lvl-ring late'].entries()) {
@@ -338,6 +345,7 @@ function sameSrc(a: OfferSource, b: OfferSource) {
 function onOffer(src: OfferSource) {
   const same = app.selected?.kind === 'offer' && sameSrc(app.selected.src, src);
   app.selected = same ? null : { kind: 'offer', src };
+  if (!same) sfx('select');
   const offer = getOffer(app.run, src);
   app.message = same || !offer ? '' : offer.kind === 'unit'
     ? 'Drag it onto the platter to buy it, onto a copy to merge, or into the fridge to save it.'
@@ -367,6 +375,7 @@ function onClickSlot(loc: Loc) {
   const sel = app.selected;
   const same = sel?.kind === 'unit' && sel.loc.area === loc.area && sel.loc.index === loc.index;
   if (getUnit(run, loc) && !same) {
+    sfx('select');
     app.selected = { kind: 'unit', loc };
     app.message = 'Drag it to move, swap or merge, or into the scrap bin to sell.';
   } else if (loc.area === 'fridge' && run.fridge[loc.index]?.kind === 'offer') {
@@ -387,15 +396,16 @@ function onDropSlot(loc: Loc) {
     if (!offer) return;
     if (offer.kind === 'unit') {
       const fridgeFree = loc.area === 'fridge' && !run.fridge[loc.index];
-      if (fridgeFree && sel.src.area === 'market') return report(freezeOffer(run, sel.src.index, loc.index));
-      return report(buyUnit(run, sel.src, loc));
+      if (fridgeFree && sel.src.area === 'market') return report(freezeOffer(run, sel.src.index, loc.index), 'freeze');
+      const into = getUnit(run, loc);
+      return report(buyUnit(run, sel.src, loc), into?.defId === offer.defId ? 'merge' : 'buy');
     }
     if (offer.itemId === 'seasoning') {
       if (!getUnit(run, loc)) return report({ ok: false, error: 'Use items on a unit.' });
       app.seasoning = { src: sel.src, loc };
       return render();
     }
-    return report(useItem(run, sel.src, loc));
+    return report(useItem(run, sel.src, loc), 'item');
   }
 
   if (sel?.kind === 'unit') {
@@ -403,7 +413,9 @@ function onDropSlot(loc: Loc) {
       app.selected = null;
       return render();
     }
-    return report(moveUnit(run, sel.loc, loc));
+    const moving = getUnit(run, sel.loc);
+    const into = getUnit(run, loc);
+    return report(moveUnit(run, sel.loc, loc), into && into.defId === moving?.defId ? 'merge' : loc.area === 'fridge' ? 'freeze' : 'place');
   }
 
   if (sel?.kind === 'pick') return pickOnto(sel.index, loc);
@@ -429,16 +441,16 @@ function pickOnto(index: number, loc: Loc) {
     const name = itemDef(pack.items[index]).name;
     const target = getUnit(run, loc);
     const used = useItem(run, { area: 'special', index: 0 }, loc);
-    if (!used.ok) return report({ ok: true, message: `${used.error} ${name} waits in the special cubby, free.` });
-    return report({ ...used, message: used.message ?? `${name} on ${target ? unitDef(target.defId).name : 'your plate'}.` });
+    if (!used.ok) return report({ ok: true, message: `${used.error} ${name} waits in the special cubby, free.` }, 'place');
+    return report({ ...used, message: used.message ?? `${name} on ${target ? unitDef(target.defId).name : 'your plate'}.` }, 'item');
   }
   const spot = run.overflow.findIndex((u) => !u); // where pickPack puts it
   const picked = pickPack(run, index);
   if (!picked.ok || loc.area === 'overflow') return report(picked);
   const moved = moveUnit(run, { area: 'overflow', index: spot }, loc);
   const food = unitDef(pack.units[index]).name;
-  if (!moved.ok) return report({ ok: true, message: `${moved.error} ${food} waits on the counter tray.` });
-  return report({ ...moved, message: moved.message ?? `${food}, fresh from the farm.` });
+  if (!moved.ok) return report({ ok: true, message: `${moved.error} ${food} waits on the counter tray.` }, 'place');
+  return report({ ...moved, message: moved.message ?? `${food}, fresh from the farm.` }, 'place');
 }
 
 /** The special cubby's offer, dropped on the counter tray (or a premium restock on the refill sign): buy it. */
@@ -448,10 +460,10 @@ function openSpecial() {
   const result = buySpecial(run);
   if (result.ok && s?.kind === 'premium') app.marketGen++;
   if (result.ok && (s?.kind === 'spicePack' || s?.kind === 'farmPack')) {
-    report({ ok: true, message: 'Pick one: drag it out of the box onto your plate (the rest go back).' });
+    report({ ok: true, message: 'Pick one: drag it out of the box onto your plate (the rest go back).' }, 'buy');
     return;
   }
-  report(result);
+  report(result, 'buy');
 }
 
 const centerOf = ([x, y, w, h]: Rect): [number, number] => [x + w / 2, y + h / 2];
@@ -459,8 +471,9 @@ const centerOf = ([x, y, w, h]: Rect): [number, number] => [x + w / 2, y + h / 2
 function sellSelected() {
   if (app.selected?.kind !== 'unit') return;
   const result = sellUnit(app.run, app.selected.loc);
-  report(result);
+  report(result, 'sell');
   if (!result.ok) return;
+  for (let i = 0; i < 3; i++) sfx('coin', 120 + i * 70 + 300);
   // Coins hop from the bin into the tip jar.
   const stage = root.querySelector<HTMLElement>('.stage');
   const [bx, by] = centerOf(LAYOUT.bin);
@@ -473,7 +486,7 @@ function onAction(action: string, el: HTMLElement) {
     case 'reroll': {
       const result = reroll(run);
       if (result.ok) app.marketGen++;
-      return report(result);
+      return report(result, 'reroll');
     }
     case 'sell':
       return sellSelected();
@@ -482,7 +495,7 @@ function onAction(action: string, el: HTMLElement) {
     case 'season': {
       const pending = app.seasoning;
       app.seasoning = undefined;
-      if (pending) report(useItem(run, pending.src, pending.loc, el.dataset.flavor as Flavor));
+      if (pending) report(useItem(run, pending.src, pending.loc, el.dataset.flavor as Flavor), 'item');
       return;
     }
     case 'cancel-season':
@@ -496,11 +509,16 @@ function onAction(action: string, el: HTMLElement) {
       return render();
     case 'speed':
       app.speed = app.speed >= 4 ? 1 : app.speed * 2;
+      sfx('select');
+      return render();
+    case 'sound':
+      toggleMute();
       return render();
     case 'skip':
       if (app.battle) app.frame = app.battle.result.frames.length - 1;
       return render();
     case 'continue':
+      sfx('select');
       return endBattle();
   }
 }
@@ -511,11 +529,13 @@ let ringing = false;
 function ringBell() {
   if (ringing) return;
   if (app.run.plate.every((u) => !u)) {
+    sfx('deny');
     app.message = `${pix('warn')} Your plate is empty! Grab something from the buffet first.`;
     return render();
   }
   const blocked = serveBlocker(app.run);
   if (blocked) {
+    sfx('deny');
     app.message = `${pix('warn')} ${blocked}`;
     render();
     const tray = root.querySelector('.tray');
@@ -526,6 +546,7 @@ function ringBell() {
   const stage = root.querySelector<HTMLElement>('.stage');
   const bell = root.querySelector('.bell');
   if (bell) animate(bell, 'hop');
+  sfx('bell');
   if (stage) floater(stage, LAYOUT.bell[0] + 24, LAYOUT.bell[1] + 2, 'ding!', 'info');
   // End of day: growing foods grow now, in front of you, before the plate goes out.
   endDay(app.run);
@@ -570,7 +591,14 @@ function endBattle() {
   if (summary && !isOver(app.run)) app.message += ` Start of day: ${summary}.`;
   save();
   render();
-  if (!isOver(app.run)) playGrowth(2 * WIPE_MS + 400);
+  const back = 2 * WIPE_MS;
+  if (isOver(app.run)) sfx(app.run.courses >= COURSES_TO_WIN ? 'win' : 'lose', back);
+  else {
+    if (o === 'win') sfx('trophy', back);
+    else if (o === 'loss' && app.run.turn - 1 >= 3) sfx('lifeLost', back);
+    for (let i = 0; i <= Math.min(lastInterest, 5); i++) sfx('coin', back + 350 + i * 90);
+    playGrowth(back + 400);
+  }
 }
 
 // ---------- shared rendering ----------
@@ -597,10 +625,19 @@ function render() {
   if (app.message !== toast.text) toast = { text: app.message, id: toast.id + 1, at: performance.now() };
 
   document.body.dataset.screen = screen;
+  // Keep the images already on screen (same markup) instead of fresh copies: iPhone Safari can draw a newly inserted
+  // <img> blank for a frame, which flashed the dark page through the scene on every tap.
+  const keep = changed ? null : imagesByMarkup();
   let fresh = false;
   if (app.battle) fresh = renderBattle(app.battle);
   else if (isOver(app.run)) renderOver();
   else renderKitchen();
+  if (keep) {
+    root.querySelectorAll('img').forEach((img) => {
+      const old = keep.get(img.outerHTML)?.pop();
+      if (old) img.replaceWith(old);
+    });
+  }
 
   if (oldNodes.length) wipe(oldNodes, oldScreen, stageScale());
   const drop = pendingDrop;
@@ -611,6 +648,23 @@ function render() {
   if (fresh && app.battle) battleEffects(app.battle, delay);
   if (screen === 'over' && changed && app.run.courses >= COURSES_TO_WIN) overConfetti(delay);
   updateTip();
+}
+
+/** Every image on screen, by its markup. */
+function imagesByMarkup(): Map<string, HTMLImageElement[]> {
+  const map = new Map<string, HTMLImageElement[]>();
+  root.querySelectorAll('img').forEach((img) => {
+    const list = map.get(img.outerHTML) ?? [];
+    list.push(img);
+    map.set(img.outerHTML, list);
+  });
+  return map;
+}
+
+/** The sound on/off button (key m). `cls` may carry extra attributes for the kitchen's placement. */
+function soundButton(cls: string): string {
+  const off = isMuted();
+  return `<button class="${cls}" data-action="sound" ${tip(`<p>Sound ${off ? 'off' : 'on'}: tap to turn it ${off ? 'on' : 'off'} (key m).</p>`)} aria-label="sound ${off ? 'off' : 'on'}">${pix(off ? 'soundOff' : 'soundOn')}</button>`;
 }
 
 const flavorOf = (u: { defId: string; flavorOverride?: Flavor } | null) => (u ? (u.flavorOverride ?? unitDef(u.defId).flavor) : null);
@@ -1003,8 +1057,16 @@ function interestWidget(): string {
     <p>You have <b>${run.gold}</b> now: <b>+${earn}</b> interest tomorrow${toNext ? `. Keep <b>${toNext}</b> more for +${earn + 1}` : ' (the most you can earn)'}.</p>
     <p class="interest-coins">${coins}</p>
     <p class="dim">Tomorrow: +${INCOME} income +${earn} interest. Fortune Cookie and Caviar raise the cap.</p>`;
-  return `<div class="interest ${earn ? '' : 'none'}" style="${box(LAYOUT.interest)}" ${tipBox(`${pix('coin')} Interest`, body)}
-      data-vk="interest" data-v="${earn}" data-va="hop">+${earn}g interest</div>`;
+  // The rule at a glance: a coin per +1 interest, labelled with the gold that earns it (5, 10, 15), lit once you have
+  // it. Coins past the base 3 come from foods that raise the cap.
+  const [ix, iy] = LAYOUT.interestSteps;
+  const steps = Array.from({ length: cap }, (_, i) => {
+    const on = run.gold >= INTEREST_STEP * (i + 1);
+    return `<span class="istep ${on ? 'on' : ''} ${i >= BASE_INTEREST_CAP ? 'bonus' : ''}" data-vk="istep:${i}" data-v="${on ? 1 : 0}" data-va="hop">${pix(on ? 'coin' : 'coinOff')}<b>${INTEREST_STEP * (i + 1)}</b></span>`;
+  }).join('');
+  return `<div class="interest-steps" style="left:${ix}px;top:${iy}px" ${tipBox(`${pix('coin')} Interest`, body)}>${steps}</div>
+    <div class="interest ${earn ? '' : 'none'}" style="${box(LAYOUT.interest)}" ${tipBox(`${pix('coin')} Interest`, body)}
+      data-vk="interest" data-v="${earn}" data-va="hop">+${earn}g interest${earn >= cap ? ' · max' : ''}</div>`;
 }
 
 /** Extra lines about a food beyond its ability text: interest, gained sell value and flavors. */
@@ -1109,6 +1171,7 @@ function renderKitchen() {
         <img class="scene-bg" src="${kitchenUrl}" alt="" draggable="false">
         <div class="ticket-text" style="${box(LAYOUT.ticket)}" data-vk="turn">day ${run.turn}</div>
         <button class="newrun" style="${box(LAYOUT.newRun)}" data-action="new-run">new run</button>
+        ${soundButton(`hotspot sound-btn" style="${box(LAYOUT.sound)}`)}
         ${freezerMagnets()}
         ${spiceJars()}
         ${chalkboard()}
@@ -1285,6 +1348,23 @@ function impact(stage: HTMLElement, [x, y]: [number, number], delay: number, spe
   ).finished.then(() => el.remove(), () => el.remove());
 }
 
+/** What a battle frame sounds like: a bonk on contact (bigger for big hits), a chomp when a food is eaten, and the
+ * effects that happened, a few at most so a busy frame stays readable. */
+const EFFECT_SOUNDS: [Mark['kind'], Sfx][] = [
+  ['cooked', 'cooked'], ['summon', 'summon'], ['blocked', 'block'], ['heal', 'heal'], ['burn', 'burn'], ['rot', 'rot'],
+  ['chill', 'chill'], ['buff', 'buff'], ['debuff', 'debuff'], ['crust', 'crust'],
+];
+function battleSounds(f: BattleFrame, delay: number, after: number, speed: number, attack: boolean, ability: boolean) {
+  const hits = f.marks.filter((m) => m.kind === 'hit');
+  const biggest = Math.max(0, ...hits.map((m) => m.amount ?? 0));
+  if (attack) sfx(biggest >= BIG_HIT ? 'bigHit' : 'hit', after);
+  else if (ability) sfx('ability', delay);
+  else if (hits.length) sfx('hit', after); // overtime, and damage with no attacker shown
+  if (f.marks.some((m) => m.kind === 'faint')) sfx('nom', after + 120 / speed);
+  const present = EFFECT_SOUNDS.filter(([kind]) => f.marks.some((m) => m.kind === kind && (kind !== 'crust' || (m.amount ?? 0) > 0)));
+  present.slice(0, 3).forEach(([, name], i) => sfx(name, after + (60 + i * 70) / speed));
+}
+
 function battleEffects(b: PendingBattle, delay: number) {
   const stage = root.querySelector<HTMLElement>('.stage');
   if (!stage) return;
@@ -1362,6 +1442,11 @@ function battleEffects(b: PendingBattle, delay: number) {
   for (const m of f.marks) {
     if (m.kind === 'faint') burst(stage, fighterPoint(m.side, m.slot), 'crumb', { speed, delay: after, count: 14, spread: 32 });
     if (m.kind === 'summon') burst(stage, fighterPoint(m.side, m.slot), 'puff', { speed, delay, count: 10, spread: 26 });
+  }
+  battleSounds(f, delay, after, speed, pairs.length > 0, !!src);
+  if (app.frame >= b.result.frames.length - 1) {
+    const o = b.result.outcome;
+    sfx(o === 'win' ? 'win' : o === 'loss' ? 'lose' : 'draw', after + 350 / speed);
   }
   // A big hit shakes the table.
   const biggest = Math.max(0, ...[0, 1].flatMap((side) => [0, 1, 2, 3, 4, 5].map((slot) =>
@@ -1482,7 +1567,7 @@ function renderBattle(battle: PendingBattle): boolean {
         ${done ? '' : `<div class="hold-hint" style="${box([6, 338, 86, 12])}" data-k="hint" data-in="fade">hold a food to read it</div>`}
         ${held ? inspectCard(app.inspect!.side, app.inspect!.slot, held) : ''}
         <div class="controls" style="${box(BATTLE.controls)}">
-          ${done ? '' : `<button class="chip" data-action="speed" data-k="speed" data-in="fade" data-vk="speed" data-v="${app.speed}">${app.speed}x</button><button class="chip" data-action="skip" data-k="skip" data-in="fade">skip</button>`}
+          ${soundButton('chip')}${done ? '' : `<button class="chip" data-action="speed" data-k="speed" data-in="fade" data-vk="speed" data-v="${app.speed}">${app.speed}x</button><button class="chip" data-action="skip" data-k="skip" data-in="fade">skip</button>`}
         </div>
         ${done
           ? `<div class="result-card ${outcome}" style="${box(BATTLE.result)}" data-k="result:${bid}" data-in="${outcome === 'loss' ? 'thud' : 'stamp'}" data-delay="250">
@@ -1768,6 +1853,7 @@ window.addEventListener('pointermove', (e) => {
     root.querySelector(`[data-drag="${drag.el.dataset.drag}"]`)?.classList.add('lifted');
     document.body.classList.add('dragging');
     drag.ghost = ghost;
+    sfx('pick');
   }
   const [x, y] = stagePoint(e);
   drag.ghost.style.left = `${x - 20}px`;
@@ -1851,7 +1937,15 @@ root.addEventListener('click', (e) => {
   }
 });
 
+// Audio can only start from a tap, click or key press.
+document.addEventListener('pointerdown', unlockAudio, true);
+document.addEventListener('keydown', unlockAudio, true);
+
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'm') {
+    toggleMute();
+    return render();
+  }
   if (app.battle || app.seasoning || isOver(app.run)) return;
   if (e.key === 'r') onAction('reroll', root);
   else if (e.key === 's') sellSelected();

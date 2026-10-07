@@ -30,7 +30,9 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 - **Special cubby:** once a day, a Spice Pack, Farm Box, Pair (2 copies for about 1.5x the price), Premium Restock or (late) a mythic. Drag it onto the counter tray to buy it; whatever lands on the tray must be placed, merged or sold before you serve.
 - **Flavors:** 2, 4 or 6 of a flavor gives a growing team bonus (the chalkboard shows the tiers). Spicy Burns, Sour Rots, Sweet heals, Salty crusts, Savory summons. Some foods count as two flavors, and Tofu and the Flavor Packet add more.
 - **Battle:** Burn and Rot hurt every turn, Chill skips an attack. A few foods attack in shapes (pierce, splash, fork, escalate). Hold a food to read it.
-- **Ring the bell** to serve and battle a ghost. Keys: `r` restock, `s` sell selected, `Esc` deselect.
+- **Ring the bell** to serve and battle a ghost. Keys: `r` restock, `s` sell selected, `Esc` deselect, `m` sound on/off.
+- **Interest:** the coins over the tip jar show the rule: +1 gold tomorrow for every 5 you keep (5, 10, 15), lit as you reach each one. Fortune Cookie and Caviar add more coins.
+- **Sound:** synthesized chiptune effects (no audio files). The speaker button (top bar, and next to the battle speed) or `m` mutes them; iPhones also follow the silent switch.
 - **Hover** anything for a tooltip; keywords like Burn, Rot and Crust are explained at the bottom.
 - **Mythics:** late in a run the special cubby can deliver one of four mythics. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and heals around it, Black Garlic doubles Burn and Rot in its lane.
 - **Cooking:** 6 copies cook a food (level 3): new name and art, and its cooked bonus switches on. The bonus is small on tier 1 foods and plate-wide on tier 6 and mythics; the chip in the cookbook shows it.
