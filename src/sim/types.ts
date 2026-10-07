@@ -1,0 +1,238 @@
+export type Flavor = 'spicy' | 'sweet' | 'sour' | 'salty' | 'savory';
+export const FLAVORS: readonly Flavor[] = ['spicy', 'sweet', 'sour', 'salty', 'savory'];
+
+export type Trigger =
+  // battle
+  | 'startOfBattle'
+  | 'hit'
+  | 'round'
+  | 'faint'
+  | 'friendSummoned'
+  | 'firstAttack'
+  | 'friendAheadHit' // the friend ahead of this food is hit (`attacker` = who hit it)
+  | 'friendAheadAttacks' // the friend ahead of this food attacks (`attacker` = the food it attacked)
+  | 'friendFaint' // an adjacent friend is eaten
+  // kitchen
+  | 'buy' // this food is bought (also when bought onto a copy)
+  | 'sell' // this food is sold
+  | 'levelUp' // this food reaches level 2 or 3
+  | 'reroll' // you restock the market (fires for foods on the plate)
+  | 'startTurn' // a new turn starts, after income and interest (foods on the plate)
+  | 'endTurn' // you press Serve (foods on the plate)
+  | 'fridgeTurn'; // you press Serve while this food is in the fridge
+
+/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. */
+export type Status = 'burn' | 'rot' | 'chill';
+export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
+
+/**
+ * How a front-row food's attack lands. single: the enemy in its lane. pierce: also half damage to the food behind
+ * it. splash: also 1 damage to the front-most enemies in the neighbouring lanes. fork: hits the neighbouring lanes
+ * instead of its own. snipe: hits the back row of its lane first. escalate: one target in rounds 1-2, the whole
+ * enemy front row in rounds 3-4, every enemy from round 5 (secondary targets take half).
+ */
+export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate';
+export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate'];
+
+export type Tier = 1 | 2 | 3 | 4 | 5 | 6;
+export type Level = 1 | 2 | 3;
+
+// ---------- abilities: building blocks (see DESIGN.md, "Designing foods") ----------
+
+/** Who an ability affects. "Lane" targets use the food's own lane; "attacker" only exists for hit triggers. */
+export type Target =
+  | 'self'
+  | 'enemyInLane' // front-most enemy in this lane, else the nearest lane with food
+  | 'enemyLaneAndAdjacent' // front-most enemy in this lane and in each neighbouring lane
+  | 'enemyLane' // every enemy in this lane (front and back)
+  | 'enemyFrontRow'
+  | 'allEnemies'
+  | 'randomBackEnemy' // random back-row enemy, front row if the back is empty
+  | 'highestAttackEnemy'
+  | 'nearestEnemyLanes' // front-row enemies in the N lanes nearest this one (N = the ability's amount)
+  | 'attacker' // hit trigger: the enemy that hit this food
+  | 'adjacentFriends'
+  | 'friendAhead'
+  | 'friendBehind'
+  | 'friendAheadOrSelf' // the friend ahead if this food is in the back row, else itself
+  | 'aheadElseAdjacent' // back row: the friend ahead; front row: adjacent friends
+  | 'laneFriends' // this food and the friend in its lane
+  | 'frontRowFriends'
+  | 'allFriends'
+  | 'randomFriends' // `count` random friends (shop: on the plate)
+  | 'mostDamagedFriend'
+  | 'summoned' // friendSummoned trigger: the food that was just summoned
+  | 'level3Friends' // kitchen: a random friend at level 3 (`count` of them)
+  | 'statusEnemies'; // enemies that have any status
+
+export type Effect =
+  | 'damage' // deal `amount` damage
+  | 'buff' // +attack/+HP (scaled by the ability's `attack` and `hp`, default 1 each)
+  | 'debuff' // -attack
+  | 'halveAttack'
+  | 'crust'
+  | 'heal'
+  | 'summon' // summon `count` of `summon.id` near this food
+  | 'extraAttacks' // the target attacks twice on its next `amount` attacks
+  | 'bonusDamage' // firstAttack trigger: the first attack deals +amount
+  | 'season' // targets' ability numbers +amount this battle (Salt)
+  | 'gold' // shop: +amount gold next turn
+  | 'copyAbility' // this food gains the target's abilities for the battle, with their current numbers
+  | 'bequeath' // the targets gain this food's attack and max HP (use with faint)
+  | 'split' // fills every empty slot with `summon.id` tokens, each with a third of this food's attack and HP (use with faint)
+  | 'burn' // +amount Burn
+  | 'rot' // +amount Rot
+  | 'chill' // +amount Chill
+  | 'cleanse' // removes up to amount Burn and Rot
+  // kitchen
+  | 'sellValue' // +amount sell value, for good
+  | 'freeReroll' // your next amount restocks this turn are free
+  | 'gainFlavor' // gains a random flavor it doesn't have yet (up to 3 flavors)
+  | 'buyBonus'; // everything you buy for the rest of this turn gets +amount/+amount
+
+export interface AbilityDef {
+  trigger: Trigger;
+  effect: Effect;
+  target?: Target; // default 'self'
+  /** Overrides the food's level 1/2/3 values for this ability. */
+  values?: [number, number, number];
+  /** Buff scaling: +attack x amount and +HP x amount (default 1 and 1; use 0 to skip one). */
+  attack?: number;
+  hp?: number;
+  /** round / hit triggers: fire only every Nth round or Nth hit. */
+  every?: number;
+  /** hit trigger: only the first time this food is hit. */
+  once?: boolean;
+  /** hit trigger: at most `amount` times per battle (Popcorn). */
+  limitToAmount?: boolean;
+  /** randomFriends: how many; summon: how many. */
+  count?: number;
+  /** summon: which token, and fixed stats (otherwise attack/HP = amount). */
+  summon?: { id: string; attack?: number; hp?: number };
+  /** +1 to the amount for each other friend of this flavor. */
+  perFriend?: Flavor;
+  /** Amount x the number of distinct flavors among your foods (Pizza). */
+  perDistinctFlavor?: boolean;
+  /** Only affects targets of this flavor. */
+  onlyFlavor?: Flavor;
+  /** Targets of this flavor get amount x mult + add. */
+  forFlavor?: { flavor: Flavor; mult?: number; add?: number };
+  /** Shop conditions: only if you didn't reroll this turn / only next to a friend of this flavor. */
+  ifNoReroll?: boolean;
+  ifAdjacentFlavor?: Flavor;
+  /** Start of battle: resolve before every other Start of battle ability (e.g. copyAbility, so copies fire). */
+  early?: boolean;
+  /** The amount goes up by 1 every time this ability fires this battle. */
+  grows?: boolean;
+  /** Kitchen: this ability gives at most this much in total over the run (per stat). Battle: it fires at most this many times a battle. */
+  max?: number;
+  /** Kitchen: only if you own a level 3 food. */
+  ifLevel3?: boolean;
+  /** Kitchen startTurn: amount x the interest you earned this turn. */
+  perInterest?: boolean;
+  /** +1 to the amount for each level 3 friend (Golden Truffle). */
+  perLevel3?: boolean;
+}
+
+/**
+ * Standing effects while a food with the aura is on the plate:
+ * echo: the friend ahead's abilities trigger twice; rally: an adjacent friend whose ability fires gains +1 attack
+ * (at most 3 times a battle each); soothe: your heals are +1.
+ * Mythics each bend one rule, reaching further once they are cooked (level 3):
+ * cook (Golden Truffle): in battle, the friend in its lane is cooked (every friend, once cooked);
+ * infuse (Saffron): adjacent friends count twice toward flavor bonuses (every friend, once cooked);
+ * baste (Wagyu): adjacent friends get double from Crust and heals (every friend, once cooked);
+ * ferment (Black Garlic): enemies in its lane take double damage from Burn and Rot (every lane, once cooked).
+ */
+export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment';
+
+/** How special a food is. Mythic foods never appear in the market. */
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+export const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+
+export interface UnitDef {
+  id: string;
+  name: string;
+  cookedName: string;
+  emoji: string;
+  tier: Tier;
+  flavor: Flavor;
+  /** A second flavor that also counts for flavor bonuses (Kimchi is Sour and Spicy). */
+  flavor2?: Flavor;
+  attack: number;
+  hp: number;
+  /** Ability numbers at level 1/2/3 (the "amount"; Salt can raise it in battle). */
+  values: [number, number, number];
+  abilities: AbilityDef[];
+  /** Ability text; `{v}` is replaced by the value for the unit's level. */
+  text: string;
+  /** A bonus that switches on at level 3 (cooked), on top of its abilities. Fixed numbers; stronger with tier. */
+  cooked?: { text: string; abilities: AbilityDef[] };
+  /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
+  rarity?: Rarity;
+  /** Summoned tokens never appear in the market and don't count for synergies. */
+  token?: boolean;
+
+  /** Use another sprite's file name instead of this food's id or name. */
+  art?: string;
+  /** How its attacks land (default single). */
+  attackPattern?: AttackPattern;
+  /** While on the plate: your interest cap is raised by this (by level). */
+  interestCap?: [number, number, number];
+  /** A plate-wide effect while this food is on the plate (see Aura). */
+  aura?: Aura;
+  /** Counts as every flavor for flavor bonuses. */
+  allFlavors?: boolean;
+  /** Comes back at full HP this many times when eaten. */
+  lives?: number;
+}
+
+export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware';
+export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth';
+
+export interface ItemDef {
+  id: ItemId;
+  name: string;
+  emoji: string;
+  tier: Tier;
+  cost: number;
+  held: boolean;
+  text: string;
+}
+
+/** A unit owned by the player, between battles. Stats here are permanent. */
+export interface UnitInstance {
+  uid: number;
+  defId: string;
+  /** Copies merged in, 1 to 6. Level 2 at 3 copies, level 3 (cooked) at 6. */
+  copies: number;
+  attack: number;
+  hp: number;
+  item?: HeldItemId;
+  flavorOverride?: Flavor;
+  /** Hot Sauce: extra attack for the next battle only. */
+  tempAttack?: number;
+  /** Extra sell value gained (Coin Chocolate, Olive Oil). */
+  sellBonus?: number;
+  /** Flavors it gained (Tofu, Flavor Packet), on top of its own. */
+  extraFlavors?: Flavor[];
+  /** Kitchen growth so far, per ability index, for abilities with a `max`. */
+  gains?: Record<number, number>;
+}
+
+/** 6 slots. Index = lane + 3 * row, where row 0 is the front row. */
+export type Plate = (UnitInstance | null)[];
+
+export const PLATE_SIZE = 6;
+export const laneOf = (slot: number) => slot % 3;
+export const rowOf = (slot: number) => Math.floor(slot / 3);
+export const slotAt = (lane: number, row: number) => lane + 3 * row;
+
+/** Orthogonal neighbours: same lane ahead/behind, or the same row in a neighbouring lane. */
+export function isAdjacent(a: number, b: number): boolean {
+  return Math.abs(laneOf(a) - laneOf(b)) + Math.abs(rowOf(a) - rowOf(b)) === 1;
+}
+
+export function levelOf(copies: number): Level {
+  return copies >= 6 ? 3 : copies >= 3 ? 2 : 1;
+}

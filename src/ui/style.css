@@ -1,0 +1,808 @@
+@font-face {
+  font-family: 'Jersey 10';
+  src: url('./fonts/jersey10.woff2') format('woff2');
+  font-weight: 400;
+  font-display: block;
+}
+
+:root {
+  --ink: #3a2a22;
+  --dim: #8a7568;
+  --cream: #fffaf0;
+  --paper: #fffdf6;
+  --line: #e2d3bd;
+  --wood: #b5784a;
+  --wood-dark: #8a5532;
+  --steel: #cfd6dc;
+  --steel-dark: #9aa5ae;
+  --accent: #e0642f;
+  --accent-dark: #b44a1d;
+  --good: #3f9b4a;
+  --spicy: #e4502a;
+  --sweet: #e86fa8;
+  --sour: #d9b21f;
+  --salty: #5f8eb0;
+  --savory: #9a5d33;
+  --pixel: 'Jersey 10', monospace;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  /* Subway-tile backsplash */
+  background-color: #f2ece1;
+  background-image:
+    linear-gradient(#ddd2c1 2px, transparent 2px),
+    linear-gradient(90deg, #ddd2c1 2px, transparent 2px);
+  background-size: 56px 28px;
+}
+h1, h2, h3 { margin: 0; font-family: var(--pixel); font-weight: 400; letter-spacing: 0.5px; }
+h2 { font-size: 20px; }
+h3 { font-size: 20px; margin-bottom: 6px; }
+p { margin: 6px 0; line-height: 1.4; }
+.dim { color: var(--dim); font-size: 13px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn {
+  font: 400 20px var(--pixel);
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+.btn:hover:not(:disabled) { background: #fff3dc; }
+.btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.small { font-size: 20px; padding: 4px 10px; box-shadow: 0 3px 0 var(--ink); }
+.btn.primary { background: var(--accent); color: white; }
+.btn.primary:hover { background: #ef7440; }
+
+/* ---------- shared (battle + game over) ---------- */
+.recipe-card {
+  background:
+    linear-gradient(#e86a6a, #e86a6a) 0 34px / 100% 2px no-repeat,
+    repeating-linear-gradient(transparent 0 23px, #c9dcef 23px 24px),
+    var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 6px;
+  padding: 10px 14px 12px;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.25);
+  line-height: 24px;
+}
+.recipe-card p { margin: 0 0 4px; line-height: 24px; }
+.atk { color: #b2401b; }
+.hp { color: #c22a4f; }
+.flavor-spicy { border-color: var(--spicy); }
+.flavor-sweet { border-color: var(--sweet); }
+.flavor-sour { border-color: var(--sour); }
+.flavor-salty { border-color: var(--salty); }
+.flavor-savory { border-color: var(--savory); }
+.sprite { image-rendering: pixelated; }
+
+/* ---------- kitchen stage: 640x360 scene px, scaled by --s ---------- */
+body[data-screen='kitchen'], body[data-screen='over'] {
+  background: #1d1410;
+  min-height: 100vh;
+  min-height: 100dvh; /* the visible height on phones, not counting toolbars */
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.stage-wrap { width: calc(640px * var(--s)); height: calc(360px * var(--s)); }
+.stage {
+  position: relative;
+  font-synthesis: none;
+  width: 640px; height: 360px;
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+  overflow: hidden;
+  font: 400 10px/9px var(--pixel);
+  color: var(--ink);
+  user-select: none;
+}
+.stage > * { position: absolute; }
+.scene-bg { left: 0; top: 0; width: 640px; height: 360px; image-rendering: pixelated; pointer-events: none; }
+.stage button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; }
+
+/* Slots and food tiles (40x48) */
+.slot { width: 40px; height: 48px; }
+body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline-offset: -2px; background: rgba(224, 100, 47, 0.08); }
+.slot.drop-hover { outline: 2px solid #e0642f !important; outline-offset: -1px; animation: slot-pulse 0.5s steps(1) infinite; }
+@keyframes slot-pulse { 50% { outline-offset: -3px; } }
+.unit { position: relative; width: 40px; height: 48px; cursor: grab; touch-action: none; transition: translate 90ms steps(2, jump-end); }
+.unit:hover { translate: 0 -2px; }
+.unit.lifted { opacity: 0.3; filter: grayscale(1); translate: 0 0; }
+.unit.selected { translate: 0 -2px; outline: 1px solid #e0642f; outline-offset: 0; }
+.u-art { position: absolute; left: 4px; top: 1px; width: 32px; height: 32px; display: grid; place-items: center; }
+.u-art .sprite { width: 32px; height: 32px; }
+.u-art .emoji { font-size: 24px; line-height: 1; }
+.u-stats { position: absolute; left: 3px; top: 31px; width: 34px; display: flex; justify-content: space-between; }
+.u-pips { position: absolute; left: 8px; top: 45px; display: flex; gap: 1px; }
+.u-pips i { width: 3px; height: 2px; background: rgba(42, 27, 20, 0.35); }
+.u-pips i.on { background: #e0642f; }
+.u-pips i:nth-child(3) { margin-right: 2px; }
+.u-lvl { position: absolute; left: 0; top: 0; min-width: 7px; height: 9px; padding: 0 1px; display: grid; place-items: center; background: #2a1b14; color: #ffd27a; font: 400 10px/9px var(--pixel); text-align: center; }
+.unit.cooked .u-lvl { color: #ff9b6a; }
+.u-item { position: absolute; right: 0; top: 0; display: flex; }
+.unit.item .u-art { top: 6px; }
+.frost { left: 0; top: 0; width: 40px; height: 48px; background: rgba(210, 238, 248, 0.35); pointer-events: none; }
+.price { width: 24px; height: 9px; font: 400 10px/9px var(--pixel); color: #fff3d6; text-align: center; pointer-events: none; }
+
+/* Labels painted onto the scene */
+.label { font: 400 10px/9px var(--pixel); white-space: nowrap; pointer-events: none; }
+.label.dark { color: #5a3a22; }
+.label.light { color: #fff3d6; }
+.label.center { text-align: center; }
+.label.tag { color: #fff; background: #a3452a; border: 1px solid #2a1b14; line-height: 9px; }
+.ticket-text { font: 400 10px/15px var(--pixel); text-align: center; color: #3a2a22; text-transform: uppercase; pointer-events: none; }
+.tip-text { position: absolute; font: 400 10px/13px var(--pixel); text-align: center; color: #3a2a22; pointer-events: none; }
+.newrun { font: 400 10px/14px var(--pixel) !important; text-transform: uppercase; color: #fff3d6 !important; background: rgba(42, 27, 20, 0.55) !important; border: 1px solid #2a1b14 !important; }
+.newrun:hover { background: rgba(42, 27, 20, 0.8) !important; }
+
+/* Freezer magnets */
+.magnets { display: flex; flex-direction: column; gap: 6px; padding: 6px 4px; pointer-events: none; }
+.mag-stars { display: flex; gap: 1px; }
+.mag-star { display: inline-flex; }
+.mag-course { display: flex; align-items: center; gap: 2px; font: 400 10px/1 var(--pixel); color: #3a2a22; }
+
+/* Spice jars: count on the glass, a gold frame when the flavor bonus is active */
+.jar { display: grid; place-items: end center; padding-bottom: 2px; }
+.jar span { position: relative; font: 400 10px/1 var(--pixel); color: #fff; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; }
+.jar.active { outline: 1px solid #ffd27a; }
+
+/* Chalkboard */
+.chalkboard { padding: 3px 5px; color: #dfe7dc; }
+.chalk-title { font: 400 10px/10px var(--pixel); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
+.chalk-line { display: flex; align-items: center; gap: 3px; font: 400 10px/10px var(--pixel); color: #75887a; white-space: nowrap; overflow: hidden; }
+.chalk-line.on { color: #f3f7f1; }
+.chalk-line b { display: inline-block; width: 7px; color: inherit; }
+
+/* Clickable painted objects */
+.hotspot { display: block; }
+.hotspot:hover { outline: 1px solid rgba(255, 210, 122, 0.9); }
+/* Props cut out of the scene (tools/gen-kitchen.mjs): the bell, bin and jars are sprites, so they can move. */
+.stage .prop { position: absolute; left: 0; top: 0; image-rendering: pixelated; pointer-events: none; }
+.bell:hover, .bin:hover { outline: none; }
+.bell:hover .prop, .bin:hover .prop { filter: drop-shadow(1px 0 #ffd27a) drop-shadow(-1px 0 #ffd27a) drop-shadow(0 -1px #ffd27a); }
+.bell:hover { translate: 0 -1px; }
+.refill span { position: absolute; left: 6px; top: 6px; width: 68px; height: 12px; font: 400 10px/12px var(--pixel); text-align: center; color: #8a2b24; text-transform: uppercase; }
+.refill.off { opacity: 0.55; cursor: default; }
+.refill span { transition: translate 80ms steps(2, jump-end); }
+.refill:hover:not(.off) span { translate: 0 -1px; }
+.bell:active { translate: 0 1px; }
+.bin.armed .prop { filter: drop-shadow(1px 0 #e0642f) drop-shadow(-1px 0 #e0642f) drop-shadow(0 -1px #e0642f); }
+.bin.drop-hover { animation: bin-rattle 0.32s steps(1) infinite; }
+.bin.drop-hover .prop { filter: drop-shadow(1px 0 #e0642f) drop-shadow(-1px 0 #e0642f) drop-shadow(0 -1px #e0642f) drop-shadow(0 1px #e0642f); }
+@keyframes bin-rattle { 0% { translate: 0 0; } 25% { translate: 0 -2px; } 50% { translate: -1px -1px; } 75% { translate: 1px -2px; } }
+.stage.over-bin .sell-tag { animation: tag-pulse 0.4s steps(1) infinite; background: #c9502a; }
+@keyframes tag-pulse { 50% { translate: 0 -2px; } }
+
+/* Cookbook pages */
+.page { padding: 4px 4px; font: 400 10px/9px var(--pixel); color: #3a2a22; overflow: hidden; }
+.page p { margin: 0 0 3px; line-height: 9px; }
+.page b { color: #b2401b; }
+.page .dim { color: #8a7568; font-size: 10px; }
+
+.pg-title { font: 400 10px/11px var(--pixel); margin-bottom: 3px; }
+.pg-art { width: 32px; height: 32px; margin: 0 auto 3px; display: grid; place-items: center; }
+.pg-art .sprite { width: 32px; height: 32px; }
+.pg-art .emoji { font-size: 24px; line-height: 1; }
+
+/* Message note on the backsplash */
+.toast {
+  display: grid; place-items: center;
+  padding: 2px 8px;
+  font: 400 10px/10px var(--pixel); text-align: center;
+  background: #fffef5; color: #3a2a22;
+  border: 1px solid #2a1b14;
+  pointer-events: none;
+  animation: toast 4.5s ease-in forwards;
+}
+@keyframes toast { 0%, 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Seasoning picker */
+.modal { left: 0; top: 0; width: 640px; height: 360px; z-index: 50; background: rgba(29, 20, 16, 0.55); }
+.modal-card { left: 320px; top: 180px; translate: -50% -50%; z-index: 51; display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 8px 10px; background: #fbf2da; border: 1px solid #2a1b14; }
+.modal-card .row { display: flex; gap: 4px; }
+.chip { font: 400 10px/12px var(--pixel) !important; padding: 0 4px !important; background: #fffef5 !important; border: 1px solid #2a1b14 !important; text-transform: capitalize; }
+.chip { transition: translate 80ms steps(2, jump-end); }
+.chip:hover { background: #ffe3b8 !important; translate: 0 -1px; }
+.chip:active { translate: 0 1px; }
+
+/* Drag and drop */
+.drag-ghost {
+  position: absolute; z-index: 100; pointer-events: none;
+  scale: 1.1; filter: drop-shadow(0 3px 0 rgba(42, 27, 20, 0.35));
+  animation: pickup 0.18s steps(3, jump-end);
+  transition: scale 120ms steps(3, jump-end), opacity 120ms steps(3, jump-end);
+}
+@keyframes pickup { from { scale: 1; } 50% { scale: 1.25; } }
+/* Over the bin: the food shrinks and reddens, about to be scrapped. */
+.drag-ghost.over-bin { scale: 0.8; opacity: 0.75; filter: sepia(0.5) saturate(1.6) hue-rotate(-20deg) drop-shadow(0 2px 0 rgba(42, 27, 20, 0.35)); }
+body.dragging, body.dragging * { cursor: grabbing !important; }
+
+/* ---------- battle stage (same 640x360 scaled stage as the kitchen) ---------- */
+body[data-screen='battle'] {
+  background: #1d1410;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+/* Foods in battle are drawn at 2x: 32x32 art as a 64x64 sprite (whole-number scaling keeps it crisp). */
+.fighter { width: 64px; height: 64px; }
+.f-art { width: 64px; height: 64px; display: grid; place-items: center; }
+.f-art .sprite { width: 64px; height: 64px; }
+.f-art .emoji { font-size: 48px; line-height: 1; }
+.fighter.side-1 .f-art { transform: scaleX(-1); }
+/* Attack/HP sit on their own layer, above every food, so a food in front never hides the numbers behind it. */
+.f-tags { width: 90px; display: flex; justify-content: center; gap: 1px; pointer-events: none; }
+
+/* Battle effects scale with playback speed (--spd); reactions wait --fxd for the spark from whoever acted. */
+/* Idle: every food breathes on its own beat (--bob keeps the beat across frames). */
+.fighter .f-art > * { animation: idle 1.6s steps(1) var(--bob, 0s) infinite; }
+@keyframes idle { 0%, 100% { translate: 0 0; } 50% { translate: 0 -1px; } }
+/* Attack: wind up, squash and lunge at the enemy side, settle. */
+.f-art { transform-origin: 50% 100%; }
+.fighter.fx-attack.side-0 .f-art { animation: lunge-right calc(0.5s / var(--spd, 1)) steps(7); }
+.fighter.fx-attack.side-1 .f-art { animation: lunge-left calc(0.5s / var(--spd, 1)) steps(7); }
+@keyframes lunge-right {
+  18% { translate: -3px 0; scale: 0.9 1.1; }
+  40% { translate: 12px -3px; scale: 1.15 0.9; }
+  65% { translate: 3px 0; scale: 1 1; }
+}
+@keyframes lunge-left {
+  18% { translate: 3px 0; scale: 0.9 1.1; }
+  40% { translate: -12px -3px; scale: 1.15 0.9; }
+  65% { translate: -3px 0; scale: 1 1; }
+}
+/* Hit: a white flash held for a beat (hit-stop), knocked back and tipped away from the attacker, then a springy
+   recovery. Big hits fly further and flash red. Pivots on the food's base. */
+.fighter.fx-hit .f-art { transform-origin: 50% 100%; animation: calc(0.5s / var(--spd, 1)) linear calc(var(--fxd, 0s) / var(--spd, 1)) forwards; }
+.fighter.fx-hit.side-0 .f-art { animation-name: hurt-left; }
+.fighter.fx-hit.side-1 .f-art { animation-name: hurt-right; }
+.fighter.fx-hit.big-hit.side-0 .f-art { animation-name: hurt-left-big; }
+.fighter.fx-hit.big-hit.side-1 .f-art { animation-name: hurt-right-big; }
+@keyframes hurt-left {
+  0%, 14% { translate: -4px 0; scale: 0.86 1.1; rotate: 0deg; filter: brightness(4) saturate(0); animation-timing-function: cubic-bezier(0.1, 0.9, 0.3, 1); }
+  38% { translate: -9px -1px; scale: 1.04 0.97; rotate: -7deg; filter: brightness(1.4) saturate(0.6); animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1); }
+  66% { translate: 2px 0; scale: 1 1; rotate: 2deg; filter: none; animation-timing-function: ease-in-out; }
+  84% { translate: -1px 0; rotate: -1deg; }
+  100% { translate: 0 0; scale: 1 1; rotate: 0deg; filter: none; }
+}
+@keyframes hurt-right {
+  0%, 14% { translate: 4px 0; scale: 0.86 1.1; rotate: 0deg; filter: brightness(4) saturate(0); animation-timing-function: cubic-bezier(0.1, 0.9, 0.3, 1); }
+  38% { translate: 9px -1px; scale: 1.04 0.97; rotate: 7deg; filter: brightness(1.4) saturate(0.6); animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1); }
+  66% { translate: -2px 0; scale: 1 1; rotate: -2deg; filter: none; animation-timing-function: ease-in-out; }
+  84% { translate: 1px 0; rotate: 1deg; }
+  100% { translate: 0 0; scale: 1 1; rotate: 0deg; filter: none; }
+}
+@keyframes hurt-left-big {
+  0%, 16% { translate: -6px 0; scale: 0.8 1.16; rotate: 0deg; filter: brightness(4) saturate(0); animation-timing-function: cubic-bezier(0.1, 0.9, 0.3, 1); }
+  40% { translate: -15px -3px; scale: 1.08 0.94; rotate: -13deg; filter: sepia(1) saturate(4) hue-rotate(-30deg); animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1); }
+  68% { translate: 3px 0; scale: 1 1; rotate: 3deg; filter: none; animation-timing-function: ease-in-out; }
+  85% { translate: -1px 0; rotate: -1deg; }
+  100% { translate: 0 0; scale: 1 1; rotate: 0deg; filter: none; }
+}
+@keyframes hurt-right-big {
+  0%, 16% { translate: 6px 0; scale: 0.8 1.16; rotate: 0deg; filter: brightness(4) saturate(0); animation-timing-function: cubic-bezier(0.1, 0.9, 0.3, 1); }
+  40% { translate: 15px -3px; scale: 1.08 0.94; rotate: 13deg; filter: sepia(1) saturate(4) hue-rotate(-30deg); animation-timing-function: cubic-bezier(0.5, 0, 0.3, 1); }
+  68% { translate: -3px 0; scale: 1 1; rotate: -3deg; filter: none; animation-timing-function: ease-in-out; }
+  85% { translate: 1px 0; rotate: 1deg; }
+  100% { translate: 0 0; scale: 1 1; rotate: 0deg; filter: none; }
+}
+/* Where an attack connects (see impact() in main.ts). */
+.impact {
+  position: absolute; z-index: 70; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none;
+  opacity: 0; border: 3px solid #fff; border-radius: 50%; background: rgba(255, 255, 255, 0.55); box-shadow: 0 0 0 1px #ffd23f;
+}
+.impact.big { width: 30px; height: 30px; margin: -15px 0 0 -15px; }
+.fighter.fx-buff .f-art, .fighter.fx-heal .f-art { --glow: #6fd06f; }
+.fighter.fx-debuff .f-art { --glow: #a77bea; }
+.fighter.fx-crust .f-art { --glow: #e2b043; }
+.fighter.fx-buff .f-art, .fighter.fx-heal .f-art, .fighter.fx-debuff .f-art, .fighter.fx-crust .f-art {
+  animation: glow calc(0.6s / var(--spd, 1)) steps(3) calc(var(--fxd, 0s) / var(--spd, 1)) both;
+}
+@keyframes glow { 0% { filter: none; } 30%, 70% { filter: drop-shadow(0 0 2px var(--glow)) brightness(1.25); } 100% { filter: drop-shadow(0 0 1px var(--glow)); } }
+.fighter.fx-ability .f-art { filter: drop-shadow(0 0 2px #ffd23f); animation: bounce calc(0.4s / var(--spd, 1)) steps(4); }
+@keyframes bounce { 40% { translate: 0 -4px; } }
+/* The winners celebrate. */
+.fighter.cheer .f-art { animation: cheer 0.7s steps(1) infinite; }
+.fighter.cheer:nth-child(odd) .f-art { animation-delay: -0.35s; }
+@keyframes cheer { 0% { translate: 0 0; } 25% { translate: 0 -3px; } 50% { translate: 0 -4px; } 75% { translate: 0 -2px; } }
+
+.pop {
+  position: absolute; left: 50%; top: -4px; z-index: 40;
+  translate: -50% 0;
+  font: 400 10px/1 var(--pixel); white-space: nowrap;
+  text-shadow: 1px 0 #fff, -1px 0 #fff, 0 1px #fff, 0 -1px #fff;
+  pointer-events: none;
+  opacity: 0; /* hidden until its delay is up, so the number lands with the hit */
+  animation: float-up calc(0.95s / var(--spd, 1)) steps(8) calc(var(--fxd, 0s) / var(--spd, 1)) forwards;
+}
+.pop.dmg { color: #d32f1f; }
+.pop.heal { color: #3f9b4a; }
+.pop.info { color: #3c6e9a; font-size: 10px; }
+@keyframes float-up {
+  0% { opacity: 1; translate: -50% 2px; scale: 0.6; }
+  15% { translate: -50% -4px; scale: 1.4; }
+  30% { translate: -50% -3px; scale: 1; }
+  75% { opacity: 1; translate: -50% -8px; }
+  100% { opacity: 0; translate: -50% -12px; }
+}
+.pop { font-size: 20px; top: -10px; }
+.pop.dmg.big { font-size: 30px; top: -18px; }
+@keyframes shake { 25% { translate: -2px 0; } 75% { translate: 2px 0; } }
+
+.plaque { padding: 4px 6px; }
+.plaque-label { font: 400 10px/9px var(--pixel); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 170px; }
+.plaque-pips { position: absolute; left: 6px; bottom: 7px; display: flex; gap: 2px; }
+.plaque-pips i { width: 12px; height: 8px; background: #d9cdb6; border: 1px solid #2a1b14; }
+.plaque.side-0 .plaque-pips i.on { background: #6fbf5c; }
+.plaque.side-1 .plaque-pips i.on { background: #e36b48; }
+.plaque-num { position: absolute; right: 6px; bottom: 4px; font: 400 20px/1 var(--pixel); }
+.plaque-num span { font-size: 10px; color: #8a7568; }
+.plaque.shake .plaque-pips { animation: shake calc(0.3s / var(--spd, 1)) steps(3); }
+
+.fork { width: 14px; line-height: 0; pointer-events: none; animation: fork calc(0.6s / var(--spd, 1)) steps(6) calc(var(--fxd, 0s) / var(--spd, 1)) both; }
+@keyframes fork { 0% { translate: 0 -14px; opacity: 0; } 40% { translate: 0 0; opacity: 1; } 100% { translate: 0 -6px; opacity: 0; } }
+.round-text { display: grid; place-items: center; font: 400 10px/1 var(--pixel); color: #dfe7dc; text-transform: uppercase; letter-spacing: 1px; pointer-events: none; }
+
+.caption {
+  display: grid; place-items: center; overflow: hidden;
+  padding: 0 6px;
+  font: 400 10px/10px var(--pixel); text-align: center;
+  background: #fffef5; color: #3a2a22;
+  border: 1px solid #2a1b14;
+}
+.controls { display: flex; gap: 3px; justify-content: flex-end; align-items: center; }
+
+
+
+/* Battle: hold a food to read it */
+.fighter { cursor: help; touch-action: none; }
+.inspect-card {
+  z-index: 80;
+  padding: 4px 6px 5px;
+  font: 400 10px/9px var(--pixel);
+  color: #3a2a22;
+  background: #fbf2da;
+  border: 1px solid #2a1b14;
+  box-shadow: 2px 2px 0 rgba(42, 27, 20, 0.45);
+  pointer-events: none;
+}
+.inspect-card p { margin: 0 0 3px; line-height: 9px; }
+.inspect-card b { color: #b2401b; }
+.inspect-card .dim { color: #8a7568; font-size: 10px; }
+
+.hold-hint { padding: 0 3px; font: 400 10px/10px var(--pixel); color: #fff3d6; background: rgba(42, 27, 20, 0.8); border: 1px solid #2a1b14; white-space: nowrap; pointer-events: none; }
+
+/* Rarity: a 5x5 pixel gem on tiles and cards, and the rarity name in its colour. */
+.rarity-common { --gem: #b8b2a2; --gem-hi: #f2eee2; --gem-ink: #6e685c; }
+.rarity-rare { --gem: #3f86d6; --gem-hi: #a9d4ff; --gem-ink: #2a64a8; }
+.rarity-epic { --gem: #9a4fd0; --gem-hi: #e0b4ff; --gem-ink: #7a35ab; }
+.rarity-legendary { --gem: #e8a227; --gem-hi: #fff0a8; --gem-ink: #a8680c; }
+.rarity-mythic { --gem: #e0446a; --gem-hi: #ffd0dc; --gem-ink: #c22a50; }
+.gem-ico { flex: none; }
+.u-gem { position: absolute; left: 0; top: 41px; display: flex; }
+.rarity-name { display: inline-flex; align-items: center; gap: 2px; color: var(--gem-ink); }
+.rarity-name .gem-ico { vertical-align: -1px; }
+/* Mythic gems cycle through colours. */
+.rarity-name.rarity-mythic { animation: mythic 1.2s steps(1) infinite; }
+@keyframes mythic {
+  0% { --gem: #e0446a; --gem-ink: #c22a50; }
+  25% { --gem: #e8a227; --gem-ink: #a8680c; }
+  50% { --gem: #3fb87a; --gem-ink: #23845a; }
+  75% { --gem: #3f86d6; --gem-ink: #2a64a8; }
+}
+
+/* ---------- motion (src/ui/motion.ts) ---------- */
+.floater {
+  position: absolute; z-index: 95;
+  font: 400 10px/1 var(--pixel); white-space: nowrap; pointer-events: none;
+  text-shadow: 1px 0 #fff, -1px 0 #fff, 0 1px #fff, 0 -1px #fff;
+}
+.floater.up { color: #3f9b4a; }
+.floater.down { color: #d32f1f; }
+.floater.info { color: #a3452a; }
+/* Flying bits: sparks between foods in battle, coins into the tip jar, confetti. */
+.bit { position: absolute; left: 0; top: 0; z-index: 70; width: 4px; height: 4px; margin: -2px 0 0 -2px; border: 1px solid #2a1b14; pointer-events: none; }
+.bit.k-hit { background: #e4502a; }
+.bit.k-heal, .bit.k-buff { background: #6fd06f; }
+.bit.k-debuff { background: #a77bea; }
+.bit.k-crust { background: #e2b043; }
+.bit.k-blocked { background: #9fb3c2; }
+.bit.k-summon { background: #ffd23f; }
+.bit.coin { width: 5px; height: 5px; background: #f2c94c; box-shadow: inset 1px 1px 0 #fff0a8; z-index: 96; }
+.bit.confetti { z-index: 59; border: 0; width: 3px; height: 3px; }
+.bit.c0 { background: #e4502a; }
+.bit.c1 { background: #f2c94c; }
+.bit.c2 { background: #6fbf5c; }
+.bit.c3 { background: #5f8eb0; }
+
+/* Scene change: the old screen is held in .scene-out while a gingham tablecloth sweeps across. */
+.scene-out {
+  position: fixed; inset: 0; z-index: 1000; overflow: hidden; pointer-events: none;
+  background-color: #f2ece1;
+  background-image: linear-gradient(#ddd2c1 2px, transparent 2px), linear-gradient(90deg, #ddd2c1 2px, transparent 2px);
+  background-size: 56px 28px;
+}
+.scene-out[data-screen='kitchen'], .scene-out[data-screen='battle'], .scene-out[data-screen='over'] { background: #1d1410; display: grid; place-items: center; }
+.cloth {
+  position: fixed; left: 0; top: 0; width: 100vw; height: 100vh; z-index: 1001;
+  background-color: #fbf3e4;
+  background-image:
+    linear-gradient(90deg, rgba(196, 52, 46, 0.55) 50%, transparent 50%),
+    linear-gradient(rgba(196, 52, 46, 0.55) 50%, transparent 50%);
+  background-size: calc(16px * var(--s, 1)) calc(16px * var(--s, 1));
+  border-left: calc(3px * var(--s, 1)) solid #2a1b14;
+  border-right: calc(3px * var(--s, 1)) solid #2a1b14;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage *, .drag-ghost { animation: none !important; transition: none !important; }
+  .stage .pop { opacity: 1; }
+}
+
+/* ---------- battle: who did what to whom ---------- */
+/* Buff / debuff / Crust icons rise above a food. */
+.pop-ico {
+  position: absolute; z-index: 41; pointer-events: none;
+  animation: ico-rise calc(0.8s / var(--spd, 1)) steps(6) calc(var(--fxd, 0s) / var(--spd, 1)) both;
+}
+@keyframes ico-rise { 0% { translate: 0 4px; opacity: 0; } 20% { translate: 0 -1px; opacity: 1; } 75% { translate: 0 -5px; opacity: 1; } 100% { translate: 0 -8px; opacity: 0; } }
+/* The acting food and the friends it reaches get corner brackets. */
+.fighter.source::before, .fighter.linked::before {
+  content: ''; position: absolute; left: -4px; top: -4px; width: 72px; height: 70px; pointer-events: none; z-index: 1;
+  --c: #ffd23f;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 10px 3px, linear-gradient(var(--c), var(--c)) 0 0 / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 10px 3px, linear-gradient(var(--c), var(--c)) 100% 0 / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 0 100% / 10px 3px, linear-gradient(var(--c), var(--c)) 0 100% / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 10px 3px, linear-gradient(var(--c), var(--c)) 100% 100% / 3px 10px;
+  background-repeat: no-repeat;
+  filter: drop-shadow(1px 1px 0 #2a1b14);
+  animation: brackets calc(0.7s / var(--spd, 1)) steps(4) both;
+}
+.fighter.linked::before { --c: #7fd86a; animation-delay: calc(0.12s / var(--spd, 1)); }
+@keyframes brackets { 0% { scale: 1.4; opacity: 0; } 30% { scale: 1; opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+/* Dotted line from a food to the friends it reaches. */
+/* Under the foods (z 0), so the line runs between the two foods without covering them. */
+.beam-dot { position: absolute; z-index: 0; width: 3px; height: 3px; margin: -1px 0 0 -1px; background: #7fd86a; box-shadow: 1px 1px 0 #2a1b14; pointer-events: none; }
+.beam-dot.k-heal, .beam-dot.k-buff { background: #7fd86a; }
+.beam-dot.k-crust { background: #f0c04a; }
+.beam-dot.k-summon { background: #ffd23f; }
+.beam-dot.k-debuff { background: #b48cf0; }
+.beam-dot.k-hit { background: #e4502a; }
+/* Crumbs when a food is eaten, a puff when one is summoned. */
+.bit.crumb { border: 0; width: 3px; height: 3px; }
+.bit.crumb0 { background: #e8c48a; }
+.bit.crumb1 { background: #b8763f; }
+.bit.crumb2 { background: #fff3d6; }
+.bit.puff { border: 0; width: 4px; height: 4px; }
+.bit.puff0 { background: #ffffff; }
+.bit.puff1 { background: #e4e9ec; }
+.bit.puff2 { background: #ffe9a8; }
+
+/* ---------- kitchen: plate links ---------- */
+/* An arrow between two plate slots: the food it starts from reaches the one it points at. */
+.link-arrow { z-index: 30; pointer-events: none; animation: link-pulse 1.2s steps(1) infinite; }
+@keyframes link-pulse { 50% { translate: 0 0; filter: brightness(1.25); } }
+/* While placing or holding a food: the slots it would reach. */
+.slot.reach { outline: 1px dashed #5fbf4a; outline-offset: -2px; background: rgba(127, 216, 106, 0.16); animation: reach-pulse 0.6s steps(1) infinite; }
+@keyframes reach-pulse { 50% { outline-offset: -4px; background: rgba(127, 216, 106, 0.28); } }
+
+/* ---------- level-up ---------- */
+.bit.ray { border: 0; width: 3px; height: 3px; z-index: 97; }
+.bit.ray0 { background: #ffd23f; }
+.bit.ray1 { background: #fff3b0; }
+.bit.ray2 { background: #f29a3a; }
+.bit.star { z-index: 97; width: 3px; height: 3px; border: 0; background: #ffffff; box-shadow: -2px 0 #ffe680, 2px 0 #ffe680, 0 -2px #ffe680, 0 2px #ffe680; }
+.lvl-ring {
+  position: absolute; z-index: 96; width: 52px; height: 52px; pointer-events: none;
+  border: 2px solid #ffd23f; border-radius: 50%; box-shadow: 0 0 0 1px #2a1b14, inset 0 0 0 1px #2a1b14;
+}
+.lvl-ring.late { border-color: #fff3b0; }
+.lvl-banner {
+  position: absolute; z-index: 98; pointer-events: none; white-space: nowrap;
+  padding: 1px 4px; font: 400 20px/18px var(--pixel); color: #fff6c8; letter-spacing: 1px;
+  background: #e0642f; border: 1px solid #2a1b14; box-shadow: 2px 2px 0 rgba(42, 27, 20, 0.45), inset 0 1px 0 #f29a6a;
+  text-shadow: 1px 1px 0 #8a2b14;
+  animation: banner-flash 0.3s steps(1) 4;
+}
+.lvl-banner.cooked { background: #c22a50; text-shadow: 1px 1px 0 #6e1430; }
+@keyframes banner-flash { 50% { color: #ffffff; background: #f2a23a; } }
+
+/* A level-up bonus dish in the buffet: a gold outline that glints, and a star tag. */
+.unit.bonus { outline: 1px solid #ffd23f; outline-offset: -1px; animation: bonus-glint 1.4s steps(1) infinite; }
+@keyframes bonus-glint { 0%, 70% { outline-color: #ffd23f; } 80% { outline-color: #fff6c8; } 90% { outline-color: #f29a3a; } }
+.bonus-tag {
+  position: absolute; right: 0; top: 0; z-index: 2; width: 9px; height: 9px;
+  background: #e0642f; border: 1px solid #2a1b14;
+}
+
+/* ---------- battle: attacks ---------- */
+/* The attacker charges across the table (animated on the .fighter in main.ts), so its sprite doesn't also lunge. */
+.fighter.source.fx-attack .f-art { animation: none; }
+.fighter.source.fx-attack { transform-origin: 50% 100%; }
+/* The food being attacked is marked in red as the charge starts. */
+.fighter.target::before {
+  content: ''; position: absolute; left: -4px; top: -4px; width: 72px; height: 70px; pointer-events: none; z-index: 1;
+  --c: #e4502a;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 10px 3px, linear-gradient(var(--c), var(--c)) 0 0 / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 10px 3px, linear-gradient(var(--c), var(--c)) 100% 0 / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 0 100% / 10px 3px, linear-gradient(var(--c), var(--c)) 0 100% / 3px 10px,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 10px 3px, linear-gradient(var(--c), var(--c)) 100% 100% / 3px 10px;
+  background-repeat: no-repeat;
+  filter: drop-shadow(1px 1px 0 #2a1b14);
+  animation: target-lock calc(0.6s / var(--spd, 1)) steps(5) both;
+}
+@keyframes target-lock { 0% { scale: 1.6; opacity: 0; } 35% { scale: 1; opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Pixel icons (src/ui/icons.ts): a box-shadow grid on a 1-cell element, inline with text. */
+.pix { display: inline-block; vertical-align: middle; flex: none; image-rendering: pixelated; }
+.toast .pix { margin-right: 2px; vertical-align: -1px; }
+.bonus-tag .pix { position: absolute; left: 0; top: 0; }
+/* Sparks match the 2x foods. */
+.bit.spark { width: 7px; height: 7px; margin: -3px 0 0 -3px; }
+
+/* ---------- stat badges (src/ui/icons.ts statBadge): a pixel medallion, heart or shield with the number on it ---------- */
+.stat-badge { position: relative; display: inline-flex; flex: none; }
+.stat-badge > b {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font: 400 10px/1 var(--pixel); color: #fff; pointer-events: none;
+  text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14;
+}
+/* nudge numbers into the visual middle of each shape */
+.stat-badge.sb-hp > b { padding-bottom: 2px; }
+.stat-badge.sb-crust > b { padding-bottom: 2px; }
+.stat-badge.sb-atk.boosted > b { color: #fff3a0; }
+.stat-badge.sb-hp.hurt .pix { filter: brightness(0.72) saturate(1.1); }
+/* in battle the badges are drawn at 2x */
+.f-tags .stat-badge > b { font-size: 20px; text-shadow: 2px 0 #2a1b14, -2px 0 #2a1b14, 0 2px #2a1b14, 0 -2px #2a1b14, 2px 2px #2a1b14; }
+.f-tags .stat-badge.sb-hp > b, .f-tags .stat-badge.sb-crust > b { padding-bottom: 4px; }
+/* Inline in the cookbook and the hold-to-read card. */
+.stat-line { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; line-height: 12px !important; }
+
+/* ---------- end screens: the battle result card and the game-over card ---------- */
+.result-card, .over-card {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; z-index: 60;
+  padding: 0 10px 10px;
+  background:
+    repeating-linear-gradient(transparent 0 11px, rgba(201, 220, 239, 0.55) 11px 12px),
+    #fffaf0;
+  border: 2px solid #2a1b14;
+  box-shadow: 3px 3px 0 rgba(42, 27, 20, 0.45), inset 0 0 0 2px #fbe9c8;
+}
+/* A ribbon across the top with the outcome in big outlined letters; its colour tells the outcome at a glance. */
+.ribbon {
+  --rib: #4f9a4a; --rib-dark: #2f6b2c;
+  position: relative; align-self: stretch; margin: 8px -16px 2px; height: 30px;
+  display: grid; place-items: center;
+  background: var(--rib); border: 2px solid #2a1b14;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), inset 0 -3px 0 var(--rib-dark);
+}
+/* notched tails folding behind the card */
+.ribbon::before, .ribbon::after {
+  content: ''; position: absolute; top: 6px; width: 10px; height: 26px; z-index: -1;
+  background: var(--rib-dark); border: 2px solid #2a1b14;
+}
+.ribbon::before { left: -8px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 45% 50%); }
+.ribbon::after { right: -8px; clip-path: polygon(0 0, 100% 0, 55% 50%, 100% 100%, 0 100%); }
+.ribbon span {
+  font: 400 30px/1 var(--pixel); color: #fffaf0; letter-spacing: 1px;
+  text-shadow: 2px 0 #2a1b14, -2px 0 #2a1b14, 0 2px #2a1b14, 0 -2px #2a1b14, 2px 2px #2a1b14, 3px 3px 0 rgba(42, 27, 20, 0.4);
+}
+.result-card.loss .ribbon, .over-card.lost .ribbon { --rib: #c9453a; --rib-dark: #8a2b24; }
+.result-card.draw .ribbon { --rib: #b99a6a; --rib-dark: #7d6340; }
+.over-card.won .ribbon { --rib: #e2a72f; --rib-dark: #a06d1c; }
+
+.result-row { display: flex; gap: 1px; align-items: center; justify-content: center; }
+.result-line { margin: 0; font: 400 10px/10px var(--pixel); color: #3a2a22; text-align: center; }
+.result-line b { color: #b2401b; }
+.big-btn {
+  margin-top: auto; padding: 3px 10px 4px !important;
+  font: 400 10px/10px var(--pixel) !important; color: #fffaf0 !important; text-transform: uppercase; letter-spacing: 1px;
+  background: #e0642f !important; border: 2px solid #2a1b14 !important;
+  box-shadow: 0 2px 0 #8a2b14, 0 3px 0 #2a1b14;
+  transition: translate 80ms steps(2, jump-end);
+}
+.big-btn:hover { background: #ef7440 !important; translate: 0 -1px; }
+.big-btn:active { translate: 0 2px; box-shadow: 0 1px 0 #2a1b14; }
+
+/* The trophy just won pops in; a star this loss costs flashes, cracks and fades. */
+.trophy-slot, .star-slot { display: inline-flex; }
+.trophy-slot.fresh { animation: trophy-pop 0.6s steps(6) 0.7s both; }
+@keyframes trophy-pop { 0% { scale: 0; } 50% { scale: 1.8; filter: brightness(1.8); } 75% { scale: 0.9; } 100% { scale: 1; } }
+.star-slot.breaking { animation: star-break 0.9s steps(8) 0.7s both; }
+@keyframes star-break {
+  0% { filter: none; }
+  20% { filter: brightness(2.2); scale: 1.3; }
+  40% { translate: -2px 0; filter: none; scale: 1; }
+  55% { translate: 2px 0; }
+  100% { translate: 0 8px; opacity: 0.2; filter: grayscale(1); }
+}
+
+/* Game over: the kitchen dimmed behind a card with the run's trophies, numbers and last plate. */
+.over-dim { left: 0; top: 0; width: 640px; height: 360px; background: rgba(29, 20, 16, 0.6); }
+.over-card { justify-content: flex-start; }
+.over-sub { margin: 0; font: 400 10px/10px var(--pixel); color: #3a2a22; }
+.over-stats { display: flex; gap: 6px; }
+.over-stats > div {
+  width: 84px; padding: 3px 0 4px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  background: #fbf2da; border: 1px solid #2a1b14; box-shadow: 1px 1px 0 rgba(42, 27, 20, 0.3);
+}
+.over-stats b { font: 400 20px/18px var(--pixel); color: #b2401b; }
+.over-stats span { font: 400 10px/9px var(--pixel); color: #8a7568; }
+.over-plate-label { margin-top: 2px; font: 400 10px/9px var(--pixel); color: #8a7568; text-transform: uppercase; letter-spacing: 1px; }
+.over-plate { display: flex; gap: 2px; justify-content: center; min-height: 34px; padding: 1px 6px; background: #ffffff; border: 1px solid #8d9aa2; border-radius: 10px; }
+.over-food { width: 32px; height: 32px; display: grid; place-items: center; }
+.over-food .sprite { width: 32px; height: 32px; image-rendering: pixelated; }
+.over-food .emoji { font-size: 24px; }
+
+/* ---------- flavors, statuses and the economy ---------- */
+/* Foods that count as several flavors carry a dot per flavor down their right edge. */
+.u-flavors { position: absolute; right: 1px; top: 10px; display: flex; flex-direction: column; gap: 1px; }
+.u-flavors i { width: 3px; height: 3px; border: 1px solid #2a1b14; box-sizing: content-box; }
+.fd-spicy { background: var(--spicy); }
+.fd-sweet { background: var(--sweet); }
+.fd-sour { background: var(--sour); }
+.fd-salty { background: var(--salty); }
+.fd-savory { background: var(--savory); }
+
+/* Chalkboard: three pips per flavor for its 2/4/6 bonuses. */
+.chalk-pips { display: inline-flex; gap: 1px; margin-right: 2px; }
+.chalk-pips i { width: 2px; height: 4px; background: #4b5a4f; }
+.chalk-pips i.on { background: #ffd27a; }
+.jar.t2 { outline-color: #ffb04a; }
+.jar.t3 { outline: 1px solid #ff6a3a; animation: bonus-glint 1.4s steps(1) infinite; }
+
+/* The special cubby: a gold tag over the last teal cubby; bundles wear an "x3". */
+.special-tag {
+  height: 9px; padding: 0 2px 0 1px; display: flex; align-items: center; gap: 1px;
+  font: 400 10px/9px var(--pixel); color: #2a1b14; background: #ffd23f; border: 1px solid #2a1b14; cursor: help;
+}
+.unit.special { outline: 1px solid #ffd23f; outline-offset: -1px; animation: bonus-glint 1.4s steps(1) infinite; }
+.unit.item.special .u-art { top: 4px; }
+.bundle-tag {
+  position: absolute; right: 0; top: 0; z-index: 2; height: 9px; padding: 0 1px;
+  font: 400 10px/9px var(--pixel); color: #fff; background: #3f9b4a; border: 1px solid #2a1b14;
+}
+.price.free { color: #b6f0a0; }
+
+/* The counter tray: a steel baking sheet. Busy (holding a bundle or an open pack) it glints and must be cleared. */
+.tray {
+  background: #c9d2d8; border: 1px solid #2a1b14;
+  box-shadow: inset 1px 1px 0 #eef3f6, inset -1px -1px 0 #8f9ca5, 1px 2px 0 rgba(42, 27, 20, 0.35);
+  opacity: 0.55;
+}
+.tray.busy { opacity: 1; }
+.tray.pack { background: #e8d2a4; box-shadow: inset 1px 1px 0 #fbeccb, inset -1px -1px 0 #b58f55, 1px 2px 0 rgba(42, 27, 20, 0.35); }
+.tray.drop-hover { opacity: 1; outline: 2px solid #e0642f; outline-offset: -1px; }
+.stage.holding .tray { opacity: 0.85; }
+.tray-label { line-height: 9px; }
+
+/* Interest, over the tip jar: "+2g interest" and a coin per gold of interest, filled for what you would earn. */
+.interest {
+  font: 400 10px/9px var(--pixel); color: #fff; text-align: center; white-space: nowrap;
+  background: #3f7a3a; border: 1px solid #2a1b14; cursor: help;
+}
+.interest.none { background: #7a6a5e; }
+.tipbox .interest-coins { display: flex; flex-wrap: wrap; gap: 1px; }
+.refill.free span { color: #2f7a2c; }
+
+/* Battle: status badges under a food's stats, and status popups. */
+.f-status { width: 90px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
+.f-status .stat-badge > b, .pop.st .stat-badge > b { font-size: 20px; text-shadow: 2px 0 #2a1b14, -2px 0 #2a1b14, 0 2px #2a1b14, 0 -2px #2a1b14, 2px 2px #2a1b14; }
+.f-status .stat-badge > b, .pop.st .stat-badge > b { padding-top: 2px; }
+.pop.st { top: -24px; }
+.pop.st-rot { left: 18px; }
+.pop.st-chill { left: 34px; }
+.bit.k-burn, .beam-dot.k-burn { background: #f07a26; }
+.bit.k-rot, .beam-dot.k-rot { background: #86a83a; }
+.bit.k-chill, .beam-dot.k-chill { background: #8fd0ee; }
+.bit.k-cleanse, .beam-dot.k-cleanse { background: #ffffff; }
+
+/* ---------- tooltips (data-tip): a pixel text box over the stage ---------- */
+.tipbox {
+  position: absolute; z-index: 120; width: max-content; max-width: 168px; padding: 4px 5px 4px;
+  font: 400 10px/9px var(--pixel); color: #3a2a22; text-align: left;
+  background: #fbf2da; border: 1px solid #2a1b14; box-shadow: 2px 2px 0 rgba(42, 27, 20, 0.45);
+  pointer-events: none;
+}
+.tipbox.fresh { animation: tip-in 0.12s steps(2) both; }
+@keyframes tip-in { from { opacity: 0; translate: 0 2px; } }
+.tipbox p { margin: 0 0 3px; line-height: 9px; }
+.tipbox p:last-child { margin-bottom: 0; }
+.tipbox p > b { color: #b2401b; font-weight: 400; }
+.tipbox .dim { color: #8a7568; font-size: 10px; }
+.tip-title { display: flex; align-items: center; gap: 2px; margin-bottom: 3px; font: 400 10px/11px var(--pixel); color: #2a1b14; }
+.tipbox .tier { display: flex; gap: 3px; color: #a89384; }
+.tipbox .tier b { flex: none; width: 7px; color: #a89384; }
+.tipbox .tier.on { color: #2a1b14; }
+.tipbox .tier.on b { color: #3f7a3a; }
+.tip-next { color: #a3452a; }
+/* Keyword notes at the bottom of cards and tooltips */
+.gloss { margin-top: 3px; padding-top: 3px; border-top: 1px dashed #c9b493; }
+.gloss p { color: #6e5a4c; }
+.gloss p > .pix { vertical-align: -2px; margin-right: 2px; }
+.tipbox .gloss p > b, .inspect-card .gloss p > b { color: #2a1b14; }
+/* Hoverable keywords in the cookbook */
+.kw { color: #b2401b; border-bottom: 1px dotted #b2401b; cursor: help; }
+.chalk-line, .jar, .u-flavors, .u-item, .mag-stars, .mag-course, .u-gem { cursor: help; }
+
+/* Flavor tags: pixel icon + name */
+.fl-tag { display: inline-flex; align-items: center; gap: 1px; margin-right: 3px; white-space: nowrap; text-transform: capitalize; }
+.fl-tag .pix, .chip .pix { margin-right: 1px; }
+.cap-food { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+/* Stat badge + label pairs never split across lines */
+.stat-pair { display: inline-flex; align-items: center; gap: 1px; margin-right: 3px; white-space: nowrap; }
+.missing { display: grid; place-items: center; }
+
+/* Rarity: a small pixel gem in the kitchen tile corner and on cards. Mythic gems shimmer. */
+.gem-ico.rarity-mythic { animation: mythic-hue 1.6s steps(1) infinite; }
+@keyframes mythic-hue { 0% { filter: none; } 25% { filter: hue-rotate(90deg); } 50% { filter: hue-rotate(180deg); } 75% { filter: hue-rotate(270deg); } }
+
+/* Battle: an attack pattern badge, a tiny map of the enemy plate with the slots the attack hits. */
+.f-pattern { display: flex; align-self: center; margin-right: 1px; }
+/* Attack pattern callout over the attacker: big, outlined, in the attack colour. */
+.floater.callout { font-size: 20px; color: #ffd23f; text-shadow: 2px 0 #2a1b14, -2px 0 #2a1b14, 0 2px #2a1b14, 0 -2px #2a1b14, 2px 2px #2a1b14; z-index: 95; }
+
+/* Food text: the condition (when it happens) in blue, a leading nickname muted, values in red. */
+.cond { color: #2a6f9e; }
+.nick { color: #a08c7c; }
+
+/* Permanent growth, only as it happens: the food glows and hops while its stat badges pop. */
+.unit.growing .u-art { animation: grow-glow 0.7s steps(7) both; }
+@keyframes grow-glow {
+  0% { filter: none; translate: 0 0; }
+  20% { filter: drop-shadow(0 0 2px #7dff6a) brightness(1.3); translate: 0 -3px; }
+  60% { filter: drop-shadow(0 0 1px #7dff6a) brightness(1.1); translate: 0 -1px; }
+  100% { filter: none; translate: 0 0; }
+}
+/* Gold sparkles when only sell value grows. */
+.bit.coin-spark { width: 3px; height: 3px; margin: -1px 0 0 -1px; background: #ffd23f; border: none; }
+
+/* ---------- phones ---------- */
+/* The game is one screen: no scrolling, pinch zoom, double-tap zoom, long-press menus or tap flashes. */
+html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+.stage { touch-action: none; -webkit-user-select: none; }
+@media (pointer: coarse) {
+  html, body { height: 100%; overflow: hidden; touch-action: none; }
+  /* Landscape notches and home bars: keep the stage clear of them (stageScale() subtracts this padding). */
+  body { min-height: 0 !important; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+}
+/* Held upright, the 640x360 scene would be tiny: ask for the phone to be turned sideways. */
+.rotate { display: none; }
+@media (pointer: coarse) and (orientation: portrait) {
+  .rotate {
+    display: grid; place-content: center; justify-items: center; gap: 18px;
+    position: fixed; inset: 0; z-index: 2000; background: #1d1410; color: #fffaf0;
+    font: 400 26px/1 var(--pixel); text-align: center;
+  }
+  .rotate small { font-size: 18px; color: #c9b8a6; }
+  .rotate i {
+    width: 36px; height: 60px; border: 4px solid #fffaf0; border-radius: 6px; box-shadow: 4px 4px 0 #e0642f;
+    animation: rotate-phone 2.4s steps(1) infinite;
+  }
+}
+@keyframes rotate-phone { 50% { rotate: 90deg; } }
+
+/* Cooked bonus: a chip on the cookbook page (lit once cooked), a line on the battle card, a flaming callout. */
+.cook-chip { display: flex; align-items: center; gap: 2px; width: max-content; padding: 0 2px; margin-top: 2px; color: #a89384; border: 1px dashed #c9b8a6; cursor: help; }
+.cook-chip.on { color: #fff3d6; background: #c8501f; border: 1px solid #2a1b14; }
+.cook-chip.on .pix { animation: cook-flicker 0.6s steps(2) infinite; }
+@keyframes cook-flicker { 50% { translate: 0 -1px; } }
+.cooked-line { display: block; margin-top: 3px; color: #b2401b; }
+.floater.callout.cooked { color: #ff8a3d; }
+.bit.ember { width: 3px; height: 3px; margin: -1px 0 0 -1px; background: #ff8a3d; border: none; }
+.bit.ember1 { background: #ffd23f; }

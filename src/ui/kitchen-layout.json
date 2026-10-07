@@ -1,0 +1,30 @@
+{
+  "comment": "Pixel positions on the 640x360 kitchen scene. Shared by the game (src/ui/main.ts) and the scene generator (tools/gen-kitchen.mjs). Rects are [x, y, w, h]; slots are the top-left of a 40x48 slot.",
+  "size": [640, 360],
+  "slot": [40, 48],
+  "fridge": [[40, 136], [40, 208]],
+  "market": [[128, 48], [176, 48], [224, 48], [272, 48], [320, 48], [368, 48], [416, 48], [464, 48]],
+  "marketFoodSlots": 6,
+  "plate": [
+    [[176, 166], [224, 166]],
+    [[176, 218], [224, 218]],
+    [[176, 270], [224, 270]]
+  ],
+  "tray": [296, 164, 144, 60],
+  "overflow": [[300, 170], [348, 170], [396, 170]],
+  "interest": [347, 240, 52, 11],
+  "ticket": [298, 8, 44, 15],
+  "newRun": [552, 5, 80, 14],
+  "freezer": [8, 30, 90, 76],
+  "refill": [436, 115, 80, 24],
+  "jars": [[529, 31], [550, 31], [571, 31], [592, 31], [613, 31]],
+  "chalkboard": [527, 71, 106, 66],
+  "toast": [124, 117, 306, 28],
+  "plateLabels": [176, 150],
+  "laneLabels": [122, 166],
+  "bell": [296, 268, 48, 46],
+  "tipLabel": [362, 274, 21, 13],
+  "bin": [402, 243, 62, 73],
+  "pageLeft": [482, 168, 70, 128],
+  "pageRight": [566, 168, 60, 128]
+}

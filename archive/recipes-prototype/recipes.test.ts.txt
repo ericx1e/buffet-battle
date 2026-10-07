@@ -1,0 +1,151 @@
+import { describe, expect, it } from 'vitest';
+import { simulateBattle } from './battle';
+import { generateGhost } from './bot';
+import { cook, cookPreview, kitchenAfterBattle, kitchenEndTurn } from './cooking';
+import { unitDef } from './data';
+import { INGREDIENTS, RECIPES, dishFor } from './recipes';
+import { buyUnit, finishBattle, moveUnit, newRun, reroll, sellUnit, serve } from './run';
+import type { Plate, UnitInstance } from './types';
+
+let uid = 1000;
+const raw = (defId: string): UnitInstance => {
+  const d = unitDef(defId);
+  return { uid: uid++, defId, copies: 1, attack: d.attack, hp: d.hp };
+};
+/** A cooked dish from these ingredients, as if made in the kitchen. */
+const dish = (...ids: string[]): UnitInstance => {
+  const u = raw(ids[0]);
+  for (const id of ids.slice(1)) {
+    const r = cook(newRun(1, 'recipes'), u, raw(id));
+    if (!r.ok) throw new Error(r.error);
+  }
+  return u;
+};
+const plate = (...units: (UnitInstance | null)[]): Plate => [...units, ...Array(6 - units.length).fill(null)];
+
+describe('recipes: cooking', () => {
+  it('every named recipe is reachable and every base + topping makes something', () => {
+    for (const r of RECIPES) expect(dishFor(r.ingredients!)?.id).toBe(r.id);
+    for (const b of INGREDIENTS.filter((d) => d.role === 'base')) {
+      for (const t of INGREDIENTS.filter((d) => d.role === 'topping')) expect(dishFor([b.id, t.id])).toBeDefined();
+    }
+  });
+
+  it('cooks a named recipe, adds the stats plus a bonus, and is final', () => {
+    const bread = raw('r_bread');
+    const r = cook(newRun(1, 'recipes'), bread, raw('r_cheese'));
+    expect(r.ok && r.cooked?.id).toBe('d_grilledCheese');
+    expect(bread.attack).toBe(1 + 2 + 2);
+    expect(bread.ingredients).toEqual(['r_bread', 'r_cheese']);
+    expect(cookPreview(raw('r_cheese'), 'r_chili').kind).toBe('none'); // two toppings don't cook
+  });
+
+  it('a third ingredient makes a feast, or garnishes the dish', () => {
+    const ramen = dish('r_noodles', 'r_egg');
+    expect(cookPreview(ramen, 'r_bacon')).toMatchObject({ kind: 'dish', def: { id: 'd_carbonara' } });
+    const g = dish('r_bread', 'r_cheese', 'r_chili');
+    expect(g.defId).toBe('d_grilledCheese');
+    expect(g.abilityBonus).toBe(1);
+    expect(cookPreview(g, 'r_egg').kind).toBe('none'); // three is the most
+  });
+
+  it('buying an ingredient onto a base cooks it; a bad pairing costs nothing', () => {
+    const run = newRun(3, 'recipes');
+    run.gold = 20;
+    run.market = [{ kind: 'unit', defId: 'r_rice' }, { kind: 'unit', defId: 'r_fish' }, { kind: 'unit', defId: 'r_rice' }];
+    expect(buyUnit(run, { area: 'market', index: 0 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    const r = buyUnit(run, { area: 'market', index: 1 }, { area: 'plate', index: 0 });
+    expect(r.ok && r.cooked?.id).toBe('d_sushi');
+    const gold = run.gold;
+    expect(buyUnit(run, { area: 'market', index: 2 }, { area: 'plate', index: 0 }).ok).toBe(false); // sushi + rice
+    expect(run.gold).toBe(gold);
+  });
+
+  it('a Burrito wraps a food that bursts out when it is eaten', () => {
+    const run = newRun(5, 'recipes');
+    run.plate[0] = dish('r_tortilla', 'r_rice');
+    run.plate[0].hp = 1;
+    run.plate[1] = raw('r_chili');
+    expect(moveUnit(run, { area: 'plate', index: 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    expect(run.plate[0]!.inside?.defId).toBe('r_chili');
+    const enemy = plate({ ...raw('r_bacon'), attack: 20, hp: 30 });
+    const result = simulateBattle(run.plate, enemy, 1);
+    expect(result.frames.some((f) => f.text.includes('bursts out'))).toBe(true);
+  });
+});
+
+describe('recipes: battle effects', () => {
+  it('Carbonara makes friends trigger twice', () => {
+    const chili = raw('r_chili');
+    const once = simulateBattle(plate(chili), plate({ ...raw('r_rice'), hp: 40 }), 1).frames.filter((f) => f.text.includes('hits')).length;
+    const twice = simulateBattle(plate(chili, dish('r_noodles', 'r_egg', 'r_bacon')), plate({ ...raw('r_rice'), hp: 40 }), 1)
+      .frames.find((f) => f.text.includes('Chili hits'))!.text.split('Chili hits').length - 1;
+    expect(once).toBeGreaterThan(0);
+    expect(twice).toBe(2);
+  });
+
+  it('Club Sandwich comes back twice before it is eaten', () => {
+    const club = dish('r_bread', 'r_bacon', 'r_tomato');
+    const r = simulateBattle(plate(club), plate({ ...raw('r_bacon'), attack: 99, hp: 99 }), 1);
+    expect(r.frames.filter((f) => f.text.includes('comes back')).length).toBe(2);
+  });
+
+  it('Pizza splits into slices when eaten', () => {
+    const pizza = dish('r_dough', 'r_tomato', 'r_cheese');
+    const r = simulateBattle(plate(pizza), plate({ ...raw('r_bacon'), attack: 99, hp: 99 }), 1);
+    expect(r.frames.some((f) => f.text.includes('splits into'))).toBe(true);
+  });
+});
+
+describe('recipes: the kitchen', () => {
+  it('Risotto slow-cooks when left alone; Grilled Cheese keeps Crust as HP; Ramen grows on wins', () => {
+    const run = newRun(9, 'recipes');
+    run.plate[0] = dish('r_rice', 'r_mushroom');
+    const hp = run.plate[0].hp;
+    kitchenEndTurn(run); // first turn: just remembers the slot
+    kitchenEndTurn(run);
+    expect(run.plate[0].hp).toBe(hp + 2);
+    run.plate[1] = dish('r_bread', 'r_cheese');
+    const gc = run.plate[1].hp;
+    run.plate[2] = dish('r_noodles', 'r_egg');
+    kitchenAfterBattle(run, 'win', [{ slot: 1, alive: true, crust: 5 }]);
+    expect(run.plate[1].hp).toBe(gc + 2);
+    expect(run.plate[2].abilityBonus).toBe(1);
+  });
+
+  it('Lemon makes the first restock free; selling a dish pays for its ingredients', () => {
+    const run = newRun(11, 'recipes');
+    run.plate[0] = raw('r_lemon');
+    const gold = run.gold;
+    expect(reroll(run).ok).toBe(true);
+    expect(run.gold).toBe(gold);
+    expect(reroll(run).ok).toBe(true);
+    expect(run.gold).toBe(gold - 1);
+    run.plate[1] = dish('r_bread', 'r_cheese', 'r_chili');
+    expect(sellUnit(run, { area: 'plate', index: 1 }).ok).toBe(true);
+    expect(run.gold).toBe(gold - 1 + 3);
+  });
+
+  it('bots play recipe runs and their battles always finish', () => {
+    let feasts = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const turn = 1 + (seed % 10);
+      const a = generateGhost(turn, seed, 'recipes');
+      const b = generateGhost(turn, seed + 1000, 'recipes');
+      feasts += a.filter((u) => u && unitDef(u.defId).recipeTier === 'feast').length;
+      const r = simulateBattle(a, b, seed);
+      expect(['win', 'loss', 'draw']).toContain(r.outcome);
+    }
+    expect(feasts).toBeGreaterThan(0);
+  });
+
+  it('a full recipe run plays through serve and finish', () => {
+    const run = newRun(21, 'recipes');
+    for (let t = 0; t < 5; t++) {
+      const mine = serve(run);
+      const r = simulateBattle(mine, generateGhost(run.turn, t, 'recipes'), t);
+      finishBattle(run, r.outcome, r.endStates);
+    }
+    expect(run.turn).toBe(6);
+  });
+});

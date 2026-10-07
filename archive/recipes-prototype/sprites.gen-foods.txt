@@ -1,0 +1,101 @@
+// Drawing functions for the recipes prototype sprites, cut from tools/gen-foods.mjs.
+// Paste back into the `foods` (bases, tomato) and `items` (appliances) objects there to regenerate.
+
+// --- foods ---
+  // ---------- Recipes mode: bases and new toppings ----------
+  bread(s) {
+    s.shadow(17, 29, 12, 2);
+    // A loaf seen from the front-left: domed top crust over a lighter crumb face, slashes on top.
+    const crust = R('#c07a36');
+    s.ball(16, 18, 12, 9, crust, { clip: (x, y) => y <= 22 });
+    s.fill(4, 18, 28, 27, (x, y) => (y < 22 || Math.abs(x - 16) > 12 ? null : x < 7 ? crust[1] : x > 25 ? crust[3] : crust[2]));
+    s.rect(5, 26, 23, 1, crust[4]);
+    for (const x of [10, 16, 22]) s.tube([[x - 2, 12], [x + 2, 15]], 0.8, R('#f0c486'));
+  },
+  rice(s) {
+    s.shadow(17, 29, 12, 2);
+    s.ball(16, 21, 12, 7, C.bowl, { clip: (x, y) => y >= 19 }); // bowl
+    s.ball(16, 17, 11, 6, C.white, { clip: (x, y) => y <= 19, tone: (nx, ny, x, y) => ((x * 3 + y * 5) % 7 === 0 ? 1 : 0) }); // mound of rice
+    s.rect(4, 19, 25, 1, C.bowl[1]);
+    s.rect(12, 23, 9, 1, R('#6f9cc8')[2]); // a blue band on the bowl
+  },
+  noodles(s) {
+    s.shadow(17, 29, 12, 2);
+    // A tangled nest of fresh noodles: wavy strands piled into a round heap.
+    for (let k = 0; k < 7; k++) {
+      const y = 12 + k * 2.2;
+      const pts = [];
+      for (let x = 5 + Math.abs(3 - k); x <= 27 - Math.abs(3 - k); x += 3) pts.push([x, y + Math.sin(x * 0.9 + k * 1.7) * 1.4]);
+      s.tube(pts, 1.1, C.noodle);
+    }
+  },
+  tortilla(s) {
+    s.shadow(17, 29, 13, 2);
+    // A folded flatbread: half-moon with toasted spots.
+    const t = R('#e8c27e');
+    s.fill(3, 10, 29, 27, (x, y) => {
+      const inside = ((x - 16) / 13) ** 2 + ((y - 26) / 15) ** 2 <= 1 && y <= 26;
+      if (!inside) return null;
+      if ((x * 7 + y * 3) % 11 === 0) return t[3];
+      return x < 9 ? t[1] : x > 24 ? t[3] : t[2];
+    });
+    s.rect(4, 26, 25, 1, t[4]);
+  },
+  dough(s) {
+    s.shadow(17, 29, 12, 2);
+    // A soft ball of dough on a floured board.
+    s.ball(16, 27, 13, 2, R('#d6b88c'), { bias: 0.2 });
+    s.ball(16, 19, 11, 8, R('#f3e3c4'));
+    for (const [x, y] of [[9, 25], [23, 26], [13, 27]]) s.px(x, y, '#ffffff');
+  },
+  tomato(s) {
+    s.shadow(17, 29, 10, 2);
+    s.ball(16, 19, 11, 9, R('#e0402e'));
+    s.ball(16, 11, 5, 2, C.leaf);
+    for (const [dx, dy] of [[-5, 1], [5, 1], [0, -1]]) s.tube([[16, 11], [16 + dx, 11 + dy]], 0.9, C.leaf);
+    s.tube([[16, 10], [17, 7]], 1, C.stem);
+  },
+
+// --- items ---
+  // ---------- Recipes mode: appliances (permanent kitchen upgrades) ----------
+  castIronPan(s) {
+    s.shadow(15, 28, 12, 2);
+    s.tube([[22, 19], [30, 15]], 1.6, R('#5a3a24')); // handle
+    s.ball(13, 21, 11, 5, R('#3c3c44'), { bias: 0.1 }); // pan, seen from above at an angle
+    s.ball(13, 20, 8, 3, R('#55555f'), { bias: -0.2 });
+  },
+  riceCooker(s) {
+    s.shadow(16, 29, 12, 2);
+    s.ball(16, 21, 11, 7, R('#eef1f3'), { clip: (x, y) => y >= 15 });
+    s.ball(16, 14, 10, 4, R('#e3e8ec'), { bias: 0.2 }); // lid
+    s.rect(14, 9, 4, 2, R('#9aa5ae')[2]); // knob
+    s.rect(13, 21, 6, 3, R('#e45a3a')[2]); // the little red light panel
+    s.px(14, 22, '#ffd2a8');
+  },
+  stockpot(s) {
+    s.shadow(16, 29, 13, 2);
+    for (const x of [3, 29]) s.ball(x, 15, 2, 1.5, R('#8d9aa2'));
+    s.fill(5, 12, 27, 27, (x, y) => {
+      const t = (x - 16) / 11;
+      if (Math.abs(t) > 1) return null;
+      return t < -0.7 ? '#e6ecef' : t > 0.6 ? '#8d9aa2' : '#c3ccd2';
+    });
+    s.ball(16, 12, 11, 2, R('#b5c0c6'), { bias: 0.3 });
+    for (const [x, y] of [[11, 7], [16, 5], [21, 7]]) s.tube([[x, y + 3], [x + 1, y]], 0.7, R('#f4f6f7')); // steam
+  },
+  pizzaOven(s) {
+    s.shadow(16, 29, 13, 2);
+    s.ball(16, 20, 13, 10, R('#c9764a'), { clip: (x, y) => y <= 26 }); // brick dome
+    s.fill(4, 25, 28, 28, (x) => (x < 6 ? '#b06038' : x > 26 ? '#7a3c22' : '#9a4c2c')); // base
+    s.ball(16, 22, 6, 5, R('#3a2622'), { clip: (x, y) => y <= 26 }); // mouth
+    s.ball(16, 25, 4, 1.5, R('#ff9a3a')); // fire glow
+    s.rect(15, 6, 3, 5, R('#8a4a2c')[2]); // chimney
+  },
+  walkInFridge(s) {
+    s.shadow(16, 29, 11, 2);
+    s.fill(6, 4, 26, 28, (x) => (x < 8 ? '#f4f8f8' : x > 24 ? '#a9bbbb' : '#dbe6e5'));
+    s.rect(6, 13, 21, 1, R('#8ea4a3')[2]); // door gap
+    s.rect(22, 7, 2, 4, R('#9aa5ae')[2]);
+    s.rect(22, 16, 2, 7, R('#9aa5ae')[2]);
+    for (const [x, y] of [[10, 18], [13, 21], [9, 23]]) s.px(x, y, '#ffffff'); // frost
+  },

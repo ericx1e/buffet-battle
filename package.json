@@ -1,0 +1,24 @@
+{
+  "name": "buffet-battle",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:single": "tsc --noEmit && node tools/build-single.mjs",
+    "gen:icons": "node tools/gen-app-icons.mjs",
+    "test": "vitest run",
+    "balance": "tsx tools/balance.ts",
+    "gen:kitchen": "node tools/gen-kitchen.mjs",
+    "gen:foods": "node tools/gen-foods.mjs",
+    "gen:battle": "node tools/gen-battle.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "comment": "Pixel positions on the 640x360 battle scene. Shared by the game (src/ui/main.ts) and tools/gen-battle.mjs. anchors[side][slot] is where a food stands (bottom-centre of its sprite, drawn 64x64: 32x32 art at 2x); slot = lane + 3 * row, row 0 = front. Plates are [cx, cy, rx, ry] ellipses; other rects are [x, y, w, h].",
+  "size": [640, 360],
+  "anchors": [
+    [
+      [243, 162],
+      [221, 230],
+      [199, 298],
+      [176, 162],
+      [134, 230],
+      [92, 298]
+    ],
+    [
+      [397, 162],
+      [419, 230],
+      [441, 298],
+      [464, 162],
+      [506, 230],
+      [548, 298]
+    ]
+  ],
+  "plaques": [
+    [12, 8, 236, 30],
+    [392, 8, 236, 30]
+  ],
+  "round": [286, 8, 68, 22],
+  "caption": [96, 332, 448, 22],
+  "controls": [548, 332, 84, 22],
+  "result": [196, 104, 248, 124],
+  "trays": {
+    "comment": "World rect of the left tray (x0..x1 across, z0..z1 depth); the right one is mirrored. See tools/gen-battle.mjs.",
+    "x0": -0.77,
+    "x1": -0.18,
+    "z0": 1.333,
+    "z1": 2.561,
+    "r": 0.09
+  }
+}

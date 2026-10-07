@@ -1,0 +1,80 @@
+
+/* ---------- recipes mode (prototype) ---------- */
+/* Raw ingredients wear their role; dishes show how many ingredients went in (pips). */
+.u-role {
+  position: absolute; right: 0; top: 0; z-index: 2; padding: 0 1px;
+  font: 400 10px/8px var(--pixel); color: #fffaf0; text-transform: uppercase; pointer-events: none;
+  border: 1px solid #2a1b14;
+}
+.u-role.base { background: #a8743e; }
+.u-role.topping { background: #4f8f3a; }
+.u-role.appliance { background: #5f7f9a; }
+.u-pips.recipe { left: 13px; gap: 2px; }
+.u-pips.recipe i { width: 4px; height: 2px; }
+.u-pips.recipe i.on { background: #e2a72f; }
+/* A Burrito shows what it's holding. */
+.u-inside { position: absolute; left: 0; top: 0; width: 16px; height: 16px; overflow: hidden; border: 1px solid #2a1b14; background: #fffaf0; z-index: 2; }
+.u-inside .sprite { width: 32px !important; height: 32px !important; margin: -8px 0 0 -8px; }
+.u-inside .dish-art { width: 32px; height: 32px; margin: -8px 0 0 -8px; }
+
+/* A dish without its own sprite: its base, with the toppings piled on top. */
+.dish-art { position: relative; display: block; width: 100%; height: 100%; }
+.dish-art .sprite { position: absolute; left: 0; top: 0; width: 100% !important; height: 100% !important; image-rendering: pixelated; }
+.dish-art .topping.t0 { translate: 12.5% -18.75%; }
+.dish-art .topping.t1 { translate: -18.75% -25%; }
+.cp-art .dish-art, .over-food .dish-art { width: 32px; height: 32px; }
+
+/* Appliances on the freezer door. */
+.mag-tools { display: flex; gap: 1px; margin-bottom: 1px; }
+.mag-tools span { width: 20px; height: 20px; display: grid; place-items: center; overflow: hidden; }
+.mag-tools .sprite { width: 32px; height: 32px; margin: -6px; }
+.unit.appliance .u-art { top: 4px; }
+
+/* The ticket says which mode this run is. */
+.mode-tag { padding: 0 3px; font: 400 10px/10px var(--pixel); color: #fffaf0; background: #4f8f3a; border: 1px solid #2a1b14; pointer-events: none; text-transform: uppercase; }
+
+/* Today's specials on the chalkboard. */
+.chalk-line.special { display: block; white-space: nowrap; line-height: 9px; margin-bottom: 0; color: #c7d3c5; }
+.chalk-line.special b { width: 6px; color: #ffd27a; }
+.chalk-line.special span { display: block; padding-left: 9px; line-height: 8px; color: #8aa08e; }
+.chalk-line.special.on { color: #f3f7f1; }
+.chalk-line.special.feast { color: #ffd27a; }
+
+/* New run: pick a mode. */
+.mode-card { gap: 8px; padding: 10px 12px; }
+.mode-btn {
+  display: flex; flex-direction: column; gap: 2px; align-items: flex-start; width: 132px; padding: 5px 7px !important;
+  background: #fffef5 !important; border: 2px solid #2a1b14 !important; box-shadow: 0 2px 0 #2a1b14;
+  font: 400 10px/9px var(--pixel) !important; text-align: left;
+  transition: translate 80ms steps(2, jump-end);
+}
+.mode-btn:hover { background: #ffe3b8 !important; translate: 0 -1px; }
+.mode-btn b { font: 400 20px/18px var(--pixel); color: #b2401b; }
+.mode-btn span { color: #8a7568; }
+
+/* While dragging onto a food: what cooking would make. */
+.cook-preview {
+  z-index: 110; padding: 4px 6px 5px; pointer-events: none;
+  font: 400 10px/9px var(--pixel); color: #3a2a22;
+  background: #fffaf0; border: 2px solid #2a1b14; box-shadow: 2px 2px 0 rgba(42, 27, 20, 0.45);
+  animation: cp-in 0.16s steps(3, jump-end);
+}
+@keyframes cp-in { from { scale: 0.6; opacity: 0; } }
+.cook-preview p { margin: 2px 0 0; line-height: 9px; }
+.cook-preview b { color: #b2401b; }
+.cook-preview .dim { color: #8a7568; }
+.cp-art { float: right; width: 32px; height: 32px; display: grid; place-items: center; margin-left: 2px; }
+.cp-art .sprite { width: 32px; height: 32px; image-rendering: pixelated; }
+.cp-title { font: 400 10px/10px var(--pixel); color: #3a2a22; }
+.cp-tier { display: inline-block; margin-top: 1px; padding: 0 2px; font: 400 10px/9px var(--pixel); color: #fffaf0; background: #8a7568; text-transform: uppercase; }
+.cook-preview.tier-home .cp-tier { background: #3f86d6; }
+.cook-preview.tier-signature .cp-tier { background: #9a4fd0; }
+.cook-preview.tier-feast { border-color: #a06d1c; box-shadow: 2px 2px 0 rgba(42, 27, 20, 0.45), 0 0 0 1px #ffd23f; }
+.cook-preview.tier-feast .cp-tier { background: #e8a227; color: #2a1b14; }
+.cook-preview.tier-garnish .cp-tier { background: #4f8f3a; }
+.cook-preview.no { border-color: #8a2b24; }
+.cook-preview.no .cp-title { color: #c22a2a; }
+.tier-home { color: #2a64a8; }
+.tier-signature { color: #7a35ab; }
+.tier-feast { color: #a8680c; }
+.chalkboard .chalk-title + .chalk-line.special { margin-top: -1px; }
