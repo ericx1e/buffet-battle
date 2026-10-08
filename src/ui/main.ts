@@ -1,6 +1,6 @@
 import './style.css';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { UNITS, abilitiesOf, daysOf, partnersOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -1104,8 +1104,6 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
     if (all) notes.push(`${all}/${all} this battle`);
   }
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
-  const partners = partnersOf(defId).map((id) => unitDef(id).name);
-  if (partners.length) notes.push(`Pairs well with ${partners.length > 3 ? `${partners.slice(0, 3).join(', ')} and more` : partners.join(partners.length === 2 ? ' and ' : ', ')}.`);
   return notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
@@ -1816,8 +1814,8 @@ function keywordify(html: string): string {
 const CONDITIONS = new RegExp(
   [
     'Start of battle', 'Start of day', 'start of day', 'End of day', 'end of day', 'at the end of every turn', 'First time hit', 'First attack each battle',
-    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the freezer(?: it ferments)?', 'Friend summoned',
-    'when the friend ahead attacks', 'when the friend ahead is hit', 'when hit', 'each level up',
+    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the freezer(?: it ferments)?', 'Friend summoned', 'Friend sold', 'Level up', 'Restock', 'Start of battle, from any row',
+    'When the friend ahead attacks', 'When the friend ahead is hit', 'when the friend ahead attacks', 'when the friend ahead is hit', 'when hit', 'each level up',
     'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit', 'Sell', 'Bought', 'Reroll', 'Eaten',
   ].map((c) => `\\b${c}\\b`).join('|'),
   'g', // case-sensitive: "Sell:" is a condition, "sell value" isn't
