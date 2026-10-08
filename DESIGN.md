@@ -71,10 +71,10 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 | --- | --- |
 | Gold on day 1 | 10 |
 | Income every later day | 8, plus interest |
-| Interest | +1 gold per 5 gold held when the day starts, up to 3 (Fortune Cookie and Caviar raise the cap by 1/2/3 each) |
+| Interest | +1 gold per 5 gold held when the day starts, up to 3 (Caviar raises the cap by 1/2/3) |
 | Buy a food | 3 gold (tiers 1-2), 4 (tiers 3-4), 5 (tiers 5-6), 7 (mythic) |
 | Buy an item | 2 to 7 gold (see Items) |
-| Restock the market | 1 gold, +1 for each restock already today (Soy Sauce can make one free) |
+| Restock the market | 1 gold, +1 for each restock already today (Dumplings make the first 1/2/3 each day free) |
 | Sell a food | Half the gold its copies cost, rounded down (at least 1), plus any sell value it gained |
 | Put a market offer in the fridge | Free |
 
@@ -131,11 +131,13 @@ The fridge replaces Super Auto Pets' freeze button and also works as a bench.
 | `endTurn` | When you press Serve (foods on the plate) |
 | `fridgeTurn` | When you press Serve while this food is in the fridge |
 
-Kitchen growth is gated by days: each growing food has a set number of days in it ("Cheese ages for 4 days"), more at higher levels, so merging a grower keeps it growing. The days follow rarity: commons grow for 3/5/8 days, rares for 4/6/10, Roast Turkey (legendary) for 5/8/12. The cookbook shows how many days are left ("Growing: 2 of 4 days left", then "Fully grown"). Conditions shape the growth rather than piling it on: Cheese, Yogurt and Chili Oil grow twice as fast next to a friend of their flavor (instead of +1 per friend, which ran away). Per-battle effects are limited too (Mochi, Durian, Smoothie's rally), so a single fight can't snowball.
+Kitchen growth never stops: a permanent scaler grows every day for the whole run, because a grower that runs out becomes a dead slot. Its rate keeps it in check instead: small numbers early, and conditions that shape the growth rather than pile it on (Cheese, Yogurt and Chili Oil grow twice as fast next to a friend of their flavor, Potato only on days you didn't restock, Fortune Cookie by the interest you earned). Caps are kept for strong combat abilities, which only go off so many times a battle (Mochi, Durian, Pork Crackling, Pineapple, Smoothie's rally); the food text doesn't mention the cap, the hover counts it down ("3/4 this battle").
 
-**Growth budget:** early foods show up early and grow for the rest of the run, so they grow slowly. A tier 1-3 grower gives about 2 stat points a day at level 1 (Bean Sprout +1/+1 to the friend ahead, Maple Syrup +1 HP to 2 friends, Bread Dough +2 HP), a condition can double it (Cheese next to a Savory friend), a tier 4 grower about 3 (Peanut Butter +1 HP to each neighbour), and the late legendary Roast Turkey about 6. Fortune Cookie grows only on days you earned interest.
+**Growth budget:** early foods show up early and grow for the rest of the run, so they grow slowly: a tier 1-3 grower gives about 1-2 stat points a day at level 1 (Bean Sprout +1/+1 to the friend ahead, Maple Syrup +1 HP to 2 friends, Bread Dough +2 HP, Cheese +1 HP or +2 next to a Savory friend), a tier 4 grower about 2 (Peanut Butter +1 HP to each neighbour), and the late Roast Turkey about 3 (+1 HP to 3 friends).
 
-**Scaling foods:** Bean Sprout (grows the friend ahead), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Ice Cream and Pickle (in the freezer), Soy Sauce (level 3 friends), and Mochi (HP each time it is hit in battle).
+**Scaling foods:** Bean Sprout (grows the friend ahead), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every restock), and Mochi (HP each time it is hit in battle).
+
+**Team-building pairs:** engines that want a partner, so a plate is built, not just bought. Interest: Caviar raises the interest cap and Fortune Cookie turns every gold of interest into HP, so saving gold with both on the plate pays twice. Restocks: Dumplings make the first restocks of each day free and Soy Sauce grows a random friend on every restock (Potato wants the opposite: no restock at all). Summons: Egg, Popcorn, Mushroom and Watermelon make tokens that Steak and Pepperoni feed on. HP: anything that gives HP (Sweet, Apple, Maple Syrup, Mochi) sets off Hot Cocoa next to it, Birthday Cake adds 1 to every gain and Wagyu doubles it. Crust: Pretzel, Anchovy and Salty feed Pork Crackling.
 
 ## The Plate (battle)
 
@@ -270,6 +272,7 @@ There are no automatic pairings. Positioning comes from specific foods' abilitie
 
 - An ability always does something stats can't: it reaches other foods, reacts to something, depends on position or flavor, or changes over time. "Start of battle: gain +2 attack" is just a bigger attack stat, so it is never an ability; put it in the stats. Cooked bonuses follow the same rule.
 
+- **One specialty per food.** A food does one thing: an attack pattern, an aura, or one ability. A food with a pattern doesn't also buff its neighbours (Spaghetti escalates, that is its whole job). Only very rare foods (the mythics) may have two, and then the two belong together (Wagyu bastes its neighbours and gives them the Crust it doubles). Two-flavor foods still do one thing that suits both flavors (Kimchi: Rot and Burn together).
 - Stats are written attack/HP. Ability values are written level 1/2/3.
 - "Permanently" means the change persists between battles. Otherwise, battle buffs end with the battle.
 - Attack can't go below 1.
@@ -290,7 +293,7 @@ Merging copies levels a food up, and reaching level 3 cooks it: the food gets a 
 - A cooked food can't merge further. Extra copies can only be sold.
 - **Cooked bonus:** every food has one (`cooked` in data.ts), a second ability that switches on only at level 3. It gets much stronger with tier: a small extra at tier 1 (Chili: hit, the attacker Burns 2), something for the neighbours at tier 3-4, the whole plate at tier 6 and for mythics (Bento: your friends +3/+3; Hot Pot: all enemies Burn 4, then 2 more every turn). Its numbers are fixed. `npx tsx tools/cooked-check.ts` measures each one: late-game plates with the food cooked, with and without its bonus. On average the bonus adds about 3 points of win rate at tier 1, 7 at tier 2, 10 at tiers 3-4, 20 at tier 5 and 27 at tier 6 (kitchen bonuses like gold read 0 there).
 - The cookbook shows the bonus as a chip under the stats (lit once cooked; its tooltip has the text). The battle hold card lists it for cooked foods, and in battle it names itself ("Cooked!" in orange, with embers) when it goes off.
-- **Level 3 payoffs** reward rolling for copies: Soy Sauce grows a random level 3 friend on every restock and makes your first restock each day free once you own one; Golden Truffle cooks the friend in its lane for each battle.
+- **Level 3 payoffs** reward rolling for copies: Golden Truffle cooks the friend in its lane for each battle.
 
 The Microwave item adds merge progress without a duplicate, giving rare high-tier foods a path to level 3.
 
@@ -447,67 +450,68 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | Tier | Food | Flavor | Stats | Cost | Ability (level 1/2/3) | Cooked (level 3) and its bonus |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Egg | Savory | 1/6 | 3 | First time hit: crack and summon a 1/1, 2/2 or 3/3 Yolk. | **Omelette**: Eaten: summon a 3/3 Yolk. |
-| 1 | Chili Pepper | Spicy | 2/4 | 3 | Start of battle: the enemy across Burns 2/3/4. | **Roasted Chili**: Hit: the attacker Burns 2. |
+| 1 | Chili Pepper | Spicy | 2/5 | 3 | Start of battle: the enemy across Burns 2/3/4. | **Roasted Chili**: Hit: the attacker Burns 2. |
 | 1 | Sugar Cube | Sweet | 1/4 | 3 | Sell: give 2 random friends +1/+1, +2/+2 or +3/+3. | **Caramel**: Start of battle: a random friend gains +2/+2. |
 | 1 | Lemon | Sour | 2/4 | 3 | Hit: the attacker loses 1/2/3 attack. | **Lemonade**: Start of battle: the enemy across loses 2 attack. |
 | 1 | Pretzel | Salty | 1/6 | 3 | Start of battle: in the back row, give the friend ahead 2/4/6 Crust; in the front row, give adjacent friends 2/4/6 Crust. | **Pretzel Bites**: Every 2 turns: adjacent friends gain 2 Crust. |
 | 1 | Apple | Sweet | 1/5 | 3 | An apple a day: at the end of every turn, your friend with the least HP gains 1/1/2 HP. | **Apple Pie**: Eaten: your friends gain +4 HP. |
-| 1 | Tofu | Savory | 1/6 | 3 | Soaks up flavor: each level up, it gains a random new flavor. Hit: gain 1/2/3 Crust. | **Mapo Tofu**: Start of battle: the enemy across Burns 2. |
-| 1 | Coin Chocolate | Sweet | 1/4 | 3 | Piggy bank: end of day, +1/1/2 sell value, for {d} days. | **Gold Truffle Coin**: End of day: +1 gold tomorrow, for 8 days. |
+| 1 | Tofu | Savory | 2/6 | 3 | Soaks up flavor: each level up, it gains a random new flavor. | **Mapo Tofu**: Start of battle: the enemy across Burns 2. |
+| 1 | Coin Chocolate | Sweet | 1/4 | 3 | Piggy bank: end of day, +1/1/2 sell value. | **Gold Truffle Coin**: End of day: +1 gold tomorrow,. |
 | 1 | Breadstick | Salty | 2/4 | 3 | Bought: give a random friend +1/+1, +2/+2 or +3/+3. | **Grissini Bundle**: First attack each battle deals +3 damage. |
-| 1 | Bean Sprout | Savory | 1/4 | 3 | Grows its neighbour: end of day, the friend ahead gains +1/+1 or +2/+2, for {d} days. | **Sprout Salad**: End of day: adjacent friends gain +1/+1, for 8 days. |
+| 1 | Bean Sprout | Savory | 1/4 | 3 | Grows its neighbour: end of day, the friend ahead gains +1/+1 or +2/+2. | **Sprout Salad**: End of day: adjacent friends gain +1/+1,. |
 | 1 | Edamame | Savory | 3/5 | 3 | Start of battle: shoots a bean at the enemy in its lane for half its attack, from either row. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
 | 2 | Popcorn | Salty | 1/8 | 3 | Hit: pop a 1/2 Kernel into an empty slot. | **Kettle Corn**: Hit: deal 1 damage to the attacker. |
 | 2 | Onion | Sour | 2/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack (they cry). | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
-| 2 | Garlic | Spicy | 2/5 | 3 | Start of battle: the enemy across and the enemies in the neighbouring lanes Burn 1/2/3, +1 for each other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 2. |
+| 2 | Garlic | Spicy | 2/6 | 3 | Start of battle: the enemy across and the enemies in the neighbouring lanes Burn 1/2/3, +1 for each other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 2. |
 | 2 | Marshmallow | Sweet | 1/8 | 3 | Hit: the friend behind gains +1/+1, +2/+2 or +3/+3 (double if it is Sweet). | **S'more**: Start of battle: the friend behind gains 6 Crust. |
-| 2 | Potato | Savory | 2/6 | 3 | End of day: gain +1/+1, +2/+2 or +3/+3 if you didn't reroll, for {d} days. | **Loaded Fries**: Eaten: adjacent friends gain +3/+3. |
+| 2 | Potato | Savory | 2/6 | 3 | End of day: gain +1/+1, +2/+2 or +3/+3 if you didn't reroll. | **Loaded Fries**: Eaten: adjacent friends gain +3/+3. |
 | 2 | Mustard | Spicy | 1/6 | 3 | Back-row kick: when the friend ahead attacks, its target Burns 2/3/4. | **Honey Mustard**: Start of battle: the friend ahead gains +2 attack. |
 | 2 | Cabbage | Sour | 1/8 | 3 | Leafy shield: when the friend ahead is hit, the attacker Rots 1/1/2. | **Sauerkraut**: Start of battle: the enemy front row Rots 1. |
-| 2 | Ice Cream | Sweet | 2/5 | 3 | Start of battle: the enemy across is Chilled 1/1/2 (skips an attack). In the freezer: +1/+1 a day, for {d} days. | **Sundae**: Start of battle: adjacent friends gain +1/+2. |
+| 2 | Ice Cream | Sweet | 2/5 | 3 | Start of battle: the enemy across is Chilled 1/1/2 (skips an attack). | **Sundae**: Start of battle: adjacent friends gain +1/+2. |
+| 2 | Dumplings | Savory | 3/8 | 3 | Start of day: your first 1/2/3 restocks are free. | **Dim Sum Basket**: Restock: gain +1/+1. |
 | 2 | Sourdough Starter | Sour | 2/6 | 3 | Sell: everything you buy for the rest of the day gets +1/+1 or +2/+2. | **Sourdough Loaf**: Start of day: everything you buy today gets +1/+1. |
 | 2 | Mochi | Sweet | 1/7 | 3 | Chewy: when hit, gain +1/2/3 HP. | **Daifuku**: Eaten: adjacent friends gain +4 HP. |
-| 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP, for {d} days. | **Country Loaf**: End of day: adjacent friends gain +2 HP, for 8 days. |
-| 2 | Olive | Salty | 3/6 | 3 | Start of battle: lobs its pit at the enemy back row in its lane (the front if the back is empty) for half its attack, from either row, and the friend ahead gains 2/3/4 Crust. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
+| 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP. | **Country Loaf**: End of day: adjacent friends gain +2 HP,. |
+| 2 | Olive | Salty | 3/6 | 3 | Start of battle: lobs its pit at the enemy back row in its lane (the front if the back is empty) for half its attack, from either row. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
 | 2 | Hot Cocoa | Sweet | 1/7 | 3 | Whenever an adjacent friend gains HP, it also gains +1/1/2 attack. | **Cocoa Deluxe**: Every turn: adjacent friends gain +1 HP. |
-| 3 | Cheese | Savory | 2/8 | 4 | Ages: end of day, +1/+1 or +2/+2, twice as much next to a Savory friend, for {d} days. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
-| 3 | Wasabi | Spicy | 3/7 | 4 | First attack each battle deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
+| 3 | Cheese | Savory | 3/8 | 4 | Ages: end of day, +1/2/2 HP, twice as much next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
+| 3 | Wasabi | Spicy | 3/8 | 4 | First attack each battle deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
 | 3 | Honey | Sweet | 2/10 | 4 | Start of battle: adjacent friends gain +1/+1, +2/+2 or +3/+3, double for Spicy neighbours. | **Honeycomb**: Every 2 turns: adjacent friends gain +1/+1. |
-| 3 | Pickle | Sour | 2/8 | 4 | Start of battle: the strongest enemy loses 2/3/4 attack. In the freezer: +1/+1 a day, for {d} days. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
+| 3 | Pickle | Sour | 2/8 | 4 | Brines: in the freezer, +1/+1 or +2/+2 a day. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
 | 3 | Anchovy | Salty | 2/7 | 4 | Every 2 turns: this and the friend in its lane gain 2/3/4 Crust. | **Caesar Salad**: Start of battle: front-row friends gain 3 Crust. |
-| 3 | Fortune Cookie | Sweet | 2/7 | 4 | Interest cap +1/2/3. Start of day, if you earned interest: +1/+1 or +2/+2, for {d} days. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
-| 3 | Kebab | Savory | 3/9 | 4 | Pierce attack: also hits the food behind its target, for half. Start of battle: the friend behind it gains +1/2/3 attack. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
-| 3 | Nachos | Salty | 2/9 | 4 | Splash attack: also hits the front foods in both neighbouring lanes, for 1. Hit: gain 1/2/3 Crust. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
-| 3 | Yogurt | Sour | 2/8 | 4 | Live cultures: start of day, +1/2/3 HP, twice as much next to a Sour friend, for {d} days. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
-| 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/1/2 attack, twice as much next to a Spicy friend, for {d} days. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
-| 3 | Maple Syrup | Sweet | 2/8 | 4 | End of day: 2 random friends gain +1/1/2 HP, for {d} days. | **Maple Taffy**: Start of battle: your friends gain +3 HP. |
+| 3 | Fortune Cookie | Sweet | 2/7 | 4 | Start of day: +1/1/2 HP for each gold of interest you earned. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
+| 3 | Kebab | Savory | 4/10 | 4 | Pierce attack: also hits the food behind its target, for half. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
+| 3 | Nachos | Salty | 3/11 | 4 | Splash attack: also hits the front foods in both neighbouring lanes, for 1. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
+| 3 | Yogurt | Sour | 2/8 | 4 | Live cultures: start of day, +1/2/3 HP, twice as much next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
+| 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/1/2 attack, twice as much next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
+| 3 | Maple Syrup | Sweet | 2/8 | 4 | End of day: 2 random friends gain +1/1/2 HP. | **Maple Taffy**: Start of battle: your friends gain +3 HP. |
 | 3 | Peppercorns | Spicy | 2/7 | 4 | Start of battle: sprays 3 peppercorns at random enemies, each for half its attack, from either row (Spicy bonuses Burn with each one). *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 2/11 | 4 | Crackles: whenever Crust blocks a hit on it or an adjacent friend, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 2/8 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Mushroom | Savory | 2/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore into an empty slot. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 3/8 | 4 | Start of battle: the friend ahead (or this, if in front) attacks twice on its first 1/2/3 attacks, one more if that friend is Sweet. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 2/16 | 4 | Every 2nd time hit: drop a 2/2, 3/3 or 4/4 Slice into an empty slot. | **Fruit Salad**: Eaten: summon three 4/4 Slices. |
-| 4 | Grapefruit | Sour | 3/10 | 4 | Start of battle: the enemy front row loses 1/1/2 attack. | **Sorbet**: Start of battle: the enemy front row is Chilled 1 and loses 1 attack. |
+| 4 | Grapefruit | Sour | 3/9 | 4 | Start of battle: the enemy front row loses 1/1/2 attack. | **Sorbet**: Start of battle: the enemy front row is Chilled 1 and loses 1 attack. |
 | 4 | Bacon | Salty | 4/8 | 4 | Hit: grease splatter deals 2/3/4 damage to the attacker. | **BLT**: Start of battle: adjacent friends gain 3 Crust. |
-| 4 | Soy Sauce | Salty | 2/10 | 4 | Reroll: a random level 3 friend gains +1/+1 or +2/+2. Start of day: if you have a level 3 food, your first restock is free. | **Aged Shoyu**: Start of battle: level 3 friends gain +3/+3. |
+| 4 | Soy Sauce | Salty | 2/10 | 4 | Restock: a random friend gains +1/+1 or +2/+2. | **Aged Shoyu**: Restock: another random friend gains +1/+1 too. |
 | 4 | Blue Cheese | Sour + Savory | 3/10 | 4 | Hit: the attacker Rots 1/2/3. | **Roquefort**: Start of battle: all enemies Rot 1. |
-| 4 | Sweet & Sour Pork | Sweet + Sour | 3/10 | 4 | Every 2 turns: the enemy across Rots 1. Every turn: it gains 1/2/3 HP. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
-| 4 | Peanut Butter | Salty | 3/10 | 4 | Sticks together: end of day, adjacent friends gain +1/1/2 HP, for {d} days. | **PB&J**: Start of battle: adjacent friends gain 4 Crust. |
+| 4 | Sweet & Sour Pork | Sweet + Sour | 3/12 | 4 | Every 2 turns: the enemy across Rots 1/1/2. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
+| 4 | Peanut Butter | Salty | 3/10 | 4 | Sticks together: end of day, adjacent friends gain +1/1/2 HP. | **PB&J**: Start of battle: adjacent friends gain 4 Crust. |
 | 5 | Steak | Savory | 4/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Start of battle: adjacent friends gain +3/+3. |
 | 5 | Ghost Pepper | Spicy | 4/10 | 5 | Start of battle: a random back-row enemy (front row if none) Burns 3/5/7. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 3/12 | 5 | Hit: adjacent friends gain +1/+1 or +2/+2. | **Pina Colada**: Every turn: your friends gain +1/+1. |
-| 5 | Durian | Sour | 4/16 | 5 | Hit: the stench makes every enemy in the front row Rot 1/1/2. | **Durian Crepe**: Start of battle: all enemies Rot 2. |
-| 5 | Caviar | Salty | 3/11 | 5 | Raises your interest cap by 1/2/3. Hit: gain 2/3/4 Crust. | **Blini Platter**: End of day: +3 gold tomorrow. Start of battle: your friends gain 2 Crust. |
-| 5 | Spaghetti | Savory | 3/14 | 5 | Escalating attack: one target, then the whole front row from turn 3, then every enemy from turn 5 (extra targets take half). Start of battle: adjacent friends gain +1/+1 or +2/+2. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
-| 5 | Takoyaki | Savory | 3/12 | 5 | Volleys every turn, from either row, instead of attacking: a ball at every enemy in the front row, each for half its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
+| 5 | Durian | Sour | 3/14 | 5 | Hit: the stench makes every enemy in the front row Rot 1/1/2. | **Durian Crepe**: Start of battle: all enemies Rot 2. |
+| 5 | Caviar | Salty | 4/13 | 5 | Raises your interest cap by 1/2/3. | **Blini Platter**: End of day: +3 gold tomorrow. |
+| 5 | Spaghetti | Savory | 3/14 | 5 | Escalating attack: one target, then the whole front row from turn 3, then every enemy from turn 5 (extra targets take half). *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
+| 5 | Takoyaki | Savory | 2/14 | 5 | Volleys every turn, from either row, instead of attacking: a ball at every enemy in the front row, each for half its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
 | 6 | Pizza | Savory | 4/15 | 5 | Start of battle: adjacent friends gain +1/2/3 HP for each different flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 for each different flavor on your plate. |
-| 6 | Hot Pot | Spicy | 4/18 | 5 | Fork attack: hits both other lanes instead of its own. Start of battle: the enemy front row Burns 1/2/3. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
-| 6 | Birthday Cake | Sweet | 3/20 | 5 | Every HP gain on your plate is +1. Eaten: summon three 2/2, 3/3 or 4/4 Cake Slices. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
+| 6 | Hot Pot | Spicy | 4/14 | 5 | Fork attack: hits both other lanes instead of its own. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
+| 6 | Birthday Cake | Sweet | 3/20 | 5 | Every HP gain on your plate is +1. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
 | 6 | Kimchi | Sour + Spicy | 4/15 | 5 | Start of battle: the enemy front row Rots 1/1/2 and Burns 1/1/2. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 4/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust (double for Savory friends). | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
-| 6 | Bento Box | Savory + Salty | 3/16 | 5 | The friend ahead's abilities trigger twice. Start of battle: the friend ahead gains 1/2/3 Crust. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
-| 6 | Smoothie | Sweet + Sour | 3/16 | 5 | A friend next to it gains +1 attack whenever its ability fires (up to +3). Every 2 turns: adjacent friends gain +1/1/2 HP. *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. Every turn: your friends gain +2 HP. |
-| 6 | Roast Turkey | Savory | 4/18 | 5 | Feeds the table: end of day, 3 random friends gain +2/3/4 HP, for {d} days. | **Holiday Feast**: End of day: all your foods gain +1/+2, for 8 days. |
+| 6 | Bento Box | Savory + Salty | 3/16 | 5 | The friend ahead's abilities trigger twice. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
+| 6 | Smoothie | Sweet + Sour | 3/16 | 5 | A friend next to it gains +1 attack whenever its ability fires (up to +3). *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
+| 6 | Roast Turkey | Savory | 4/18 | 5 | Feeds the table: end of day, 3 random friends gain +1/2/3 HP. | **Holiday Feast**: End of day: all your foods gain +1/+2,. |
 | Mythic | Golden Truffle | Savory | 3/16 | 7 | In battle, the friend in its lane is cooked: it uses its level 3 numbers and its cooked bonus. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |
 | Mythic | Saffron | All | 3/14 | 7 | Counts as every flavor. Adjacent friends count twice toward flavor bonuses. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
 | Mythic | Wagyu | Salty + Sweet | 4/22 | 7 | Adjacent friends get double from Crust and HP gains. Start of battle: they gain 4/5/6 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Every friend gets double from Crust and HP gains. |
@@ -520,8 +524,8 @@ Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summon
 From 400 bot runs on the current numbers (the bots don't save for interest, chase level 3s or buy specials, so engine foods read low):
 
 - Sour was strongest through attack penalties more than Rot itself (simulating Rot capped at 2 or 3, or ticking every other turn, barely moved it): Sour x4 no longer lowers attack, Grapefruit no longer stacks with Sour friends, and Rot stacks to 3. Sour foods now sit around 50-64%.
-- Growth gated by days brought the scaling foods back in line (Cheese 64% to 54%, Potato 61% to 53%, Roast Turkey 63% to 55%).
-- The top is now Birthday Cake, Pineapple, Peppercorns, Durian, Hot Pot and Takoyaki at 62-65%. Projectile foods were strong because they added an attacker from the back row every turn; now Edamame, Olive and Peppercorns throw once (opening throws) and only Takoyaki throws every turn (Edamame 59%, Takoyaki 58%, Olive 51%, Peppercorns 43%).
+- Growth has no day limit now (a grower that stops is a dead slot); rates were lowered instead (Cheese grows HP, Roast Turkey +1/2/3 HP). One specialty per food took extras off the pattern foods, which got sturdier stats instead (Kebab 4/10, Nachos 3/11, Hot Pot 4/14).
+- The top is now Durian, Kimchi, Blue Cheese, Hot Pot and Grapefruit at 60-63%; Fortune Cookie reads 40% because bots don't save for interest. Projectile foods were strong because they added an attacker from the back row every turn; now Edamame, Olive and Peppercorns throw once (opening throws) and only Takoyaki throws every turn (Edamame 59%, Takoyaki 58%, Olive 51%, Peppercorns 43%).
 - The flavor bridges read low in random bot plates (Pepperoni ~43%, Pork Crackling ~46%, Hot Cocoa ~48%): they shine in the plates built around them, which bots don't build.
 - Flavor shares of winning plates: spicy is lowest (~14%), savory highest (~24%).
 - Battles average about 7 turns and about 2% end in a draw.
@@ -548,6 +552,7 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 
 - **Kitchen:** a slim fridge on the left (its two slots in the glass door, lives and courses on the freezer), the cabinet and counter beside it, and on the right the spice rack, a wide chalkboard and a large cookbook (two 90px pages). The market is a cabinet of cubbies (6 brown for foods, a teal one for the item and a gold-tagged special cubby), the plate is a platter on a wooden counter with the counter tray beside it, the fridge and freezer magnets (lives as pixel hearts, courses) are on the left, the tip jar shows gold with the interest you'd earn above it, and the spice rack (flavor counts) and chalkboard (flavor bonus tiers 2·4·6) are on the right. Press the service bell to Serve.
 - **Levels in battle:** the level as a chunky gold number on a dark tab at the food's top-left (orange 3 when cooked). Level 1 has none.
+- **Flavor boards:** each side's active flavor bonuses sit on a little chalkboard under its name plaque ("Your flavors" left, "Their flavors" right): the flavor icon, its count and what it does; hover a line for the full tiers.
 - **Battle layers:** food sprites at the bottom (nearer lanes over farther ones), then each food's stat row above every sprite (attack, HP, and a small column of chips for Crust, Burn, Rot and Chill, so statuses never cover a food's face and rows in a lane don't collide), then every pop-up (damage, heals, gains, status ticks) above everything.
 - **Buffs:** a gold four-pointed star (trailing two smaller ones) flies from the food that gave it and bursts on the friend, which hops and glows gold while "+1 ⚔ +1 ♥" rises over it, exactly what it gained. Heals fly pink, Crust tan. Attack losses rise in purple ("-1 ⚔"). Kitchen growth uses the same star.
 - **Captions:** one short line per moment. Three or more targets are counted ("Durian: 3 enemies Rot 1"), several foods taking Burn and Rot share one line ("Burn & Rot: Popcorn 4, Kimchi 2"), repeats collapse ("+1/+1 ×3"), and each plate's end-of-turn effects get their own moment. Anything still longer than two lines ends in an ellipsis.

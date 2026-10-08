@@ -356,6 +356,28 @@ const foods = {
     s.rect(8, 14, 3, 4, '#2e4a2c');
     s.rect(3, 18, 27, 1, '#f4ece4');
   },
+  dumplings(s) {
+    s.shadow(17, 29, 13, 2);
+    // A round bamboo steamer seen from the front and a little above, three pleated dumplings sitting inside.
+    const bamboo = R('#d9b26a');
+    s.ball(16, 21, 13, 7, bamboo, { clip: (x, y) => y >= 20 });
+    s.ball(16, 19, 12, 4, R('#7a5a2e'));
+    for (const x of [8, 13, 19, 24]) for (let y = 22; y <= 26; y++) if (y < 21 + Math.sqrt(Math.max(0, 1 - ((x - 16) / 13) ** 2)) * 7) s.px(x, y, bamboo[3]);
+    s.rect(4, 23, 25, 1, bamboo[1]); // the woven band
+    const dough = R('#f1dfbf');
+    // Back one first, then the two in front overlapping it. Each is a half-moon: a flat bottom, a domed top, and a
+    // pleated crest of little folds pinched along its ridge; a tan rim keeps each one separate from the next.
+    for (const [x, y] of [[16, 15], [10, 19], [22, 19]]) {
+      s.ball(x, y, 7, 6, R('#b98c58'), { clip: (_, py) => py <= y + 3 });
+      s.ball(x, y, 6, 5, dough, { bias: 0.25, clip: (_, py) => py <= y + 2 });
+      s.rect(x - 5, y + 2, 11, 1, dough[3]); // the flat underside in shadow
+      for (let i = -4; i <= 4; i++) {
+        const top = y - 4 + Math.round((i * i) / 8);
+        s.px(x + i, top, i % 2 === 0 ? dough[3] : dough[1]); // the crest
+        if (i % 2 === 0 && Math.abs(i) < 4) s.px(x + i, top + 1, dough[2]); // a fold running down from it
+      }
+    }
+  },
   // Flavor overhaul foods
   tofu(s) {
     s.shadow(17, 29, 12, 2);

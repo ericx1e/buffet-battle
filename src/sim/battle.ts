@@ -116,6 +116,8 @@ export interface BattleResult {
   /** From side 0's point of view. */
   outcome: Outcome;
   frames: BattleFrame[];
+  /** How many of each flavor each side counts toward flavor bonuses (Saffron's neighbours count twice). */
+  flavors: [Partial<Record<Flavor, number>>, Partial<Record<Flavor, number>>];
 }
 
 export const MAX_ROUNDS = 40;
@@ -266,7 +268,7 @@ class Battle {
       text = `Time! ${outcome === 'win' ? 'Your plate has more left. You win!' : outcome === 'loss' ? 'Their plate has more left.' : "It's a draw."}`;
     }
     this.snap(text);
-    return { outcome, frames: this.frames };
+    return { outcome, frames: this.frames, flavors: [Object.fromEntries(this.tally[0]), Object.fromEntries(this.tally[1])] };
   }
 
   private over() {

@@ -1591,6 +1591,26 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
 }
 
 const STATUS_NAME = { burn: 'Burn', rot: 'Rot', chill: 'Chill' } as const;
+/**
+ * A side's flavor bonuses, on a little chalkboard under its name plaque: each active flavor with its count and what
+ * it does (the tiers that replace each other show only the higher one). Hover a line for the full text.
+ */
+function flavorSide(side: 0 | 1, tally: Partial<Record<Flavor, number>> | undefined): string {
+  const active = (Object.entries(tally ?? {}) as [Flavor, number][])
+    .map(([f, n]) => [f, n, flavorTier(n)] as const)
+    .filter(([, , t]) => t > 0)
+    .sort((a, b) => b[1] - a[1] || FLAVORS.indexOf(a[0]) - FLAVORS.indexOf(b[0]));
+  if (active.length === 0) return '';
+  const lines = active.map(([f, n, t]) => {
+    const short = FLAVOR_BONUS[f].slice(t >= 2 ? 1 : 0, t).join(' · ');
+    const long = FLAVOR_BONUS_LONG[f].slice(0, t).map((x) => `<p>${x}</p>`).join('');
+    return `<div class="chalk-line on" ${tip(`<p><b>${f} x${n}</b></p>${long}`)}>${pix(f)}<b>${n}</b><span>${short}</span></div>`;
+  }).join('');
+  const x = side === 0 ? 10 : LAYOUT.size[0] - 10 - 132;
+  return `<div class="flavor-side chalkboard" style="left:${x}px;top:44px;width:132px">
+    <div class="chalk-title">${side === 0 ? 'Your' : 'Their'} flavors</div>${lines}</div>`;
+}
+
 /** Draws the current battle frame. Returns true the first time a frame is shown (its effects should play). */
 function renderBattle(battle: PendingBattle): boolean {
   const frames = battle.result.frames;
@@ -1628,6 +1648,7 @@ function renderBattle(battle: PendingBattle): boolean {
         <img class="scene-bg" src="${battleUrl}" alt="" draggable="false">
         ${teamPlaque(0, f, 'Your plate', bid, fresh)}
         ${teamPlaque(1, f, battle.opponent, bid, fresh)}
+        ${flavorSide(0, battle.result.flavors?.[0])}${flavorSide(1, battle.result.flavors?.[1])}
         <div class="round-text" style="${box([rx + 3, ry + 3, rw - 6, rh - 6])}" data-vk="round:${bid}" data-v="${f.round}">${f.round > 0 ? `turn ${f.round}` : 'serve!'}</div>
         ${fighters}
         <div class="caption" style="${box(BATTLE.caption)}"><div class="caption-text" data-vk="cap:${bid}" data-v="${idx}" data-va="caption">${captionHtml(f.text)}</div></div>

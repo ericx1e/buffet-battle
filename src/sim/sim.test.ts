@@ -74,9 +74,9 @@ describe('battle', () => {
     expect(r.frames.some((f) => f.plates[0].some((u) => u?.defId === 'yolk'))).toBe(true);
   });
 
-  it('Birthday Cake leaves three slices when eaten', () => {
-    const r = simulateBattle(plate({ 0: unit('cake', { attack: 1, hp: 1 }) }), plate({ 0: unit('cheese', { attack: 5, hp: 50 }) }), 1);
-    expect(r.frames.some((f) => f.plates[0].filter((u) => u?.defId === 'cakeSlice').length === 3)).toBe(true);
+  it('Watermelon drops slices when hit', () => {
+    const r = simulateBattle(plate({ 0: unit('watermelon', { hp: 40 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 50 }) }), 1);
+    expect(r.frames.some((f) => f.plates[0].some((u) => u?.defId === 'slice'))).toBe(true);
   });
 
   it('Apple gives HP to the friend with the least HP (there is no max HP)', () => {
@@ -139,15 +139,15 @@ describe('flavor synergy in abilities', () => {
     run.plate[1] = unit('potato');
     run.plate[5] = unit('cheese');
     serve(run);
-    expect(run.plate[0]!.attack).toBe(4); // 2 + 1 + 1 (next to Potato)
-    expect(run.plate[5]!.attack).toBe(3); // 2 + 1 (no Savory neighbour)
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 2); // +1, doubled next to Potato
+    expect(run.plate[5]!.hp).toBe(unitDef('cheese').hp + 1); // no Savory neighbour
   });
 
   it('kitchen growth has no cap: it keeps growing every turn', () => {
     const run = newRun(3);
-    run.plate[0] = unit('cheese', { copies: 6 }); // +2 a turn
+    run.plate[0] = unit('cheese', { copies: 6 }); // +2 HP a turn
     for (let i = 0; i < 5; i++) serve(run);
-    expect(run.plate[0]!.attack).toBe(2 + 10);
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 10);
   });
 });
 
@@ -157,7 +157,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
@@ -243,7 +243,7 @@ describe('run', () => {
     run.gold = 100;
     finishBattle(run, 'win');
     expect(run.lastInterest).toBe(3); // capped
-    run.plate[0] = unit('fortuneCookie', { copies: 6 });
+    run.plate[0] = unit('caviar', { copies: 6 });
     expect(interestCap(run)).toBe(6);
   });
 
@@ -264,23 +264,48 @@ describe('run', () => {
     expect(sellPrice(unit('egg', { sellBonus: 3 }))).toBe(4);
   });
 
-  it('Coin Chocolate gains sell value for its growth days, more days at higher levels', () => {
+  it('Coin Chocolate gains sell value every day, with no limit', () => {
     const run = newRun(5);
     run.plate[0] = unit('coinChocolate');
-    run.plate[1] = unit('coinChocolate', { copies: 3 });
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.sellBonus).toBe(3); // 3 days at level 1
-    expect(run.plate[1]!.sellBonus).toBe(5); // 5 days at level 2
+    expect(run.plate[0]!.sellBonus).toBe(9);
   });
 
-  it('Ice Cream grows in the freezer, not on the plate', () => {
+  it('Fortune Cookie turns interest into HP; Caviar raises the cap it feeds on', () => {
     const run = newRun(5);
-    run.fridge[0] = { kind: 'unit', unit: unit('iceCream') };
-    run.plate[0] = unit('iceCream');
+    run.plate[0] = unit('fortuneCookie');
+    run.plate[1] = unit('caviar', { copies: 6 }); // cap 3 + 3
+    run.gold = 0;
+    finishBattle(run, 'win'); // into turn 2, no interest yet
+    run.gold = 100;
+    finishBattle(run, 'win');
+    expect(run.lastInterest).toBe(6);
+    expect(run.plate[0]!.hp).toBe(unitDef('fortuneCookie').hp + 6);
+  });
+
+  it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('dumplings', { copies: 3 }); // 2 free a day
+    run.plate[1] = unit('soySauce');
+    run.plate[2] = unit('egg');
+    finishBattle(run, 'win'); // start of day: the free restocks
+    run.gold = 0;
+    expect(reroll(run).ok).toBe(true);
+    expect(reroll(run).ok).toBe(true);
+    expect(reroll(run).ok).toBe(false); // out of free ones, and broke
+    const grown = run.plate.reduce((n, u) => n + (u ? u.attack : 0), 0);
+    const base = unitDef('dumplings').attack + unitDef('soySauce').attack + unitDef('egg').attack;
+    expect(grown).toBe(base + 2);
+  });
+
+  it('Pickle grows in the freezer, not on the plate', () => {
+    const run = newRun(5);
+    run.fridge[0] = { kind: 'unit', unit: unit('pickle') };
+    run.plate[0] = unit('pickle');
     serve(run);
     serve(run);
-    expect(run.fridge[0]?.kind === 'unit' && run.fridge[0].unit.attack).toBe(unitDef('iceCream').attack + 2);
-    expect(run.plate[0]!.attack).toBe(unitDef('iceCream').attack);
+    expect(run.fridge[0]?.kind === 'unit' && run.fridge[0].unit.attack).toBe(unitDef('pickle').attack + 2);
+    expect(run.plate[0]!.attack).toBe(unitDef('pickle').attack);
   });
 
   it('Bean Sprout grows the friend ahead', () => {
@@ -288,14 +313,14 @@ describe('run', () => {
     run.plate[0] = unit('egg');
     run.plate[3] = unit('beanSprout');
     for (let i = 0; i < 6; i++) serve(run);
-    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 3); // 3 growth days at level 1
+    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 6); // every day, no limit
   });
 
   it('Bread Dough rises: HP only', () => {
     const run = newRun(5);
     run.plate[0] = unit('breadDough');
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 6); // +2 for 3 days
+    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 2 * 9); // +2 every day
     expect(run.plate[0]!.attack).toBe(unitDef('breadDough').attack);
   });
 
