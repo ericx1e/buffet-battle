@@ -1,6 +1,6 @@
 import './style.css';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -755,7 +755,8 @@ function offerTile(offer: Offer, attrs: string, selected: boolean): string {
       offer.bonus ? `<div class="bonus-tag">${pix('starSmall')}</div><div class="u-art">` : '<div class="u-art">',
     );
   }
-  return `<div class="unit item ${selected ? 'selected' : ''}" ${attrs}><div class="u-art">${itemArt(offer.itemId)}</div></div>`;
+  const r = itemRarity(itemDef(offer.itemId));
+  return `<div class="unit item ${selected ? 'selected' : ''}" ${attrs}><div class="u-art">${itemArt(offer.itemId)}</div><div class="u-gem" ${tipBox(rarityName(r), `<p>${RARITY_TEXT[r]}</p>`)}>${gemIcon(r)}</div></div>`;
 }
 
 const offerId = (o: Offer) => (o.kind === 'unit' ? o.defId : o.itemId);
@@ -800,9 +801,9 @@ function marketSlots(): string {
 /** Names and blurbs for what the special cubby can hold. */
 const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string; text: string }> = {
   spicePack: { name: 'Spice Pack', text: 'Open it and keep 1 of 3 consumables, maybe one the buffet does not stock yet.' },
-  farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to a tier above the buffet.' },
+  farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to one rarity above the buffet.' },
   bundle: { name: 'Pair', text: 'Two copies of one food for about one and a half times the price. They land on the counter tray: place, merge or sell them before serving.' },
-  premium: { name: 'Premium Restock', text: 'Restocks the buffet with nothing but foods from the next tier.' },
+  premium: { name: 'Premium Restock', text: 'Restocks the buffet with nothing but foods of the next rarity.' },
   mythic: { name: 'Mythic Delivery', text: 'A one-of-a-kind dish that never shows up in the buffet.' },
 };
 
@@ -1122,7 +1123,7 @@ function cookbook(): string {
     left = `<div class="pg-art">${unitArt(defId, level === 3)}</div>
       <div class="pg-title">${level === 3 ? d.cookedName : d.name}</div>
       <p>${shown}</p>
-      <p>${rarityTag(d.id)} · T${d.tier}${price ? ` · ${price}` : ''}</p>
+      <p>${rarityTag(d.id)}${price ? ` · ${price}` : ''}</p>
       <p class="stat-line">${statBadge('atk', atk)} attack ${statBadge('hp', hp)} HP</p>
       ${u ? `<p class="dim">sells for ${sellPrice(u)}g${u.sellBonus ? ` (+${u.sellBonus})` : ''}</p>` : ''}
       ${cookedChip(defId, level)}`;
@@ -1135,7 +1136,7 @@ function cookbook(): string {
     if (offer?.kind === 'item') {
       const d = itemDef(offer.itemId);
       const price = s.src.area === 'special' ? 'free' : `${d.cost} gold`;
-      left = `<div class="pg-art">${itemArt(d.id)}</div><div class="pg-title">${d.name}</div><p>tier ${d.tier} · ${price}</p>`;
+      left = `<div class="pg-art">${itemArt(d.id)}</div><div class="pg-title">${d.name}</div><p>${rarityName(itemRarity(d))} · ${price}</p>`;
       right = `<p>${keywordify(d.text)}</p><p class="dim">Drop it on one of your foods.</p>`;
     } else if (offer) {
       const d = unitDef(offer.defId);
@@ -1552,18 +1553,20 @@ function battleEffects(b: PendingBattle, delay: number) {
 /** Card shown while a food is held during battle: what it is and what it does, with its current stats. */
 /** The rarity name in its colour, with a gem. */
 /** What each rarity means, for tooltips. */
+/** When each rarity starts showing up in the buffet. */
 const RARITY_TEXT: Record<string, string> = {
-  common: 'Tiers 1-2.',
-  rare: 'Tiers 3-4.',
-  epic: 'Tier 5.',
-  legendary: 'Tier 6.',
+  common: 'In the buffet from day 1.',
+  uncommon: 'In the buffet from day 3.',
+  rare: 'In the buffet from day 5.',
+  epic: 'In the buffet from day 7.',
+  legendary: 'In the buffet from day 9.',
+  exotic: 'In the buffet from day 11.',
   mythic: 'Never in the buffet: only delivered through the special cubby.',
 };
 
-function rarityTag(defId: string): string {
-  const r = rarityOf(unitDef(defId));
-  return `<span class="rarity-name rarity-${r}">${gemIcon(r)}${r}</span>`;
-}
+/** A rarity as its gem and name. */
+const rarityName = (r: string) => `<span class="rarity-name rarity-${r}">${gemIcon(r)}${r}</span>`;
+const rarityTag = (defId: string) => rarityName(rarityOf(unitDef(defId)));
 
 function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
   const d = unitDef(u.defId);

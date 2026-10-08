@@ -24,7 +24,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 
 ## How to play
 
-- **Click** anything to read it in the cookbook. **Drag** a dish from the cabinet onto your plate to buy it (3-5 gold by tier), onto a copy to merge, or into the fridge to buy it and keep it for later. Drag plate units to move, swap or merge, and into the scrap bin to sell. Clicking only selects; every action is a drag.
+- **Click** anything to read it in the cookbook. **Drag** a dish from the cabinet onto your plate to buy it (3-5 gold by rarity), onto a copy to merge, or into the fridge to buy it and keep it for later. Drag plate units to move, swap or merge, and into the scrap bin to sell. Clicking only selects; every action is a drag.
 - **Plate:** 3 lanes, back column on the left, front column on the right. Front foods attack the enemy in their lane (or the nearest lane with food); a food at 0 HP is eaten and the one behind steps up. Last plate with food wins.
 - **Gold:** unspent gold carries over and earns interest (+1 per 5 held, up to 3; the coins over the tip jar show what you would earn, hover them for details). Each restock in a day costs 1 more. Selling returns half of what a food cost.
 - **Special cubby:** once a day, a Spice Pack, Farm Box, Pair (2 copies for about 1.5x the price), Premium Restock or (late) a mythic. Drag it onto the counter tray to buy it; whatever lands on the tray must be placed, merged or sold before you serve.
@@ -35,7 +35,8 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 - **Sound:** marimba, glockenspiel, woodblock, bongo and bubbly-pop effects in the style of Super Auto Pets (CC0; see `src/ui/sfx/CREDITS.md`). The speaker button (top bar, and next to the battle speed) or `m` mutes them; iPhones also follow the silent switch.
 - **Hover** anything for a tooltip; keywords like Burn, Rot and Crust are explained at the bottom.
 - **Mythics:** late in a run the special cubby can deliver one of four mythics. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and heals around it, Black Garlic doubles Burn and Rot in its lane.
-- **Cooking:** 6 copies cook a food (level 3): new name and art, and its cooked bonus switches on. The bonus is small on tier 1 foods and plate-wide on tier 6 and mythics; the chip in the cookbook shows it.
+- **Cooking:** 6 copies cook a food (level 3): new name and art, and its cooked bonus switches on. The bonus is small on common foods and plate-wide on exotics and mythics; the chip in the cookbook shows it.
+- **Rarity:** every food and item has one, shown as a gem: common, uncommon, rare, epic, legendary and exotic unlock in the buffet day by day; mythics only come through the special cubby.
 - **Phones:** play in landscape. Drag with a finger, tap for tooltips, hold a food in battle to read it.
 - **Lives:** you start with 5; from day 3 every lost battle costs one.
 - **Pixel art:** drop 32x32 PNGs into `art/` to replace a generated sprite (see [art/README.md](art/README.md)).

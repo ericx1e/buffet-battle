@@ -412,7 +412,13 @@ export function daysOf(def: UnitDef, level: Level): number | undefined {
   return abilitiesOf(def, level).find((ab) => ab.days)?.days?.[level - 1];
 }
 
-const RARITY_BY_TIER: Record<Tier, Rarity> = { 1: 'common', 2: 'common', 3: 'rare', 4: 'rare', 5: 'epic', 6: 'legendary' };
+/** Each buffet tier is its own rarity: the player only ever sees the rarity. */
+export const RARITY_BY_TIER: Record<Tier, Rarity> = { 1: 'common', 2: 'uncommon', 3: 'rare', 4: 'epic', 5: 'legendary', 6: 'exotic' };
+
+/** An item's rarity, from its tier like a food's. */
+export function itemRarity(def: ItemDef): Rarity {
+  return RARITY_BY_TIER[def.tier as Tier];
+}
 
 /** A food's rarity: its own `rarity`, else the default for its tier. */
 export function rarityOf(def: UnitDef): Rarity {

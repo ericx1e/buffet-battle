@@ -165,8 +165,9 @@ export interface AbilityDef {
 export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment';
 
 /** How special a food is. Mythic foods never appear in the market. */
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
-export const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic'];
+/** One rarity per buffet tier (1 common ... 6 exotic), and mythic for the special-cubby foods. */
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'exotic' | 'mythic';
+export const RARITIES: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'exotic', 'mythic'];
 
 export interface UnitDef {
   id: string;

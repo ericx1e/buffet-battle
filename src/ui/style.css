@@ -393,6 +393,8 @@ body[data-screen='battle'] {
 
 /* Rarity: a 5x5 pixel gem on tiles and cards, and the rarity name in its colour. */
 .rarity-common { --gem: #b8b2a2; --gem-hi: #f2eee2; --gem-ink: #6e685c; }
+.rarity-uncommon { --gem: #43a03c; --gem-hi: #c8f5b8; --gem-ink: #2f7a2a; }
+.rarity-exotic { --gem: #d2452a; --gem-hi: #ffc8b0; --gem-ink: #b0361e; }
 .rarity-rare { --gem: #3f86d6; --gem-hi: #a9d4ff; --gem-ink: #2a64a8; }
 .rarity-epic { --gem: #9a4fd0; --gem-hi: #e0b4ff; --gem-ink: #7a35ab; }
 .rarity-legendary { --gem: #e8a227; --gem-hi: #fff0a8; --gem-ink: #a8680c; }

@@ -683,7 +683,7 @@ export function buySpecial(run: RunState): ActionResult {
     case 'premium':
       rollMarket(run, true);
       run.rerolledThisTurn = true;
-      message = 'Premium restock: the buffet is stocked from the next tier.';
+      message = 'Premium restock: the buffet is stocked with the next rarity.';
       break;
   }
   run.gold -= s.cost;

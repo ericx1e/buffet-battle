@@ -40,7 +40,9 @@ Early losses are cheaper so a weak opening doesn't end a run, as in Super Auto P
 | 1 to 2 | 0 (practice days: a loss costs nothing) |
 | 3 onward | 1 |
 
-### Tier unlocks
+### Tier unlocks (shown as rarity)
+
+The tiers below are the rarities the buffet unlocks: tier 1 common, 2 uncommon, 3 rare, 4 epic, 5 legendary, 6 exotic.
 
 The market offers higher-tier units as the run goes on. Tiers unlock by day, not by payment. Gold goes into foods, restocks, specials and savings instead.
 
@@ -344,7 +346,7 @@ Black Garlic and Wagyu mirror each other: one doubles the offensive statuses (Sp
 
 `npx tsx tools/mythic-check.ts` swaps each mythic into every slot of late-game plates. On random plates the best slot wins 71-77% against a 49% baseline (legendaries 52-68%), and the worst slot is 11-16 points lower, so placement matters. Black Garlic and Wagyu are build-arounds: on plates with 3+ foods of their flavors they lift the win rate by about 20 points.
 
-- Rarity is shown as a small pixel gem in the kitchen tile's corner (grey common, blue rare, purple epic, gold legendary, colour-shifting mythic) and named on the cookbook page and the battle hold card. Battles don't show it on the table, to keep the stat row to attack, HP and Crust. Rarity defaults from the tier (1-2 common, 3-4 rare, 5 epic, 6 legendary); set `rarity: 'epic'` on a food to override. `rarity: 'mythic'` keeps a food out of the market: mythics only arrive through the special cubby.
+- **Rarity is the tier.** Each buffet tier is its own rarity, and the player only ever sees the rarity: 1 common (grey), 2 uncommon (green), 3 rare (blue), 4 epic (purple), 5 legendary (gold), 6 exotic (red), plus mythic (colour-shifting) for the special-cubby foods. Items get a rarity from their tier the same way. It's shown as a small pixel gem in the corner of every food and item tile (its tooltip says from which day it shows up) and named on the cookbook page and the battle hold card; tier numbers are never shown. Battles don't show it on the table, to keep the stat row clear.
 - Bots place foods automatically from their abilities: foods whose abilities work from anywhere go to the back row, foods that buff neighbours look for company.
 
 ### Triggers

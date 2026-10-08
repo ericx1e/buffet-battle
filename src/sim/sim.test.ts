@@ -180,9 +180,11 @@ describe('food data', () => {
 
   it('rarity defaults from tier, and mythics stay out of the market', () => {
     expect(rarityOf(unitDef('egg'))).toBe('common');
+    expect(rarityOf(unitDef('popcorn'))).toBe('uncommon');
     expect(rarityOf(unitDef('cheese'))).toBe('rare');
-    expect(rarityOf(unitDef('steak'))).toBe('epic');
-    expect(rarityOf(unitDef('pizza'))).toBe('legendary');
+    expect(rarityOf(unitDef('mushroom'))).toBe('epic');
+    expect(rarityOf(unitDef('steak'))).toBe('legendary');
+    expect(rarityOf(unitDef('pizza'))).toBe('exotic');
     expect(rarityOf({ ...unitDef('egg'), rarity: 'mythic' })).toBe('mythic');
     expect(MARKET_UNITS.every((u) => rarityOf(u) !== 'mythic' && !u.token)).toBe(true);
   });

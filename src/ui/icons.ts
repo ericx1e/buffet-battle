@@ -400,9 +400,11 @@ export function patternIcon(pattern: string, scale = 1): string {
 /** Rarity colours: h highlight, a body, b shade, d deep shade. */
 const RARITY_COLORS: Record<string, Record<string, string>> = {
   common: { h: '#ffffff', a: '#d6d0c2', b: '#b2ab9c', d: '#857e70' },
+  uncommon: { h: '#e2ffd6', a: '#6cc95a', b: '#43a03c', d: '#2a6e28' },
   rare: { h: '#d8ecff', a: '#5aa0f0', b: '#3a78d0', d: '#24509a' },
   epic: { h: '#f2dcff', a: '#b47ce8', b: '#8a52d0', d: '#5e3296' },
   legendary: { h: '#fff6c8', a: '#f6cc4a', b: '#dca030', d: '#a8701c' },
+  exotic: { h: '#ffe0d0', a: '#f0704a', b: '#d2452a', d: '#922a1a' },
   mythic: { h: '#ffffff', a: '#ff8ad0', b: '#e0446a', d: '#9a2a6a' },
 };
 
