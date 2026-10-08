@@ -15,6 +15,7 @@ Drop pixel-art PNGs anywhere in this folder and the game uses them for the match
 - With `npm run dev` running, the browser console warns about any PNG here that doesn't match a food or item.
 - Draw at 32x32 with a transparent background; sprites are scaled up with nearest-neighbour so pixels stay crisp.
 - Draw units facing right. Enemy units are mirrored automatically in battle.
+- Draw everything from the same angle: a 3/4 view from slightly above, lit from the top left, sitting on a soft shadow at the bottom of the frame. Standing containers (jars, bottles, cups, buckets) show their top as an ellipse, their bottom edge curves toward you, and labels or stripes curve with the rim (the generator's `cylinder` helper does this). Things lying flat (coins, pretzels, steaks, slices) are squashed top to bottom and show their thickness below. Round foods are just balls.
 
 ## Generated art
 

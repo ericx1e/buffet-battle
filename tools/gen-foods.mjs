@@ -19,6 +19,29 @@ const C = {
   yolk: R('#f2a41e'), spore: R('#b99b72'), melonRed: R('#ec4a4a'), sponge: R('#f2cf8a'),
 };
 
+/**
+ * A standing cylinder seen from slightly above, like everything else in the game: its side (a radius that can taper
+ * from rxTop to rxBot), a bottom edge that curves toward you, and its top as an ellipse. The rim's curve also bends
+ * any band on the side: side(t, v) gets the column (-1 left .. 1 right) and v, the distance below the rim at that
+ * column, so a label drawn at v 5..9 curves like a real one. top(x, y) colours the top ellipse (null skips it).
+ */
+function cylinder(s, cx, top, bottom, rxTop, rxBot, ry, side, topFill) {
+  s.fill(cx - Math.max(rxTop, rxBot) - 1, top - ry - 1, cx + Math.max(rxTop, rxBot) + 1, bottom + ry + 1, (x, y) => {
+    const k = Math.max(0, Math.min(1, (y - top) / (bottom - top)));
+    const rx = rxTop + (rxBot - rxTop) * k;
+    const t = (x - cx) / rx;
+    if (Math.abs(t) > 1) return null;
+    const dip = ry * Math.sqrt(Math.max(0, 1 - t * t));
+    if (y < top + dip || y > bottom + dip) return null;
+    return side(t, y - (top + dip));
+  });
+  if (topFill) {
+    s.fill(cx - rxTop, top - ry, cx + rxTop, top + ry, (x, y) => (((x - cx) / rxTop) ** 2 + ((y - top) / ry) ** 2 <= 1 ? topFill(x, y) : null));
+  }
+}
+/** The usual side shading for a cylinder: lit on the left, a shade band and dark core on the right. */
+const cyl = (r, t) => (t < -0.62 ? r[1] : t > 0.78 ? r[4] : t > 0.45 ? r[3] : r[2]);
+
 const foods = {
   apple(s) {
     s.shadow(17, 29, 10, 2);
@@ -92,20 +115,27 @@ const foods = {
     s.line(18, 11, 17, 12, C.stem[3]);
   },
   pretzel(s) {
-    s.shadow(17, 28, 12, 2);
-    const heart = [[16, 25], [10, 21], [6, 16], [6, 10], [9, 7], [13, 7], [16, 10], [19, 7], [23, 7], [26, 10], [26, 16], [22, 21], [16, 25]];
+    s.shadow(17, 28, 13, 2);
+    // A pretzel lying on the table, seen from slightly above: squashed top to bottom, with its baked underside
+    // showing as a darker edge below.
+    const sq = ([x, y]) => [x, 17 + (y - 16) * 0.72];
+    const heart = [[16, 25], [10, 21], [6, 16], [6, 10], [9, 7], [13, 7], [16, 10], [19, 7], [23, 7], [26, 10], [26, 16], [22, 21], [16, 25]].map(sq);
+    const cross = [[[9, 23], [20, 12]], [[23, 23], [12, 12]]].map((l) => l.map(sq));
+    const under = R('#7e3f18');
+    s.tube(heart.map(([x, y]) => [x, y + 2]), 2.3, under);
+    for (const l of cross) s.tube(l.map(([x, y]) => [x, y + 2]), 2.1, under);
     s.tube(heart, 2.3, C.pretzel);
-    s.tube([[9, 23], [20, 12]], 2.1, C.pretzel);
-    s.tube([[23, 23], [12, 12]], 2.1, C.pretzel);
-    for (const [x, y] of [[8, 9], [12, 6], [20, 6], [25, 9], [6, 14], [26, 15], [15, 16], [18, 20], [11, 21]]) s.px(x, y, '#fbf6ee');
+    for (const l of cross) s.tube(l, 2.1, C.pretzel);
+    for (const [x, y] of [[8, 9], [12, 6], [20, 6], [25, 9], [6, 14], [26, 15], [15, 16], [18, 20], [11, 21]].map(sq)) s.px(x, Math.round(y), '#fbf6ee');
   },
   popcorn(s) {
     s.shadow(17, 29, 9, 2);
-    s.poly([[8, 14], [24, 14], [22, 28], [10, 28]], (x) => {
-      const stripe = Math.floor((x - 8) / 3) % 2 === 0 ? C.stripeRed : C.stripeWhite;
-      return x >= 21 ? stripe[3] : x <= 9 ? stripe[1] : stripe[2];
-    });
-    for (const [x, y, r] of [[10, 13, 3], [22, 13, 3], [14, 11, 3], [18, 12, 3], [12, 8, 3], [17, 7, 3], [21, 9, 3], [15, 4, 2]]) s.ball(x, y, r, r - 0.5, C.popcorn);
+    // A striped bucket seen from slightly above (curved bottom, the rim's back edge showing), heaped with popcorn.
+    cylinder(s, 16, 15, 27, 8.5, 6, 2.2, (t, v) => {
+      const stripe = Math.floor((t + 1) * 3.4) % 2 === 0 ? C.stripeRed : C.stripeWhite;
+      return t > 0.62 ? stripe[3] : t < -0.7 ? stripe[1] : stripe[2];
+    }, () => '#e8d6c0');
+    for (const [x, y, r] of [[10, 13, 3], [22, 13, 3], [14, 11, 3], [18, 12, 3], [12, 8, 3], [17, 7, 3], [21, 9, 3], [15, 4, 2], [16, 14, 3]]) s.ball(x, y, r, r - 0.5, C.popcorn);
   },
   onion(s) {
     s.shadow(17, 29, 9, 2);
@@ -212,17 +242,20 @@ const foods = {
   },
   steak(s) {
     s.shadow(17, 28, 13, 2);
-    s.ball(16, 18, 13, 8, C.steak, {
+    // A thick-cut steak lying on the table seen from slightly above: its seared side shows below the top, which has
+    // grill marks and a rim of fat.
+    s.ball(16, 20, 13, 7, R('#5a2614'));
+    s.ball(16, 17, 13, 7, C.steak, {
       tone: (nx, ny, x, y) => {
         if (nx * nx + ny * ny > 0.72 && ny < 0.3) return 0;
         return (x - y + 40) % 6 === 0 && Math.abs(nx) < 0.75 ? 2 : 0; // grill marks
       },
     });
-    s.fill(3, 9, 29, 27, (x, y) => {
-      const nx = (x - 16) / 13.35, ny = (y - 18) / 8.35, d = nx * nx + ny * ny;
+    s.fill(3, 9, 29, 25, (x, y) => {
+      const nx = (x - 16) / 13.35, ny = (y - 17) / 7.35, d = nx * nx + ny * ny;
       return d <= 1 && d > 0.74 && ny < 0.2 ? (nx < 0 ? C.fat[1] : C.fat[2]) : null;
     });
-    s.ball(23, 17, 3, 2, C.white);
+    s.ball(23, 16, 3, 1.6, C.white);
   },
   ghostPepper(s) {
     s.shadow(17, 29, 9, 2);
@@ -334,21 +367,24 @@ const foods = {
     for (const [x, y] of [[12, 13], [17, 12], [20, 15], [14, 16]]) { s.px(x, y, C.leaf[1]); s.px(x + 1, y, C.leaf[2]); }
   },
   coinChocolate(s) {
-    s.shadow(17, 28, 11, 2);
-    // A gold-foil coin with an embossed rim and star; a peeled edge shows the chocolate.
+    s.shadow(17, 27, 12, 2);
+    // Two gold-foil chocolate coins lying flat, seen from slightly above: squashed ellipses with a visible edge, the
+    // top one stamped with a star and peeled at one side to show the chocolate.
     const foil = R('#e5b93c');
-    // The coin's edge, then its flat face (lit evenly, not like a ball) with a stamped rim.
-    s.fill(4, 7, 28, 28, (x, y) => (((x - 16) / 11.4) ** 2 + ((y - 19) / 9.4) ** 2 <= 1 ? foil[4] : null));
-    s.fill(4, 5, 28, 27, (x, y) => {
-      const d = Math.hypot((x - 16) / 11.4, (y - 16) / 9.4);
-      if (d > 1) return null;
-      if (d > 0.72 && d < 0.86) return foil[3];
-      return x + y < 26 ? foil[1] : foil[2];
-    });
-    const star = [[16, 9], [18, 13], [22, 13], [19, 16], [20, 20], [16, 18], [12, 20], [13, 16], [10, 13], [14, 13]];
-    s.poly(star, foil[3]);
-    s.poly([[22, 21], [27, 16], [27, 21], [24, 25]], C.bean[2]);
-    s.line(22, 21, 27, 16, foil[0]);
+    const coin = (cx, cy) => {
+      s.fill(cx - 12, cy - 6, cx + 12, cy + 9, (x, y) => (((x - cx) / 11.4) ** 2 + ((y - cy - 3) / 5.2) ** 2 <= 1 ? (x < cx - 6 ? foil[3] : foil[4]) : null));
+      s.fill(cx - 12, cy - 6, cx + 12, cy + 6, (x, y) => {
+        const d = Math.hypot((x - cx) / 11.4, (y - cy) / 5.2);
+        if (d > 1) return null;
+        if (d > 0.74 && d < 0.88) return foil[3];
+        return x + y * 2 < cx + cy * 2 - 2 ? foil[1] : foil[2];
+      });
+    };
+    coin(14, 21);
+    coin(18, 15);
+    s.poly([[18, 11], [19, 14], [23, 14], [20, 16], [21, 19], [18, 17], [15, 19], [16, 16], [13, 14], [17, 14]], foil[3]);
+    s.poly([[24, 15], [29, 13], [29, 17], [26, 19]], C.bean[2]);
+    s.line(24, 15, 29, 13, foil[0]);
   },
   breadstick(s) {
     s.shadow(17, 28, 12, 2);
@@ -358,18 +394,13 @@ const foods = {
     for (const [x, y] of [[8, 20], [11, 10], [14, 22], [18, 12], [21, 20], [25, 10], [27, 15]]) s.px(x, y, '#fbf6ee');
   },
   mustard(s) {
-    s.shadow(17, 29, 7, 2);
-    // A yellow squeeze bottle with a red nozzle.
+    s.shadow(17, 29, 8, 2);
+    // A yellow squeeze bottle with a red flip cap and a band of label, seen from slightly above.
     const yellow = R('#f2c21e'), red = R('#d23a2c');
-    s.fill(10, 12, 22, 28, (x, y) => {
-      const t = (x - 16) / 6;
-      if (Math.abs(t) > 1 || (y > 26 && ((x - 16) / 6) ** 2 + ((y - 26) / 2) ** 2 > 1)) return null;
-      return t < -0.6 ? yellow[1] : t > 0.5 ? yellow[3] : yellow[2];
-    });
-    s.ball(16, 12, 6, 2, red, { clip: (x, y) => y <= 13 });
-    s.poly([[14, 11], [18, 11], [17, 3], [15, 3]], (x) => (x <= 15 ? red[1] : red[2]));
-    s.rect(12, 15, 1, 9, '#fff6c0');
-    s.rect(13, 19, 7, 3, red[2]);
+    cylinder(s, 16, 12, 27, 6, 6, 2, (t, v) => (v >= 7 && v <= 10 ? cyl(red, t) : cyl(yellow, t)), (x) => (x < 15 ? yellow[0] : yellow[1]));
+    cylinder(s, 16, 8, 11, 3, 3.5, 1.2, (t) => cyl(red, t), () => red[1]);
+    s.poly([[15, 8], [17, 8], [16.5, 2], [15.5, 2]], (x) => (x <= 15 ? red[1] : red[2]));
+    s.rect(11, 15, 1, 5, '#fff6c0');
   },
   cabbage(s) {
     s.shadow(17, 29, 12, 2);
@@ -431,14 +462,13 @@ const foods = {
     s.px(15, 16, C.stem[2]); s.px(18, 16, C.red[2]);
   },
   soySauce(s) {
-    s.shadow(17, 29, 7, 2);
-    // A teardrop glass dispenser of dark soy with a red cap.
+    s.shadow(17, 29, 8, 2);
+    // A teardrop glass dispenser of dark soy with a red cap whose top you can see.
     const glass = R('#4a2a1c'), cap = R('#d23a2c');
     s.ball(16, 22, 7, 7, glass);
-    s.tube([[16, 16], [16, 8]], 3, glass);
-    s.rect(13, 5, 7, 4, cap[2]);
-    s.rect(13, 5, 2, 4, cap[1]);
-    s.poly([[19, 6], [24, 3], [24, 5], [19, 8]], cap[2]);
+    s.tube([[16, 16], [16, 9]], 3, glass);
+    cylinder(s, 16, 6, 9, 3.5, 3.5, 1.4, (t) => cyl(cap, t), () => cap[1]);
+    s.poly([[19, 7], [24, 4], [24, 6], [19, 9]], cap[2]);
     s.rect(12, 19, 1, 5, '#a8735a');
   },
   blueCheese(s) {
@@ -472,10 +502,11 @@ const foods = {
     s.shadow(17, 29, 14, 2);
     // A lacquered box seen from slightly above: its dark front side with a red band, then the open top split into
     // rice with a plum, salmon, tamagoyaki and broccoli, foreshortened so the compartments are wider than tall.
-    s.poly([[3, 20], [29, 20], [29, 27], [3, 27]], (x, y) => (y === 20 ? '#5a3430' : x < 6 ? '#3a2224' : '#2c1a1c'));
+    s.poly([[3, 20], [29, 20], [29, 27], [3, 27]], (x) => (x < 6 ? '#3a2224' : '#24161a')); // the box's front, in shade
     s.rect(3, 23, 27, 1, '#b8434a');
-    s.poly([[5, 9], [27, 9], [29, 20], [3, 20]], '#4a2c2a');
-    s.poly([[7, 11], [16, 11], [16, 18], [6, 18]], (x, y) => (y === 11 ? '#fffdf6' : '#f2eee2'));
+    s.poly([[6, 8], [26, 8], [29, 20], [3, 20]], (x, y) => (y <= 9 ? '#5a3430' : '#7a4440')); // the lit top rim, narrower at the back
+    s.rect(3, 20, 27, 1, '#a65a50'); // the near edge catches the light
+    s.poly([[8, 10.5], [16, 10.5], [16, 18], [6, 18]], (x, y) => (y <= 11 ? '#fffdf6' : '#f2eee2'));
     s.ball(11, 14, 1.6, 1.2, R('#d6455a'));
     s.poly([[18, 11], [25, 11], [26, 14], [18, 14]], '#f08a5a');
     s.rect(18, 11, 7, 1, '#ffb08a');
@@ -484,14 +515,14 @@ const foods = {
     s.ball(25, 16.5, 2, 1.6, C.leaf);
   },
   smoothie(s) {
-    s.shadow(16, 30, 7, 1);
-    // A tall cup of berry smoothie with a striped straw and a lemon slice on the rim.
+    s.shadow(16, 30, 8, 2);
+    // A tall cup of berry smoothie seen from slightly above: the pink drink's surface inside the rim, a striped straw
+    // and a lemon slice on the rim.
     const berry = R('#f27aa8');
-    s.poly([[9, 10], [23, 10], [21, 29], [11, 29]], (x) => (x < 12 ? berry[1] : x > 20 ? berry[3] : berry[2]));
-    s.rect(9, 10, 15, 2, '#fbd0e0');
+    cylinder(s, 16, 10, 28, 7.5, 5.5, 2.2, (t) => cyl(berry, t), (x, y) => (((x - 16) / 6.2) ** 2 + ((y - 10.4) / 1.5) ** 2 <= 1 ? '#f9a8c8' : '#fff0f6'));
     s.tube([[18, 10], [21, 2]], 1, C.stripeWhite, (off, t) => (Math.floor(t * 8) % 2 ? C.stripeRed : C.stripeWhite));
     s.ball(9, 10, 3, 3, C.lemon, { clip: (x, y) => y <= 11 });
-    s.rect(11, 14, 1, 10, '#ffe0ec');
+    s.rect(11, 14, 1, 9, '#ffe0ec');
   },
   edamame(s) {
     s.shadow(17, 28, 11, 2);
@@ -600,12 +631,13 @@ const foods = {
   },
   wagyu(s) {
     s.shadow(17, 28, 13, 2);
-    // A raw slab of beef with heavy white marbling.
+    // A raw slab of beef with heavy white marbling, seen from slightly above so its cut side shows below the top.
     const beef = R('#d64b55');
     const marble = (x, y) => Math.sin(x * 1.1 + Math.sin(y * 0.9) * 2) + Math.sin(y * 1.6 - x * 0.3) > 1.1;
-    s.ball(16, 18, 13, 8, beef, { tone: (nx, ny, x, y) => (marble(x, y) ? -2 : 0) });
-    s.fill(3, 9, 29, 27, (x, y) => {
-      const nx = (x - 16) / 13.35, ny = (y - 18) / 8.35, d = nx * nx + ny * ny;
+    s.ball(16, 20, 13, 7, R('#9a2a34'), { tone: (nx, ny, x, y) => (marble(x, y + 3) ? -2 : 0) });
+    s.ball(16, 17, 13, 7, beef, { tone: (nx, ny, x, y) => (marble(x, y) ? -2 : 0) });
+    s.fill(3, 9, 29, 25, (x, y) => {
+      const nx = (x - 16) / 13.35, ny = (y - 17) / 7.35, d = nx * nx + ny * ny;
       return d <= 1 && d > 0.78 && ny < 0.1 ? C.fat[1] : null;
     });
   },
@@ -671,29 +703,24 @@ const foods = {
   },
   mapleSyrup(s) {
     s.shadow(17, 30, 9, 2);
-    // An amber glass jug of syrup with a loop handle and a red cap.
-    const amber = R('#c9761e');
+    // An amber glass jug of syrup with a loop handle and a red cap whose top you can see.
+    const amber = R('#c9761e'), red = R('#d23a2c');
     s.tube([[21, 13], [26, 16], [25, 22], [21, 23]], 1.2, amber);
     s.ball(15, 22, 8, 7, amber);
-    s.tube([[15, 15], [15, 8]], 2.6, amber);
-    s.rect(12, 4, 7, 4, R('#d23a2c')[2]);
-    s.rect(12, 4, 7, 1, R('#d23a2c')[1]);
+    s.tube([[15, 15], [15, 9]], 2.6, amber);
+    cylinder(s, 15, 5, 8, 3.5, 3.5, 1.4, (t) => cyl(red, t), () => red[1]);
     s.poly([[12, 20], [18, 20], [18, 26], [12, 26]], '#f3e3c3');
     s.px(15, 22, '#d6352a'); s.px(14, 23, '#d6352a'); s.px(16, 23, '#d6352a'); s.px(15, 24, '#d6352a');
   },
   peanutButter(s) {
     s.shadow(17, 30, 11, 2);
-    // An open jar of peanut butter with a swirl on top and a peanut on the label.
-    const glass = R('#c08a4a');
-    s.fill(7, 12, 25, 29, (x, y) => {
-      const t = (x - 16) / 9;
-      if (Math.abs(t) > 1 || (y > 27 && ((x - 16) / 9) ** 2 + ((y - 27) / 2) ** 2 > 1)) return null;
-      const r = y >= 17 && y <= 24 ? R('#d8394f') : glass;
-      return t < -0.65 ? r[1] : t > 0.55 ? r[3] : r[2];
-    });
-    s.ball(16, 12, 9, 3, R('#b47a3a'), { bias: 0.3, tone: (nx, ny, x, y) => ((x + y * 2) % 7 === 0 ? 1 : 0) });
-    s.ball(16, 20, 3, 2, R('#e0b070'));
-    s.rect(9, 14, 1, 10, '#e2b47a');
+    // An open jar of peanut butter seen from slightly above: a red label band curving round it, the glass rim, and
+    // the swirl on top.
+    const glass = R('#c08a4a'), label = R('#d8394f');
+    cylinder(s, 16, 12, 27, 9, 9, 3, (t, v) => (v >= 5 && v <= 11 ? cyl(label, t) : cyl(glass, t)), () => '#e9e2da');
+    s.ball(16, 12, 7.5, 2.2, R('#b47a3a'), { bias: 0.3, tone: (nx, ny, x, y) => ((x + y * 2) % 7 === 0 ? 1 : 0) });
+    s.ball(16, 21, 3, 2, R('#e0b070'));
+    s.rect(9, 15, 1, 8, '#e2b47a');
   },
   roastTurkey(s) {
     s.shadow(17, 29, 14, 2);
