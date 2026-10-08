@@ -311,10 +311,10 @@ export const UNITS: UnitDef[] = [
     text: 'Adjacent friends gain +{v} attack when their ability fires.',
     cooked: { text: 'Start of battle: your friends gain +2 attack.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', hp: 0, values: [2, 2, 2] }] },
     abilities: [] },
-  { id: 'roastTurkey', name: 'Roast Turkey', cookedName: 'Holiday Feast', emoji: '🦃', tier: 6, flavor: 'savory', attack: 3, hp: 12, values: [1, 2, 3],
-    text: 'End of day: 2 random friends gain +{v}/+{v}.',
+  { id: 'roastTurkey', name: 'Roast Turkey', cookedName: 'Holiday Feast', emoji: '🦃', tier: 6, flavor: 'savory', attack: 2, hp: 9, values: [1, 2, 3],
+    text: 'End of day: 3 random friends gain +{v}/+{v}.',
     cooked: { text: 'End of day: all your foods gain +1/+2.', abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'allFriends', hp: 2, values: [1, 1, 1] }] },
-    abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'randomFriends', count: 2 }] },
+    abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'randomFriends', count: 3 }] },
 
   // Mythic: never in the market; delivered by the special cubby late in a run (7 gold)
   // Each mythic bends one rule, and where it sits decides who it reaches (see Aura in types.ts). Cooked, the rule
