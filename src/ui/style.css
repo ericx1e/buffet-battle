@@ -829,13 +829,13 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .bit.proj-peppercorn { background: #3a2a22; width: 3px; height: 3px; margin: -1px 0 0 -1px; box-shadow: 0 0 0 1px #e4502a; }
 .bit.proj-takoyaki { background: #c88a3e; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; box-shadow: inset -1px -1px 0 #8a5530, inset 1px 1px 0 #ffe0a0; }
 
-/* Level in battle: the kitchen tile's badge, at battle size. Level 2 a gold number, cooked a star. */
-.f-lvl {
-  position: absolute; left: 6px; top: 2px; z-index: 3; min-width: 16px; height: 18px; padding: 0 3px;
-  display: grid; place-items: center; background: #2a1b14; border: 2px solid #ffd27a;
-  font: 400 20px/16px var(--pixel); color: #ffd27a; pointer-events: auto;
-}
-.f-lvl.cooked { border-color: #ff8a3d; background: #4a2010; }
+/* Level in battle: gold rank chevrons on the food's top-left, two for level 2, three (the top one orange) when cooked. */
+.f-lvl { position: absolute; left: 4px; top: 0; z-index: 3; pointer-events: auto; filter: drop-shadow(0 2px 0 rgba(42, 27, 20, 0.35)); }
+/* Battle layers: sprites, then stat rows (statuses as small chips stacked at the row's end), then pop-ups above all. */
+.f-sts { display: flex; flex-direction: column-reverse; align-self: flex-end; margin-left: 1px; }
+.f-tags .f-sts .stat-badge > b { font-size: 14px; line-height: 11px; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; padding: 0; }
+.f-pops { position: absolute; width: 64px; height: 64px; pointer-events: none; }
+.f-pops .pop.st { top: 26px; }
 /* Buffs: a sparkle (with a trail) flies from the food that gave it and bursts, then the gain pops over the food. */
 /* A 4-pointed star with a dark outline, trailed by two smaller ones. */
 .bit.orb {

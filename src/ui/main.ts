@@ -1305,15 +1305,15 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     <div class="fighter side-${side} ${cls} ${u.token ? 'token' : ''} ${o.cheer ? 'cheer' : ''}" data-inspect="${side}:${slot}"
       style="left:${ax - 32}px;top:${ay - 60}px;z-index:${z};--bob:${Math.round(bob)}ms" data-k="f:${id}" data-in="${o.opening ? 'drop' : 'pop'}" data-out="eaten">
       <div class="f-art">${unitArt(u.defId, u.level === 3)}</div>
-      ${u.level > 1 && !u.token ? `<div class="f-lvl ${u.level === 3 ? 'cooked' : ''}" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${u.level === 3 ? pix('starSmall', 2) : '2'}</div>` : ''}
-      ${popups}
+      ${u.level > 1 && !u.token ? `<div class="f-lvl" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${pix(u.level === 3 ? 'rank3' : 'rank2', 2)}</div>` : ''}
     </div>
+    ${popups ? `<div class="f-pops" style="left:${ax - 32}px;top:${ay - 60}px;z-index:${90 + z}">${popups}</div>` : ''}
     <div class="f-tags" style="left:${ax - 45}px;top:${ay - 8}px;z-index:${40 + z}" data-k="ft:${id}" data-in="fade" data-out="fade-out">
       ${patternOf(u.defId) ? `<span class="f-pattern">${patternIcon(patternOf(u.defId)!, 2)}</span>` : ''}${statBadge('atk', u.attack, 2, `data-vk="fa:${id}" data-v="${u.attack}"`)}${statBadge('hp', u.hp, 2, `data-vk="fh:${id}" data-v="${u.hp}"`, hurt)}${
-        u.crust ? statBadge('crust', u.crust, 2, `data-k="fc:${id}" data-vk="fc:${id}" data-v="${u.crust}"`) : ''}
+''}${
+        u.crust || u.burn || u.rot || u.chill ? `<span class="f-sts">${(['crust', 'burn', 'rot', 'chill'] as const).filter((k) => u[k] > 0).map((k) => statBadge(k, u[k], 1, `data-k="f${k}:${id}" data-vk="f${k}:${id}" data-v="${u[k]}"`)).join('')}</span>` : ''}
     </div>
-    ${u.burn || u.rot || u.chill ? `<div class="f-status" style="left:${ax - 45}px;top:${ay - 32}px;z-index:${40 + z}" data-k="fs:${id}" data-in="fade" data-out="fade-out">${
-      (['burn', 'rot', 'chill'] as const).filter((k) => u[k] > 0).map((k) => statBadge(k, u[k], 2, `data-k="f${k}:${id}" data-vk="f${k}:${id}" data-v="${u[k]}"`)).join('')}</div>` : ''}`;
+`;
 }
 
 /** Team plaque: the plate's name and one pip per food still on it. */

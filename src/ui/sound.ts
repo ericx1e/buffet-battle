@@ -1,6 +1,6 @@
 // Sound: short recorded effects (Kenney's CC0 Impact Sounds, RPG Audio, Interface Sounds and Music Jingles, converted
-// to small WAVs in ./sfx) for a kitchen that sounds like one: plates set down, coins, a knife's chop, punches, a pot
-// lid, the fridge door, page flips, and steel-drum and NES jingles for rewards. Only Burn's sizzle is synthesized.
+// to WAVs in ./sfx at full quality, all normalized to the same peak) for a kitchen that sounds like one: plates set down, coins, a knife's chop, punches, a pot
+// lid, the fridge door, page flips, soft food thumps, and warm steel-drum and pizzicato jingles for rewards. Only Burn's sizzle is synthesized.
 // Effects with several takes (plate_0, plate_1...) pick one at random, and every sound varies its pitch a little, so
 // repeats don't drone. Audio starts on the first tap or click (browsers require it) and can be muted; the choice is
 // remembered.
@@ -45,10 +45,10 @@ export function unlockAudio() {
   prime();
   // A gentle compressor keeps a busy battle frame from clipping.
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -16;
-  comp.ratio.value = 4;
+  comp.threshold.value = -8; // only catches a pile-up of sounds; single sounds pass untouched
+  comp.ratio.value = 3;
   out = ctx.createGain();
-  out.gain.value = 0.7;
+  out.gain.value = 0.9;
   out.connect(comp).connect(ctx.destination);
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noiseBuf.getChannelData(0);
@@ -122,67 +122,73 @@ function sizzle(at: number, d = 0.35, v = 1) {
   for (let i = 0; i < 7; i++) burst(at + Math.random() * d, 0.012, 0.05 * v, 2500);
 }
 
-/** Each sound, given its start time. Volumes are balanced by ear-free rule of thumb: UI quiet, impacts mid, jingles a touch below. */
+/** Each sound, given its start time. Every file peaks at the same level, so these volumes set the mix: taps and UI soft, impacts up front, jingles between. */
 const SOUNDS = {
   // kitchen
-  select: (s: number) => play('tick', s, { v: 0.35 }),
+  select: (s: number) => play('tick', s, { v: 0.4 }),
   page: (s: number) => play('page', s, { v: 0.35, rate: 1.1 }),
-  pick: (s: number) => play('pick', s, { v: 0.35 }),
-  place: (s: number) => play('plate', s, { v: 0.45 }),
+  pick: (s: number) => play('pick', s, { v: 0.4 }),
+  place: (s: number) => play('plate', s, { v: 0.6 }),
   buy: (s: number) => {
-    play('coins', s, { v: 0.5 });
-    play('plate', s + 0.08, { v: 0.35 });
+    play('coins', s, { v: 0.55 });
+    play('plate', s + 0.08, { v: 0.4 });
   },
-  coin: (s: number) => play('glass', s, { v: 0.3, rate: 1.4 }),
+  coin: (s: number) => play('glass', s, { v: 0.35, rate: 1.3 }),
   sell: (s: number) => {
-    play('thunk', s, { v: 0.6 });
-    play('coins2', s + 0.1, { v: 0.9 });
+    play('thunk', s, { v: 0.7 });
+    play('coins2', s + 0.1, { v: 0.5 });
   },
   merge: (s: number) => {
-    play('squish', s, { v: 0.6 });
-    play('plate', s + 0.05, { v: 0.3 });
+    play('squish', s, { v: 0.7 });
+    play('plate', s + 0.05, { v: 0.4 });
   },
   levelUp: (s: number) => play('jLevel', s, { v: 0.55 }),
   cook: (s: number) => {
     sizzle(s, 0.4, 0.8);
-    play('jCook', s + 0.05, { v: 0.45 });
+    play('jCook', s + 0.05, { v: 0.55 });
   },
-  freeze: (s: number) => play('fridge', s, { v: 0.45 }),
-  item: (s: number) => play('drop', s, { v: 0.5 }),
+  freeze: (s: number) => play('fridge', s, { v: 0.6 }),
+  item: (s: number) => play('drop', s, { v: 0.55 }),
   reroll: (s: number) => {
-    play('clatter', s, { v: 0.35 });
-    play('clatter', s + 0.07, { v: 0.25, rate: 1.15 });
+    play('clatter', s, { v: 0.45 });
+    play('clatter', s + 0.07, { v: 0.3, rate: 1.1 });
   },
-  bell: (s: number) => play('bell', s, { v: 0.4, rate: 1.6 }),
-  deny: (s: number) => play('error', s, { v: 0.4 }),
-  grow: (s: number) => play('ding2', s, { v: 0.25, rate: 1.2 }),
+  bell: (s: number) => play('bell', s, { v: 0.45, rate: 1.5 }),
+  deny: (s: number) => {
+    play('knock', s, { v: 0.5, rate: 0.9 }); // knock knock, on wood
+    play('knock', s + 0.12, { v: 0.45, rate: 0.85 });
+  },
+  grow: (s: number) => play('ding2', s, { v: 0.3, rate: 1.2 }),
   // battle
-  hit: (s: number) => play('punch', s, { v: 0.5 }),
-  bigHit: (s: number) => play('punchBig', s, { v: 0.6 }),
-  nom: (s: number) => {
-    play('chop', s, { v: 0.5 });
-    play('squish', s + 0.08, { v: 0.4, rate: 0.8 });
+  hit: (s: number) => play('thump', s, { v: 0.75, rate: 1.1 }),
+  bigHit: (s: number) => {
+    play('punchBig', s, { v: 0.6 });
+    play('thump', s, { v: 0.5, rate: 0.9 });
   },
-  heal: (s: number) => play('ding', s, { v: 0.25, rate: 1.1 }),
-  buff: (s: number) => play('pop', s, { v: 0.4, rate: 1.1 }),
-  debuff: (s: number) => play('knock', s, { v: 0.35, rate: 0.8 }),
-  crust: (s: number) => play('knock', s, { v: 0.35, rate: 1.2 }),
+  nom: (s: number) => {
+    play('chop', s, { v: 0.6 });
+    play('squish', s + 0.08, { v: 0.45, rate: 0.85 });
+  },
+  heal: (s: number) => play('ding', s, { v: 0.3, rate: 1.1 }),
+  buff: (s: number) => play('pop', s, { v: 0.5, rate: 1.1 }),
+  debuff: (s: number) => play('knock', s, { v: 0.4, rate: 0.8 }),
+  crust: (s: number) => play('knock', s, { v: 0.4, rate: 1.2 }),
   burn: (s: number) => sizzle(s),
-  rot: (s: number) => play('squish', s, { v: 0.45, rate: 0.7 }),
-  chill: (s: number) => play('glass', s, { v: 0.3, rate: 1.6 }),
-  block: (s: number) => play('pot', s, { v: 0.3, rate: 1.2 }),
-  summon: (s: number) => play('pop', s, { v: 0.45, rate: 1.3 }),
-  ability: (s: number) => play('tick', s, { v: 0.25 }),
-  pew: (s: number) => play('swish', s, { v: 0.7, rate: 1.3 }),
+  rot: (s: number) => play('squish', s, { v: 0.5, rate: 0.75 }),
+  chill: (s: number) => play('glass', s, { v: 0.35, rate: 1.5 }),
+  block: (s: number) => play('pot', s, { v: 0.35, rate: 1.2 }),
+  summon: (s: number) => play('pop', s, { v: 0.5, rate: 1.3 }),
+  ability: (s: number) => play('tick', s, { v: 0.3 }),
+  pew: (s: number) => play('swish', s, { v: 0.45, rate: 1.3 }),
   cooked: (s: number) => {
     sizzle(s, 0.2, 0.6);
-    play('ding', s, { v: 0.3, rate: 1.3 });
+    play('ding', s, { v: 0.35, rate: 1.3 });
   },
-  win: (s: number) => play('jWin', s, { v: 0.45 }),
+  win: (s: number) => play('jWin', s, { v: 0.55 }),
   lose: (s: number) => play('jLose', s, { v: 0.5 }),
-  draw: (s: number) => play('jDraw', s, { v: 0.4 }),
-  lifeLost: (s: number) => play('jLife', s, { v: 0.55 }),
-  trophy: (s: number) => play('jTrophy', s, { v: 0.55 }),
+  draw: (s: number) => play('jDraw', s, { v: 0.45 }),
+  lifeLost: (s: number) => play('jLife', s, { v: 0.5 }),
+  trophy: (s: number) => play('jTrophy', s, { v: 0.5 }),
 };
 
 export type Sfx = keyof typeof SOUNDS;

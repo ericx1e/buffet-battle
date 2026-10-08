@@ -1,6 +1,7 @@
-// Turns .ogg sound effects (Kenney's packs ship .ogg) into the small WAVs in src/ui/sfx/: decoded in Chrome, mixed to
-// 22.05 kHz mono 16-bit, silence trimmed, with a short fade at the end. WAV plays everywhere, iPhone included.
-// Needs playwright-core and Chrome. Usage:
+// Turns .ogg sound effects (Kenney's packs ship .ogg) into the WAVs in src/ui/sfx/: decoded in Chrome, mixed to mono
+// 16-bit at the source's own sample rate (full quality), normalized so every sound peaks at the same level, silence
+// trimmed, with a short fade at the end. WAV plays everywhere, iPhone included.
+// Needs Chrome and playwright-core (npm i --no-save playwright-core). Usage:
 //   node tools/import-sfx.mjs <folder of .ogg files> src/ui/sfx plate_0=impactPlate_light_000.ogg bell=impactBell_heavy_000.ogg ...
 //   node tools/import-sfx.mjs <folder> --info <name=file.ogg ...>   (lengths and peaks only)
 // A name ending in _0, _1... is one take of an effect; the game picks a take at random.
@@ -23,7 +24,7 @@ for (const j of jobs) {
     const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
     const ac = new AudioContext();
     const buf = await ac.decodeAudioData(bytes.buffer);
-    const rate = 22050;
+    const rate = buf.sampleRate; // keep every frequency: resampling down made the sounds dull and distant
     const off = new OfflineAudioContext(1, Math.ceil(buf.duration * rate), rate);
     const s = off.createBufferSource();
     s.buffer = buf;
@@ -32,6 +33,10 @@ for (const j of jobs) {
     s.connect(g).connect(off.destination);
     s.start();
     const out = (await off.startRendering()).getChannelData(0);
+    // Normalize: every sound peaks at -1 dB, so volumes are set in one place (sound.ts), not by the source files.
+    let top = 0;
+    for (let i = 0; i < out.length; i++) top = Math.max(top, Math.abs(out[i]));
+    if (top > 0) for (let i = 0; i < out.length; i++) out[i] *= 0.89 / top;
     // Trim silence at both ends, with a short fade at the end.
     let a = 0, z = out.length - 1;
     while (a < z && Math.abs(out[a]) < 0.004) a++;
