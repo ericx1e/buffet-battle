@@ -228,6 +228,20 @@ describe('projectiles and patterns', () => {
     expect(lostTurn1(r)[0]).toBe(2 + 1); // the bean for half its 3 attack (rounded up), plus our wall's attack
   });
 
+  it('an opening throw flies once, then the food attacks like any other; a volley flies every turn', () => {
+    const shots = texts(simulateBattle(plate(inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1)).match(/t_shot shoots/g) ?? [];
+    expect(shots.length).toBe(1);
+    const volleys = texts(simulateBattle(plate(inst(wall), null, null, inst(thrower('t_volley', 'volley'))), plate(inst(wall)), 1)).match(/t_volley volleys/g) ?? [];
+    expect(volleys.length).toBeGreaterThan(1);
+  });
+
+  it('after its opening shot, a front-row thrower attacks in melee', () => {
+    const r = simulateBattle(plate(inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1);
+    const hpAfter = (round: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[1][0]!.hp;
+    expect(hpAfter(1) - hpAfter(2)).toBe(3); // its full attack, in melee
+    expect(texts(r)).not.toMatch(/Turn 2 · t_shot shoots/);
+  });
+
   it('a lob hits the enemy back row of its lane', () => {
     const r = simulateBattle(plate(inst(wall), null, null, inst(thrower('t_lob', 'lob'))), plate(inst(wall), null, null, inst(wall)), 1);
     expect(lostTurn1(r)[3]).toBe(1); // half of 2

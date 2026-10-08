@@ -7,6 +7,7 @@ import {
   type Flavor,
   type HeldItemId,
   type Level,
+  OPENING_THROWS,
   PROJECTILES,
   type Plate,
   PLATE_SIZE,
@@ -416,9 +417,16 @@ class Battle {
     }
   }
 
-  /** Whether a food throws projectiles (from either row) instead of attacking with the front row. */
+  /** Whether a food throws projectiles (from either row) instead of attacking with the front row, every turn. */
   private throws(u: BattleUnit): boolean {
-    return PROJECTILES.includes(unitDef(u.defId).attackPattern ?? 'single');
+    const p = unitDef(u.defId).attackPattern ?? 'single';
+    return PROJECTILES.includes(p) && !OPENING_THROWS.includes(p);
+  }
+
+  /** Whether a food throws this turn: every turn for a volley, only the first turn for an opening throw. */
+  private throwsNow(u: BattleUnit): boolean {
+    const p = unitDef(u.defId).attackPattern ?? 'single';
+    return PROJECTILES.includes(p) && (!OPENING_THROWS.includes(p) || this.round === 1);
   }
 
   /** An attack's damage and how many times it goes off: first-attack bonuses, attack-twice, and Sour x6. */
@@ -440,7 +448,8 @@ class Battle {
   }
 
   /**
-   * Projectiles: every thrower, front or back row, lane by lane, before the front rows attack. Each throw is its own
+   * Projectiles: every thrower, front or back row, lane by lane, before the front rows attack (opening throws on the
+   * first turn only). Each throw is its own
    * moment on screen, so you can follow what flew where.
    */
   private shootStep() {
@@ -449,7 +458,7 @@ class Battle {
       for (const side of order) {
         for (const row of [0, 1]) {
           const u = this.plates[side][slotAt(lane, row)];
-          if (!u || !this.throws(u) || !this.onPlate(u)) continue;
+          if (!u || !this.throwsNow(u) || !this.onPlate(u)) continue;
           if (this.over()) return;
           if (u.chill > 0) {
             u.chill--;

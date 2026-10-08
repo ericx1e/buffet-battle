@@ -184,7 +184,7 @@ The battle is shown from the side: your plate on the left facing right, the enem
 
 ### Attack patterns
 
-Most foods hit the enemy across. A few attack in their own shape; secondary targets take half damage (at least 1). Projectile foods throw from either row, before the front rows attack, so a back-row food can deal damage too; every throw hits for half the thrower's attack (rounded up), and the throw is the food's whole identity (no extra ability); each throw is its own moment on screen, with the projectile (bean, pit, peppercorn, ball) arcing to every food it hits. In battle, a patterned food wears a tiny map of the enemy plate next to its stats (red slots take full damage, orange take part); when it attacks, the pattern's name pops up over it ("Pierce!"), every food it lands on gets target brackets, and sparks carry on from the main target to the others.
+Most foods hit the enemy across. A few attack in their own shape; secondary targets take half damage (at least 1). Projectile foods throw from either row, before the front rows attack, so a back-row food can deal damage too; every throw hits for half the thrower's attack (rounded up). Most are **opening throws**: they fly once, on the first turn, and after that the food attacks like any other (from the front row). Only Takoyaki, at tier 5, volleys every turn instead of attacking. Each throw is its own moment on screen, with the projectile (bean, pit, peppercorn, ball) arcing to every food it hits. Patterns aren't drawn next to a food's stats (its text says what it does); when it attacks, the pattern's name pops up over it ("Pierce!"), every food it lands on gets target brackets, and sparks carry on from the main target to the others.
 
 | Pattern | Food | Shape |
 | --- | --- | --- |
@@ -194,10 +194,10 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 | `fork` | Hot Pot | Hits both other lanes instead of its own (from a side lane: the middle and the far side) |
 | `snipe` | (none yet) | Hits the back row of its lane first |
 | `escalate` | Spaghetti | One target in turns 1-2, the whole enemy front row in turns 3-4, every enemy from turn 5 |
-| `shot` (projectile) | Edamame | From either row: the enemy in its lane, for half |
-| `lob` (projectile) | Olive | From either row: the enemy back row of its lane first, for half |
-| `spray` (projectile) | Peppercorns | From either row: 3 at random enemies, half each; Spicy bonuses Burn with every one |
-| `volley` (projectile) | Takoyaki | From either row: every enemy in the front row, half each |
+| `shot` (opening throw) | Edamame | First turn only, from either row: the enemy in its lane, for half |
+| `lob` (opening throw) | Olive | First turn only, from either row: the enemy back row of its lane first, for half |
+| `spray` (opening throw) | Peppercorns | First turn only, from either row: 3 at random enemies, half each; Spicy bonuses Burn with every one |
+| `volley` (projectile) | Takoyaki | Every turn, from either row, instead of attacking: every enemy in the front row, half each |
 
 ### Statuses
 
@@ -456,7 +456,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 1 | Coin Chocolate | Sweet | 1/4 | 3 | Piggy bank: end of day, +1/1/2 sell value, for {d} days. | **Gold Truffle Coin**: End of day: +1 gold tomorrow, for 8 days. |
 | 1 | Breadstick | Salty | 2/4 | 3 | Bought: give a random friend +1/+1, +2/+2 or +3/+3. | **Grissini Bundle**: First attack each battle deals +3 damage. |
 | 1 | Bean Sprout | Savory | 1/4 | 3 | Grows its neighbour: end of day, the friend ahead gains +1/+1 or +2/+2, for {d} days. | **Sprout Salad**: End of day: adjacent friends gain +1/+1, for 8 days. |
-| 1 | Edamame | Savory | 3/5 | 3 | Shoots from either row: a bean at the enemy in its lane, for half its attack. *(shot attack)* | **Garlic Edamame**: Shoots twice every turn. |
+| 1 | Edamame | Savory | 3/5 | 3 | Opening shot: on the first turn, from either row, a bean at the enemy in its lane for half its attack. *(shot attack)* | **Garlic Edamame**: Its opening shot fires twice. |
 | 2 | Popcorn | Salty | 1/8 | 3 | Hit: pop a 1/2 Kernel into an empty slot (up to 1/2/3 times per battle). | **Kettle Corn**: Hit: deal 1 damage to the attacker. |
 | 2 | Onion | Sour | 2/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack (they cry). | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
 | 2 | Garlic | Spicy | 2/5 | 3 | Start of battle: the enemy across and the enemies in the neighbouring lanes Burn 1/2/3, +1 for each other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 2. |
@@ -468,7 +468,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Sourdough Starter | Sour | 2/6 | 3 | Sell: everything you buy for the rest of the day gets +1/+1 or +2/+2. | **Sourdough Loaf**: Start of day: everything you buy today gets +1/+1. |
 | 2 | Mochi | Sweet | 1/7 | 3 | Chewy: when hit, gain +1/2/3 HP (up to 4 times a battle). | **Daifuku**: Eaten: adjacent friends gain +4 HP. |
 | 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP, for {d} days. | **Country Loaf**: End of day: adjacent friends gain +2 HP, for 8 days. |
-| 2 | Olive | Salty | 3/6 | 3 | Lobs from either row: its pit hits the enemy back row in its lane (the front if the back is empty), for half its attack. Start of battle: the friend ahead gains 2/3/4 Crust. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
+| 2 | Olive | Salty | 3/6 | 3 | Opening lob: on the first turn, from either row, its pit hits the enemy back row in its lane (the front if the back is empty) for half its attack. Start of battle: the friend ahead gains 2/3/4 Crust. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
 | 2 | Hot Cocoa | Sweet | 1/7 | 3 | Whenever an adjacent friend is healed, it gains +1/1/2 attack (up to 4 times a battle). | **Cocoa Deluxe**: Every turn: heal adjacent friends 1. |
 | 3 | Cheese | Savory | 2/8 | 4 | Ages: end of day, +1/+1 or +2/+2, twice as much next to a Savory friend, for {d} days. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
 | 3 | Wasabi | Spicy | 3/7 | 4 | First attack each battle deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
@@ -481,7 +481,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Yogurt | Sour | 2/8 | 4 | Live cultures: start of day, +1/2/3 HP, twice as much next to a Sour friend, for {d} days. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
 | 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/1/2 attack, twice as much next to a Spicy friend, for {d} days. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
 | 3 | Maple Syrup | Sweet | 2/8 | 4 | End of day: 2 random friends gain +1/1/2 HP, for {d} days. | **Maple Taffy**: Start of battle: your friends gain +3 HP. |
-| 3 | Peppercorns | Spicy | 1/6 | 4 | Sprays from either row: 3 peppercorns at random enemies, each for half its attack (Spicy bonuses Burn with each one). *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
+| 3 | Peppercorns | Spicy | 2/7 | 4 | Opening spray: on the first turn, from either row, 3 peppercorns at random enemies, each for half its attack (Spicy bonuses Burn with each one). *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 2/11 | 4 | Crackles: whenever Crust blocks a hit on it or an adjacent friend, the attacker takes 2/3/4 damage (up to 6 times a battle). | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 2/8 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Mushroom | Savory | 2/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore into an empty slot. | **Risotto**: Eaten: summon two 4/4 Spores. |
@@ -499,7 +499,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 5 | Durian | Sour | 4/16 | 5 | Hit: the stench makes every enemy in the front row Rot 1/1/2 (up to 3 times a battle). | **Durian Crepe**: Start of battle: all enemies Rot 2. |
 | 5 | Caviar | Salty | 3/11 | 5 | Raises your interest cap by 1/2/3. Hit: gain 2/3/4 Crust. | **Blini Platter**: End of day: +3 gold tomorrow. Start of battle: your friends gain 2 Crust. |
 | 5 | Spaghetti | Savory | 3/14 | 5 | Escalating attack: one target, then the whole front row from turn 3, then every enemy from turn 5 (extra targets take half). Start of battle: adjacent friends gain +1/+1 or +2/+2. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
-| 5 | Takoyaki | Savory | 2/12 | 5 | Volleys from either row: a ball at every enemy in the front row, each for half its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
+| 5 | Takoyaki | Savory | 3/12 | 5 | Volleys every turn, from either row, instead of attacking: a ball at every enemy in the front row, each for half its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
 | 6 | Pizza | Savory | 4/15 | 5 | Start of battle: adjacent friends gain +1/2/3 HP for each different flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 for each different flavor on your plate. |
 | 6 | Hot Pot | Spicy | 4/18 | 5 | Fork attack: hits both other lanes instead of its own. Start of battle: the enemy front row Burns 1/2/3. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
 | 6 | Birthday Cake | Sweet | 3/20 | 5 | Your heals are +1. Eaten: summon three 2/2, 3/3 or 4/4 Cake Slices. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
@@ -521,7 +521,7 @@ From 400 bot runs on the current numbers (the bots don't save for interest, chas
 
 - Sour was strongest through attack penalties more than Rot itself (simulating Rot capped at 2 or 3, or ticking every other turn, barely moved it): Sour x4 no longer lowers attack, Grapefruit no longer stacks with Sour friends, and Rot stacks to 3. Sour foods now sit around 50-64%.
 - Growth gated by days brought the scaling foods back in line (Cheese 64% to 54%, Potato 61% to 53%, Roast Turkey 63% to 55%).
-- The top is now Birthday Cake, Pineapple, Peppercorns, Durian, Hot Pot and Takoyaki at 62-65%. Projectile foods are strong because they add an attacker from the back row; watch them.
+- The top is now Birthday Cake, Pineapple, Peppercorns, Durian, Hot Pot and Takoyaki at 62-65%. Projectile foods were strong because they added an attacker from the back row every turn; now Edamame, Olive and Peppercorns throw once (opening throws) and only Takoyaki throws every turn (Edamame 59%, Takoyaki 58%, Olive 51%, Peppercorns 43%).
 - The flavor bridges read low in random bot plates (Pepperoni ~43%, Pork Crackling ~46%, Hot Cocoa ~48%): they shine in the plates built around them, which bots don't build.
 - Flavor shares of winning plates: spicy is lowest (~14%), savory highest (~24%).
 - Battles average about 7 turns and about 2% end in a draw.

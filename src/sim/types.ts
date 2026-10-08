@@ -34,12 +34,15 @@ export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
  * row in rounds 3-4, every enemy from round 5 (secondary targets take half).
  * Projectiles (see PROJECTILES) are thrown from either row, before the front rows attack, and always hit for half
  * the thrower's attack. shot: the enemy in its lane. lob: the back row of its lane first. spray: 3 at random
- * enemies. volley: every enemy in the front row.
+ * enemies. volley: every enemy in the front row. Opening throws (see OPENING_THROWS) fly once, on the first turn;
+ * after that the food attacks like any other. A volley flies every turn instead of attacking.
  */
 export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate' | 'shot' | 'lob' | 'spray' | 'volley';
 export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate', 'shot', 'lob', 'spray', 'volley'];
 /** Patterns thrown from either row. */
 export const PROJECTILES: readonly AttackPattern[] = ['shot', 'lob', 'spray', 'volley'];
+/** Projectiles thrown once, on the first turn; the food then attacks normally. The rest are thrown every turn. */
+export const OPENING_THROWS: readonly AttackPattern[] = ['shot', 'lob', 'spray'];
 
 export type Tier = 1 | 2 | 3 | 4 | 5 | 6;
 export type Level = 1 | 2 | 3;

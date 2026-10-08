@@ -763,7 +763,6 @@ body[data-screen='battle'] {
 @keyframes mythic-hue { 0% { filter: none; } 25% { filter: hue-rotate(90deg); } 50% { filter: hue-rotate(180deg); } 75% { filter: hue-rotate(270deg); } }
 
 /* Battle: an attack pattern badge, a tiny map of the enemy plate with the slots the attack hits. */
-.f-pattern { display: flex; align-self: center; margin-right: 1px; }
 /* Attack pattern callout over the attacker: big, outlined, in the attack colour. */
 .floater.callout { font-size: 20px; color: #ffd23f; text-shadow: 2px 0 #2a1b14, -2px 0 #2a1b14, 0 2px #2a1b14, 0 -2px #2a1b14, 2px 2px #2a1b14; z-index: 95; }
 

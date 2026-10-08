@@ -42,7 +42,7 @@ import {
 import { type AttackPattern, FLAVORS, type Flavor, type HeldItemId, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { itemArt, propArt, specialArt, unitArt } from './art';
-import { gemIcon, gridUrl, patternIcon, pix, statBadge } from './icons';
+import { gemIcon, gridUrl, pix, statBadge } from './icons';
 import PROPS from './kitchen-props.json';
 import { pickOpponent, saveGhost } from './ghosts';
 import LAYOUT from './kitchen-layout.json';
@@ -1309,7 +1309,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     </div>
     ${popups ? `<div class="f-pops" style="left:${ax - 32}px;top:${ay - 60}px;z-index:${90 + z}">${popups}</div>` : ''}
     <div class="f-tags" style="left:${ax - 45}px;top:${ay - 8}px;z-index:${40 + z}" data-k="ft:${id}" data-in="fade" data-out="fade-out">
-      ${patternOf(u.defId) ? `<span class="f-pattern">${patternIcon(patternOf(u.defId)!, 2)}</span>` : ''}${statBadge('atk', u.attack, 2, `data-vk="fa:${id}" data-v="${u.attack}"`)}${statBadge('hp', u.hp, 2, `data-vk="fh:${id}" data-v="${u.hp}"`, hurt)}${
+      ${statBadge('atk', u.attack, 2, `data-vk="fa:${id}" data-v="${u.attack}"`)}${statBadge('hp', u.hp, 2, `data-vk="fh:${id}" data-v="${u.hp}"`, hurt)}${
 ''}${
         u.crust || u.burn || u.rot || u.chill ? `<span class="f-sts">${(['crust', 'burn', 'rot', 'chill'] as const).filter((k) => u[k] > 0).map((k) => statBadge(k, u[k], 1, `data-k="f${k}:${id}" data-vk="f${k}:${id}" data-v="${u[k]}"`)).join('')}</span>` : ''}
     </div>
