@@ -24,7 +24,6 @@ import {
   interestOn,
   INCOME,
   INTEREST_STEP,
-  BASE_INTEREST_CAP,
   isOver,
   migrateRun,
   moveUnit,
@@ -1063,16 +1062,10 @@ function interestWidget(): string {
     <p>You have <b>${run.gold}</b> now: <b>+${earn}</b> interest tomorrow${toNext ? `. Keep <b>${toNext}</b> more for +${earn + 1}` : ' (the most you can earn)'}.</p>
     <p class="interest-coins">${coins}</p>
     <p class="dim">Tomorrow: +${INCOME} income +${earn} interest. Fortune Cookie and Caviar raise the cap.</p>`;
-  // The rule at a glance: a coin per +1 interest, labelled with the gold that earns it (5, 10, 15), lit once you have
-  // it. Coins past the base 3 come from foods that raise the cap.
-  const [ix, iy] = LAYOUT.interestSteps;
-  const steps = Array.from({ length: cap }, (_, i) => {
-    const on = run.gold >= INTEREST_STEP * (i + 1);
-    return `<span class="istep ${on ? 'on' : ''} ${i >= BASE_INTEREST_CAP ? 'bonus' : ''}" data-vk="istep:${i}" data-v="${on ? 1 : 0}" data-va="hop">${pix(on ? 'coin' : 'coinOff')}<b>${INTEREST_STEP * (i + 1)}</b></span>`;
-  }).join('');
-  return `<div class="interest-steps" style="left:${ix}px;top:${iy}px" ${tipBox(`${pix('coin')} Interest`, body)}>${steps}</div>
-    <div class="interest ${earn ? '' : 'none'}" style="${box(LAYOUT.interest)}" ${tipBox(`${pix('coin')} Interest`, body)}
-      data-vk="interest" data-v="${earn}" data-va="hop">+${earn}g interest${earn >= cap ? ' · max' : ''}</div>`;
+  // One sign over the jar: what you'll get tomorrow, and what keeping more gold would do.
+  const next = earn >= cap ? 'max reached' : `next +1 at ${INTEREST_STEP * (earn + 1)}g`;
+  return `<div class="interest ${earn ? '' : 'none'}" style="${box(LAYOUT.interest)}" ${tipBox(`${pix('coin')} Interest`, body)}
+      data-vk="interest" data-v="${earn}" data-va="hop"><b>+${earn}g interest</b><span>${next}</span></div>`;
 }
 
 /** Extra lines about a food beyond its ability text: growth days left, interest, gained sell value and flavors. */

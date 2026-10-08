@@ -699,6 +699,11 @@ body[data-screen='battle'] {
   background: #3f7a3a; border: 1px solid #2a1b14; cursor: help;
 }
 .interest.none { background: #7a6a5e; }
+/* Two lines: what you get tomorrow, then what the next step takes. */
+.interest { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.interest b { font-weight: 400; }
+.interest span { color: #cfeec0; }
+.interest.none span { color: #e6d8cc; }
 .tipbox .interest-coins { display: flex; flex-wrap: wrap; gap: 1px; }
 .refill.free span { color: #2f7a2c; }
 
@@ -809,17 +814,6 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .bit.ember { width: 3px; height: 3px; margin: -1px 0 0 -1px; background: #ff8a3d; border: none; }
 .bit.ember1 { background: #ffd23f; }
 
-/* Interest steps over the tip jar: a coin per +1 interest, labelled with the gold that earns it, lit once reached.
-   Steps past the base 3 (from Fortune Cookie and Caviar) have a purple number. */
-.interest-steps {
-  display: flex; gap: 3px; padding: 1px 3px; translate: -50% 0; cursor: help; white-space: nowrap;
-  background: rgba(42, 27, 20, 0.6); border: 1px solid #2a1b14;
-}
-.istep { display: flex; align-items: center; gap: 1px; font: 400 10px/9px var(--pixel); color: #a89384; }
-.istep b { font-weight: 400; }
-.istep.on { color: #ffd23f; }
-.istep.bonus b { color: #c9a8ff; }
-.istep.on.bonus b { color: #e2cfff; }
 /* Sound on/off: top bar in the kitchen, with the speed controls in battle. */
 .sound-btn { display: grid; place-items: center; background: rgba(42, 27, 20, 0.55) !important; border: 1px solid #2a1b14 !important; }
 .sound-btn:hover { background: rgba(42, 27, 20, 0.8) !important; }
