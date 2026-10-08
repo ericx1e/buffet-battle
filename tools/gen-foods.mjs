@@ -125,10 +125,10 @@ const foods = {
   },
   sugar(s) {
     s.shadow(17, 28, 11, 2);
-    // A sugar cube from the front and a little above: its front face and a thin top face, sparkling specks.
     const speck = (x, y) => ((x * 7 + y * 13) % 9 === 0);
-    box(s, 7, 25, 13, 27, 4, R('#ece8f0'), (x, y) => (speck(x, y) ? '#e6e0ea' : '#ffffff'));
-    for (const [x, y] of [[10, 17], [15, 21], [21, 18], [12, 24], [22, 24]]) s.px(x, y, '#cfc8d6');
+    s.poly([[16, 8], [26, 13], [16, 18], [6, 13]], (x, y) => (speck(x, y) ? '#e6e0ea' : '#ffffff'));
+    s.poly([[6, 13], [16, 18], [16, 28], [6, 23]], (x, y) => (speck(x, y) ? '#cfc8d6' : '#e8e3ec'));
+    s.poly([[16, 18], [26, 13], [26, 23], [16, 28]], (x, y) => (speck(x, y) ? '#aaa2b4' : '#c3bccb'));
   },
   lemon(s) {
     s.shadow(17, 27, 11, 2);
@@ -455,11 +455,15 @@ const foods = {
   },
   croutons(s) {
     s.shadow(17, 29, 13, 2);
-    // A little heap of golden toasted bread cubes, each with its lit top face and a darker side, flecked with herbs.
-    const toast = R('#d99a45');
-    const cube = (x, y, w) => box(s, x, x + w, y, y + w - 1, 2, toast, () => R('#f2c37a')[1]);
-    cube(4, 20, 7); cube(13, 21, 7); cube(21, 19, 7); cube(9, 13, 7); cube(17, 12, 7);
-    for (const [x, y] of [[7, 22], [15, 23], [24, 21], [12, 15], [20, 14]]) s.px(x, y, '#5a8a3a');
+    // A little heap of golden toasted bread cubes, each turned on the diagonal like the sugar cube: a lit top, a
+    // mid left face and a shaded right face, flecked with herbs.
+    const cube = (cx, cy, r) => {
+      s.poly([[cx, cy - r], [cx + r, cy - r / 2], [cx, cy], [cx - r, cy - r / 2]], '#f2c37a');
+      s.poly([[cx - r, cy - r / 2], [cx, cy], [cx, cy + r], [cx - r, cy + r / 2]], '#d99a45');
+      s.poly([[cx, cy], [cx + r, cy - r / 2], [cx + r, cy + r / 2], [cx, cy + r]], '#a8682c');
+    };
+    cube(9, 21, 5); cube(22, 21, 5); cube(15, 24, 5); cube(12, 14, 5); cube(20, 13, 5);
+    for (const [x, y] of [[9, 17], [22, 17], [15, 20], [12, 10], [20, 9]]) s.px(x, y, '#5a8a3a');
   },
   baguette(s) {
     s.shadow(17, 29, 14, 2);
@@ -476,9 +480,12 @@ const foods = {
   // Flavor overhaul foods
   tofu(s) {
     s.shadow(17, 29, 12, 2);
-    // A soft white block from the front and a little above, a sprinkle of scallion on its thin top face.
-    box(s, 5, 27, 15, 27, 5, R('#f4edd9'), (x, y) => ((x * 3 + y * 7) % 11 === 0 ? '#ece2c8' : '#fbf6e8'));
-    for (const [x, y] of [[11, 13], [16, 11], [20, 13], [14, 14]]) { s.px(x, y, C.leaf[1]); s.px(x + 1, y, C.leaf[2]); }
+    // A soft white block seen from above-front, with a sprinkle of scallion.
+    const tofu = R('#f4edd9');
+    s.poly([[16, 9], [27, 14], [16, 19], [5, 14]], (x, y) => ((x * 3 + y * 7) % 11 === 0 ? tofu[1] : tofu[0]));
+    s.poly([[5, 14], [16, 19], [16, 28], [5, 23]], tofu[2]);
+    s.poly([[16, 19], [27, 14], [27, 23], [16, 28]], tofu[3]);
+    for (const [x, y] of [[12, 13], [17, 12], [20, 15], [14, 16]]) { s.px(x, y, C.leaf[1]); s.px(x + 1, y, C.leaf[2]); }
   },
   coinChocolate(s) {
     s.shadow(17, 27, 12, 2);
