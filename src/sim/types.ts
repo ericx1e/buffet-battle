@@ -70,7 +70,7 @@ export type Target =
   | 'frontRowFriends'
   | 'allFriends'
   | 'randomFriends' // `count` random friends (shop: on the plate)
-  | 'mostDamagedFriend'
+  | 'lowestHpFriend'
   | 'summoned' // friendSummoned trigger: the food that was just summoned
   | 'level3Friends' // kitchen: a random friend at level 3 (`count` of them)
   | 'thatFriend' // friendHealed: the friend that was healed

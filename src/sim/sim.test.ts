@@ -79,9 +79,10 @@ describe('battle', () => {
     expect(r.frames.some((f) => f.plates[0].filter((u) => u?.defId === 'cakeSlice').length === 3)).toBe(true);
   });
 
-  it('Apple heals the most damaged friend', () => {
-    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 40 }), 3: unit('apple') }), plate({ 0: unit('cheese', { attack: 4, hp: 50 }) }), 1);
-    expect(frameText(r, 'Apple heals')).toBe(true);
+  it('Apple gives HP to the friend with the least HP (there is no max HP)', () => {
+    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 40 }), 1: unit('cheese', { attack: 1, hp: 3 }), 3: unit('apple', { hp: 30 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 50 }) }), 1);
+    expect(frameText(r, 'Apple: Cheese +1 HP')).toBe(true);
+    expect(r.frames.some((f) => (f.plates[0][1]?.hp ?? 0) > 3)).toBe(true); // past its starting HP
   });
 
   it('retaliation damage does not chain: Durian and Bacon cannot ping-pong forever', () => {
@@ -309,8 +310,8 @@ describe('run', () => {
 
   it('Mochi gains HP when hit, at most 4 times a battle', () => {
     const r = simulateBattle(plate({ 0: unit('mochi', { hp: 60 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }) }), 1);
-    const maxHp = Math.max(...r.frames.map((f) => f.plates[0][0]?.maxHp ?? 0));
-    expect(maxHp).toBe(60 + 4);
+    const gains = r.frames.flatMap((f) => f.marks).filter((m) => m.kind === 'buff' && m.side === 0 && m.slot === 0);
+    expect(gains.length).toBe(4);
   });
 
   it('Tofu soaks up a new flavor each level up', () => {

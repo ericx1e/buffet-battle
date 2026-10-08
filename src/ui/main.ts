@@ -99,7 +99,7 @@ const tipBox = (title: string, body: string) => tip(`<div class="tip-title">${ti
 /** Keywords explained at the bottom of any card or tooltip whose text mentions them. */
 const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[] = [
   { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1. Stacks up to 4.' },
-  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 3. Heals on a Rotting food are halved.' },
+  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 3. HP gains on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
   { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
@@ -987,7 +987,7 @@ function freezerMagnets(): string {
  */
 const FLAVOR_BONUS: Record<Flavor, [string, string, string, string]> = {
   spicy: ['spicy hits Burn 1', 'spicy hits Burn 2', 'Burn never fades', 'Burning take +2'],
-  sweet: ['front row heals 1', 'heals 2 + cleanses', 'overheal → Crust', 'sugar rush'],
+  sweet: ['front row +1 HP a turn', '+2 HP + cleanses', 'back row too', 'sugar rush'],
   sour: ['enemy front Rots 1', 'every enemy Rots 1', 'Rotting hit softer', 'Rot spreads'],
   salty: ['front row 2 Crust', 'front row 4 Crust', '+2 Crust a turn', 'Crust bites back'],
   savory: ['summons +1/+1', '+2/+2, eaten feed', 'eaten leave Crumbs', 'feast'],
@@ -995,14 +995,14 @@ const FLAVOR_BONUS: Record<Flavor, [string, string, string, string]> = {
 /** The same bonuses spelled out, for tooltips. */
 const FLAVOR_BONUS_LONG: Record<Flavor, [string, string, string, string]> = {
   spicy: ['Your Spicy foods\' attacks Burn their target 1.', 'They Burn 2 instead.', 'Burn on enemies never fades.', 'Burning enemies take +2 damage from every hit.'],
-  sweet: ['Your front row heals 1 at the end of each turn.', 'It heals 2 and cleanses 1 Burn and 1 Rot.', 'Healing past full HP becomes Crust.', 'Sugar rush: each of your foods survives being eaten once, at 1 HP.'],
+  sweet: ['Your front row gains 1 HP at the end of each turn.', 'It gains 2 HP and cleanses 1 Burn and 1 Rot.', 'Your back row gets it too.', 'Sugar rush: each of your foods survives being eaten once, at 1 HP.'],
   sour: ['The enemy front row Rots 1 at the start of battle.', 'Every enemy Rots 1 instead.', 'Rotting enemies deal 1 less damage.', 'When a Rotting enemy is eaten, its Rot spreads to its neighbours.'],
   salty: ['Your front row gains 2 Crust at the start of battle.', 'It gains 4 Crust instead.', 'Your front row regains 2 Crust every turn.', 'Crust bites back: damage it blocks is dealt back to the attacker.'],
   savory: ['Your summoned foods get +1/+1.', 'They get +2/+2, and when a friend is eaten its neighbours gain +1/+1.', 'Eaten friends leave a 2/2 Crumb behind.', 'Feast: when a friend is eaten, every friend gains +2/+2.'],
 };
 const FLAVOR_ROLE: Record<Flavor, string> = {
   spicy: 'Damage over time with Burn.',
-  sweet: 'Healing and cleansing.',
+  sweet: 'Gaining HP and cleansing.',
   sour: 'Weakens enemies with Rot.',
   salty: 'Crust to soak up hits.',
   savory: 'Summons and growth.',
@@ -1094,6 +1094,10 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
       const left = Math.max(0, days - (u.gains?.[i] ?? 0));
       notes.push(left > 0 ? `Growing: ${left} of ${days} days left.` : `Fully grown (${days} days). Level up for more days.`);
     });
+  }
+  for (const ab of abilitiesOf(d, level)) {
+    const all = ab.max ?? (ab.limitToAmount ? (ab.values ?? d.values)[level - 1] : 0);
+    if (all) notes.push(`${all}/${all} this battle`);
   }
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
   return notes.map((n) => `<p class="dim">${n}</p>`).join('');
@@ -1294,7 +1298,6 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
   const cls = [...kinds].map((k) => `fx-${k}`).join(' ') + (hit >= BIG_HIT ? ' big-hit' : '') + (o.role ? ` ${o.role}` : '');
   // Idle bob, continuous across re-renders: every food breathes on its own beat.
   const bob = -((performance.now() + slot * 270 + side * 130) % 1600);
-  const hurt = u.hp < u.maxHp ? 'hurt' : '';
   const id = `${o.bid}:${side}:${u.uid}`;
   return `
     <div class="fighter side-${side} ${cls} ${u.token ? 'token' : ''} ${o.cheer ? 'cheer' : ''}" data-inspect="${side}:${slot}"
@@ -1304,7 +1307,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     </div>
     ${popups ? `<div class="f-pops" style="left:${ax - 32}px;top:${ay - 60}px;z-index:${90 + z}">${popups}</div>` : ''}
     <div class="f-tags" style="left:${ax - 45}px;top:${ay - 8}px;z-index:${40 + z}" data-k="ft:${id}" data-in="fade" data-out="fade-out">
-      ${statBadge('atk', u.attack, 2, `data-vk="fa:${id}" data-v="${u.attack}"`)}${statBadge('hp', u.hp, 2, `data-vk="fh:${id}" data-v="${u.hp}"`, hurt)}${
+      ${statBadge('atk', u.attack, 2, `data-vk="fa:${id}" data-v="${u.attack}"`)}${statBadge('hp', u.hp, 2, `data-vk="fh:${id}" data-v="${u.hp}"`)}${
 ''}${
         u.crust || u.burn || u.rot || u.chill ? `<span class="f-sts">${(['crust', 'burn', 'rot', 'chill'] as const).filter((k) => u[k] > 0).map((k) => statBadge(k, u[k], 1, `data-k="f${k}:${id}" data-vk="f${k}:${id}" data-v="${u[k]}"`)).join('')}</span>` : ''}
     </div>
@@ -1564,7 +1567,7 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
   const pair = (badge: string, label: string) => `<span class="stat-pair">${badge}${label}</span>`;
   const stats = [
     pair(statBadge('atk', u.attack), 'attack'),
-    pair(statBadge('hp', u.hp, 1, '', u.hp < u.maxHp ? 'hurt' : ''), `/${u.maxHp} HP`),
+    pair(statBadge('hp', u.hp, 1), 'HP'),
     u.crust ? pair(statBadge('crust', u.crust), 'Crust') : '',
     ...(['burn', 'rot', 'chill'] as const).map((k) => (u[k] > 0 ? pair(statBadge(k, u[k]), STATUS_NAME[k]) : '')),
   ].join('');
@@ -1582,6 +1585,7 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
       <p class="stat-line">${stats}</p>
       ${held}
       <p>${text}</p>
+      ${(u.uses ?? []).map(([left, all]) => `<p class="dim">${left}/${all} this battle</p>`).join('')}
       ${glossary(`${text} ${held} ${u.crust ? 'Crust' : ''} ${statusWords}`)}
     </div>`;
 }

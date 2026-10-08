@@ -38,7 +38,8 @@ interface BattleUnit {
   flavors: Flavor[];
   attack: number;
   hp: number;
-  maxHp: number;
+  /** HP it came onto the plate with: what an extra life brings it back to (there is no max HP). */
+  startHp: number;
   crust: number;
   item?: HeldItemId;
   token: boolean;
@@ -52,7 +53,7 @@ interface BattleUnit {
   abilityBonus: number;
   /** Abilities gained for this battle (copyAbility), with their numbers fixed in `values`. */
   extra: AbilityDef[];
-  /** Times it can still come back at full HP. */
+  /** Times it can still come back (with the HP it started with). */
   lives: number;
   /** Counts as every flavor. */
   allFlavors: boolean;
@@ -74,13 +75,14 @@ export interface UnitView {
   flavors: Flavor[];
   attack: number;
   hp: number;
-  maxHp: number;
   crust: number;
   token: boolean;
   item?: HeldItemId;
   burn: number;
   rot: number;
   chill: number;
+  /** Abilities that only go off so many times a battle: [times left, times in all], in ability order. */
+  uses: [number, number][];
 }
 
 export type MarkKind =
@@ -155,7 +157,7 @@ interface SideBonus {
   burnSticks: boolean; // Burn on this side's enemies doesn't fade
   sweetHeal: number; // front row heals this much each round
   sweetCleanse: boolean; // and loses 1 Burn and 1 Rot
-  overheal: boolean; // healing past max HP becomes Crust
+  sweetAll: boolean; // the back row is soothed too
   saltyRegen: number; // front row regains this much Crust each round
   summonBonus: number; // summons +n/+n
   hearty: boolean; // a friend eaten: its adjacent friends +1/+1
@@ -169,7 +171,7 @@ interface SideBonus {
 }
 
 const NO_BONUS: SideBonus = {
-  spicyBurn: 0, burnSticks: false, sweetHeal: 0, sweetCleanse: false, overheal: false, saltyRegen: 0,
+  spicyBurn: 0, burnSticks: false, sweetHeal: 0, sweetCleanse: false, sweetAll: false, saltyRegen: 0,
   summonBonus: 0, hearty: false, crumbs: false, rotSpreads: false, flare: false, rotWeakens: false, sugarRush: false,
   thorns: false, feast: false,
 };
@@ -216,7 +218,7 @@ class Battle {
     const def = unitDef(defId);
     return {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
-      attack, hp, maxHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false,
+      attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false,
       extraAttacks: 0, tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
       burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false,
     };
@@ -314,9 +316,9 @@ class Battle {
           case 'sweet':
             b.sweetHeal = tier >= 2 ? 2 : 1;
             b.sweetCleanse = tier >= 2;
-            b.overheal = tier >= 3;
+            b.sweetAll = tier >= 3;
             b.sugarRush = tier >= 4;
-            lines.push(`Sweet x${n}: front row heals ${b.sweetHeal} a turn${tier >= 2 ? ' and sheds Burn and Rot' : ''}${tier >= 3 ? ', overheal becomes Crust' : ''}${tier >= 4 ? ', sugar rush' : ''}`);
+            lines.push(`Sweet x${n}: ${tier >= 3 ? 'every friend' : 'front row'} gains ${b.sweetHeal} HP a turn${tier >= 2 ? ' and sheds Burn and Rot' : ''}${tier >= 4 ? ', sugar rush' : ''}`);
             break;
           case 'sour': {
             const targets = tier >= 2 ? this.units(enemy) : this.units(enemy).filter((u) => rowOf(u.slot) === 0);
@@ -562,13 +564,13 @@ class Battle {
         const line = this.fire(u, 'round', {});
         if (line) lines.push(line);
       }
-      const front = this.units(side).filter((f) => rowOf(f.slot) === 0);
+      const front = this.units(side).filter((f) => b.sweetAll || rowOf(f.slot) === 0);
       if (b.sweetHeal > 0) {
         for (const f of front) {
-          if (f.hp < f.maxHp || b.overheal) this.heal(f, b.sweetHeal);
+          this.buff(f, 0, b.sweetHeal);
           if (b.sweetCleanse) this.cleanse(f, 1);
         }
-        if (front.length > 0) lines.push(`${side === 0 ? 'Your' : 'Enemy'} sweets soothe the front row`);
+        if (front.length > 0) lines.push(`${side === 0 ? 'Your' : 'Enemy'} sweets soothe ${b.sweetAll ? 'every friend' : 'the front row'}`);
       }
       if (b.saltyRegen > 0) {
         for (const f of front) this.giveCrust(f, b.saltyRegen);
@@ -648,14 +650,14 @@ class Battle {
       }
 
       let dead = ([0, 1] as Side[]).flatMap((side) => this.units(side).filter((u) => u.hp <= 0));
-      // Extra lives: back at full HP instead of being eaten.
+      // Extra lives: back with the HP it started with instead of being eaten.
       const revived = dead.filter((u) => u.lives > 0);
       for (const u of revived) {
         u.lives--;
-        u.hp = u.maxHp;
+        u.hp = u.startHp;
         u.burn = 0;
         u.rot = 0;
-        this.mark(u, 'heal', u.maxHp);
+        this.mark(u, 'heal', u.startHp);
       }
       if (revived.length > 0) this.snap(`${revived.map((u) => this.name(u)).join(', ')} comes back for more!`);
       // Sweet x8: each friend hangs on once at 1 HP.
@@ -795,7 +797,7 @@ class Battle {
       case 'split': {
         // One token per empty slot, each with a third of this food's attack and HP.
         const a = Math.max(1, Math.ceil(u.attack / 3));
-        const h = Math.max(1, Math.ceil(u.maxHp / 3));
+        const h = Math.max(1, Math.ceil(u.startHp / 3));
         let n = 0;
         while (this.summon(u.side, u.slot, ab.summon!.id, a, h, u.flavor)) n++;
         if (n === 0) return;
@@ -827,12 +829,9 @@ class Battle {
       case 'crust':
         for (const t of targets) this.giveCrust(t, amountFor(t));
         return `${name}: ${names(targets)} +${amountFor(targets[0])} Crust`;
-      case 'heal': {
-        const healed = targets.filter((t) => t.hp < t.maxHp || this.bonus[t.side].overheal);
-        for (const t of healed) this.heal(t, amountFor(t));
-        if (healed.length === 0) return undefined;
-        return healed.length === 1 && healed[0] === u ? `${name} heals ${amountFor(u)}` : `${name} heals ${names(healed)} by ${amountFor(healed[0])}`;
-      }
+      case 'heal': // the same as gaining HP (there is no max HP)
+        for (const t of targets) this.buff(t, 0, amountFor(t));
+        return `${name}: ${names(targets)} +${amountFor(targets[0])} HP`;
       case 'burn':
       case 'rot':
       case 'chill':
@@ -869,8 +868,8 @@ class Battle {
         return copies.length > 0 ? `${name} copies the abilities of ${this.name(t)}` : `${name} studies ${this.name(t)}, but it has no ability to copy`;
       }
       case 'bequeath':
-        for (const t of targets) this.buff(t, u.attack, u.maxHp);
-        return `${name} passes its strength to ${names(targets)}: +${u.attack}/+${u.maxHp}`;
+        for (const t of targets) this.buff(t, u.attack, u.startHp);
+        return `${name} passes its strength to ${names(targets)}: +${u.attack}/+${u.startHp}`;
     }
   }
 
@@ -932,10 +931,10 @@ class Battle {
         return this.rng.sample(this.units(u.side).filter((t) => t !== u), ab.count ?? 1);
       case 'level3Friends':
         return this.units(u.side).filter((t) => t !== u && !t.token && t.level === 3);
-      case 'mostDamagedFriend': {
-        const hurt = this.units(u.side).filter((t) => t.hp < t.maxHp);
-        hurt.sort((x, y) => y.maxHp - y.hp - (x.maxHp - x.hp) || x.slot - y.slot);
-        return one(hurt[0]);
+      case 'lowestHpFriend': {
+        const all = this.units(u.side);
+        all.sort((x, y) => x.hp - y.hp || x.slot - y.slot);
+        return one(all[0]);
       }
       case 'summoned':
         return one(ctx.summoned && this.onPlate(ctx.summoned) ? ctx.summoned : null);
@@ -981,19 +980,17 @@ class Battle {
     this.queue.push({ unit: target, source });
   }
 
-  /** Heals up to max HP; soothe auras add 1 each; a basting Wagyu doubles it; Rot halves it; Sweet x6 turns overheal into Crust. */
-  private heal(u: BattleUnit, amount: number) {
+  /**
+   * Gaining HP, from a heal or a buff alike (there is no max HP): soothe auras add 1 each, a basting Wagyu doubles it,
+   * Rot halves it, and adjacent friends notice (friendHealed).
+   */
+  private gainHp(u: BattleUnit, amount: number): number {
+    if (amount <= 0) return 0;
     amount += this.auraCount(u.side, 'soothe');
     if (this.basted(u)) amount *= 2;
     if (u.rot > 0) amount = Math.floor(amount / 2);
-    const gained = Math.min(amount, u.maxHp - u.hp);
-    if (gained > 0) {
-      u.hp += gained;
-      this.mark(u, 'heal', gained);
-      for (const f of this.adjacent(u)) this.fire(f, 'friendHealed', { friend: u });
-    }
-    const spare = amount - Math.max(0, gained);
-    if (spare > 0 && this.bonus[u.side].overheal) this.giveCrust(u, spare);
+    u.hp += amount;
+    return amount;
   }
 
   private addStatus(u: BattleUnit, status: 'burn' | 'rot' | 'chill', amount: number) {
@@ -1033,9 +1030,10 @@ class Battle {
 
   private buff(u: BattleUnit, attack: number, hp: number) {
     u.attack += attack;
-    u.hp += hp;
-    u.maxHp += hp;
-    this.mark(u, 'buff', attack, hp);
+    const gained = this.gainHp(u, hp);
+    if (attack === 0 && gained === 0) return;
+    this.mark(u, 'buff', attack, gained);
+    if (gained > 0) for (const f of this.adjacent(u)) this.fire(f, 'friendHealed', { friend: u });
   }
 
   private debuff(u: BattleUnit, attack: number) {
@@ -1127,13 +1125,16 @@ class Battle {
         flavors: u.allFlavors ? [...FLAVORS] : u.flavors,
         attack: u.attack,
         hp: Math.max(0, u.hp),
-        maxHp: u.maxHp,
         crust: u.crust,
         token: u.token,
         item: u.item,
         burn: u.burn,
         rot: u.rot,
         chill: u.chill,
+        uses: [...abilitiesOf(unitDef(u.defId), u.level), ...u.extra].flatMap((ab, i): [number, number][] => {
+          const all = ab.max ?? (ab.limitToAmount ? this.amountOf(u, ab, i) : 0);
+          return all ? [[Math.max(0, all - (u.fired[i] ?? 0)), all]] : [];
+        }),
       };
     this.frames.push({
       plates: [this.plates[0].map(view), this.plates[1].map(view)],
