@@ -169,7 +169,7 @@ describe('food data', () => {
         const kitchen = ['buy', 'sell', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
         if (['gold', 'sellValue', 'freeReroll', 'gainFlavor', 'buyBonus'].includes(ab.effect)) expect(kitchen, `${u.id}: ${ab.effect} is a kitchen effect`).toContain(ab.trigger);
       }
-      expect(u.text.includes('{v}') || u.abilities.every((a) => a.values), `${u.id}: text should show {v}`).toBe(true);
+      expect(u.text.includes('{v}') || u.abilities.every((a) => a.values || a.limitToAmount), `${u.id}: text should show {v} (a limitToAmount count shows in the hover instead)`).toBe(true);
     }
   });
 
