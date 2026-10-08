@@ -338,23 +338,23 @@ prop('tipjar', () => {
   blob(cx - rx, neckTop - 6, cx + rx, bottom + 5, (x, y) => {
     const t = (x - cx) / rx;
     // Opening seen from above
-    if (y <= neckTop + 6 && inEllipse(x, y, cx, neckTop, 12.5, 6)) {
-      return inEllipse(x, y, cx, neckTop + 1, 10.2, 4.2) ? (y < neckTop ? '#6a908e' : '#7da3a1') : y > neckTop + 2 ? GLASS[2] : GLASS[1];
+    // The opening: a round rim seen a little from above, the width of the neck
+    if (y <= neckTop + 4 && inEllipse(x, y, cx, neckTop, 11.5, 4)) {
+      return inEllipse(x, y, cx, neckTop + 0.5, 9.5, 2.6) ? (y < neckTop ? '#6a908e' : '#7da3a1') : y > neckTop + 1 ? GLASS[2] : GLASS[1];
     }
     // Rounded shoulders: the glass swells from the neck to the body over a few pixels
-    const shoulder = [12, 13, 14, 14.6, 15];
+    const shoulder = [12.4, 13.4, 14.2, 14.7, 15];
     if (y >= bodyTop && y < bodyTop + shoulder.length) {
       const w = shoulder[y - bodyTop];
       if (Math.abs(x - cx) > w) return null;
       const tt = (x - cx) / w;
-      if (y < bodyTop + 2) return Math.abs(tt) > 0.85 ? GLASS[3] : GLASS[2];
       return tt < -0.72 ? GLASS[0] : tt > 0.7 ? GLASS[4] : '~#cfe9e5';
     }
     // Threaded neck
     if (y > neckTop && y < bodyTop) {
       if (Math.abs(x - cx) > 12) return null;
       const d = dip((x - cx) / 12, 2);
-      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 12.5, 6)) return null;
+      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 11.5, 4)) return null;
       return y === neckTop + 4 + d || y === neckTop + 7 + d ? GLASS[4] : side((x - cx) / 12, GLASS);
     }
     // Body with a rounded bottom
