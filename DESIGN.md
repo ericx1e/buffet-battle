@@ -44,7 +44,7 @@ Early losses are cheaper so a weak opening doesn't end a run, as in Super Auto P
 
 The tiers below are the rarities the buffet unlocks: tier 1 common, 2 uncommon, 3 rare, 4 epic, 5 legendary, 6 exotic.
 
-The market offers higher-tier units as the run goes on. Tiers unlock by day, not by payment. Gold goes into foods, restocks, specials and savings instead.
+The market offers higher-tier units as the run goes on. Tiers unlock by day, not by payment. Gold goes into foods, refills, specials and savings instead.
 
 | Day | Highest unit tier in market | Market unit slots |
 | --- | --- | --- |
@@ -65,7 +65,7 @@ The market offers higher-tier units as the run goes on. Tiers unlock by day, not
 
 ## The Kitchen (prep phase)
 
-Gold is now a resource to manage across days: it carries over, interest rewards saving, foods cost more as their tier rises, and every restock in a day costs more than the last.
+Gold is now a resource to manage across days: it carries over, interest rewards saving, foods cost more as their tier rises, and every refill in a day costs more than the last.
 
 ### Economy
 
@@ -76,7 +76,7 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 | Interest | +1 gold per 5 gold held when the day starts, up to 3 (Caviar raises the cap by 1/2/3) |
 | Buy a food | 3 gold (tiers 1-2), 4 (tiers 3-4), 5 (tiers 5-6), 7 (mythic) |
 | Buy an item | 2 to 7 gold (see Items) |
-| Restock the market | 1 gold, +1 for each restock already today (Dumplings make the first 1/2/3 each day free) |
+| Refill the market | 1 gold, +1 for each refill already today (Dumplings make the first 1/2/3 each day free) |
 | Sell a food | Half the gold its copies cost, rounded down (at least 1), plus any sell value it gained |
 | Put a food in the fridge | Its price: you buy it into the fridge (the fridge only holds foods you own) |
 
@@ -86,19 +86,19 @@ Selling never refunds a merge in full: a level 2 tier 1 food (3 copies) sells fo
 
 - Offers 3 to 5 foods (by day, see Tier unlocks) and 1 item.
 - Foods are drawn from all unlocked tiers with equal weight per food.
-- Restocking replaces everything except the special cubby.
+- Refilling replaces everything except the special cubby.
 - **Level-up bonus:** when a food reaches level 2 or 3, a food from one tier above the current highest unlocked tier (capped at 6) drops into an empty food cubby right away, marked as a bonus. If all 6 food cubbies are full, it joins the next market instead.
 
 ### Special cubby
 
-The last teal cubby holds one special offer each day. Restocking doesn't change it, and it is bought by dragging it onto the counter tray.
+The last teal cubby holds one special offer each day. Refilling doesn't change it, and it is bought by dragging it onto the counter tray.
 
 | Offer | When | Cost | What it does |
 | --- | --- | --- | --- |
 | Spice Pack | Any day | 3 | Open it and keep 1 of 3 consumables, drawn from up to a tier ahead of the market. The pick is used right away (drag it onto a food) or waits in the cubby, free |
 | Farm Box | Day 2+ | 5 | Open it and keep 1 of 3 foods from the current tier band, up to one tier above the market |
 | Pair | Any day | About 1.5x one food's price (3→5, 4→6, 5→8) | 2 copies of one unlocked food, delivered to the counter tray |
-| Premium Restock | Day 3+ | 3 | Restocks the market with only next-tier foods (drag onto the refill sign or the tray) |
+| Premium Refill | Day 3+ | 3 | Refills the market with only next-tier foods (drag onto the refill sign or the tray) |
 | Mythic Delivery | Day 9+, 25% of days | 7 | One mythic food, delivered to the counter tray |
 
 ### Counter tray (overflow)
@@ -128,25 +128,25 @@ The fridge is a bench for foods you own. Unlike Super Auto Pets' freeze, it does
 | `buy` | When this food is bought (also when it merges into a copy) |
 | `sell` | When this food is sold |
 | `levelUp` | When this food reaches level 2 or 3 |
-| `reroll` | When you restock (foods on the plate) |
+| `reroll` | When you refill (foods on the plate) |
 | `startTurn` | At the start of each day, after income and interest (foods on the plate) |
 | `endTurn` | When you press Serve (foods on the plate) |
 | `fridgeTurn` | When you press Serve while this food is in the fridge |
 
-Kitchen growth never stops: a permanent scaler grows every day for the whole run, because a grower that runs out becomes a dead slot. Its rate keeps it in check instead: small numbers early, and conditions that shape the growth rather than pile it on (Cheese, Yogurt and Chili Oil grow twice as fast next to a friend of their flavor, Potato only on days you didn't restock, Fortune Cookie by the interest you earned). Caps are kept for strong combat abilities, which only go off so many times a battle (Mochi, Durian, Pork Crackling, Pineapple, Smoothie's rally); the food text doesn't mention the cap, the hover counts it down ("3/4 this battle").
+Kitchen growth never stops: a permanent scaler grows every day for the whole run, because a grower that runs out becomes a dead slot. Its rate keeps it in check instead: small numbers early, and conditions that shape the growth rather than pile it on (Cheese, Yogurt and Chili Oil grow twice as fast next to a friend of their flavor, Potato only on days you didn't refill, Fortune Cookie by the interest you earned). Caps are kept for strong combat abilities, which only go off so many times a battle (Mochi, Durian, Pork Crackling, Pineapple, Smoothie's rally); the food text doesn't mention the cap, the hover counts it down ("3/4 this battle").
 
 **Growth budget:** early foods show up early and grow for the rest of the run, so they grow slowly: a tier 1-3 grower gives about 1-2 stat points a day at level 1 (Bean Sprout +1/+1 to the friend ahead, Maple Syrup +1 HP to 2 friends, Bread Dough +2 HP, Cheese +1 HP or +2 next to a Savory friend), a tier 4 grower about 2 (Peanut Butter +1 HP to each neighbour), and the late Roast Turkey about 3 (+1 HP to 3 friends).
 
 **Attack growth** matters as much as HP growth, so not every grower gives HP: Jerky trains the friend ahead (+1 attack a day), Maple Syrup gives a random friend attack every day, Chili Oil grows its own attack, Hot Cocoa turns HP gains into attack, and Gravy arms summons.
 
-**Scaling foods:** Bean Sprout (grows the friend ahead), Jerky and Maple Syrup (attack), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every restock), and Mochi (HP each time it is hit in battle).
+**Scaling foods:** Bean Sprout (grows the friend ahead), Jerky and Maple Syrup (attack), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every refill), and Mochi (HP each time it is hit in battle).
 
 **Team-building pairs:** engines that want a partner, so a plate is built, not just bought. They are listed in the `PAIRS` table in data.ts (for design and tests; the game doesn't print them, food text stays brief):
 
 | What | Makes it | Feeds on it |
 | --- | --- | --- |
 | Interest | Caviar (raises the cap) | Fortune Cookie (+1 HP per gold of interest) |
-| Free restocks | Dumplings (first 1/2/3 restocks free) | Soy Sauce (a random friend +1/+1 per restock) |
+| Free refills | Dumplings (first 1/2/3 refills free) | Soy Sauce (a random friend +1/+1 per refill) |
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
 | HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
@@ -155,7 +155,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
 
-Potato wants the opposite of free restocks: it grows only on days you don't restock.
+Potato wants the opposite of free refills: it grows only on days you don't refill.
 
 ## The Plate (battle)
 
@@ -413,7 +413,7 @@ In the kitchen, buffs can target `self`, `randomFriends`, `level3Friends`, `adja
 | `split` | Fills every empty slot with `summon.id` tokens, each with a third of this food's attack and HP (use with `faint`) |
 | `gold` | Kitchen: +amount gold tomorrow |
 | `sellValue` | Kitchen: +amount sell value, for good |
-| `freeReroll` | Kitchen: your next amount restocks today are free |
+| `freeReroll` | Kitchen: your next amount refills today are free |
 | `gainFlavor` | Kitchen: gains a random flavor it doesn't have (up to 3) |
 | `buyBonus` | Kitchen: foods you buy for the rest of today get +amount/+amount |
 
@@ -432,7 +432,7 @@ In the kitchen, buffs can target `self`, `randomFriends`, `level3Friends`, `adja
 | `perLevel3: true` | +1 amount for each level 3 friend |
 | `onlyFlavor: 'spicy'` | Only affects targets of that flavor |
 | `forFlavor: { flavor, mult, add }` | Targets of that flavor get amount x mult + add |
-| `ifNoReroll: true` | Kitchen: only if you didn't restock today |
+| `ifNoReroll: true` | Kitchen: only if you didn't refill today |
 | `ifAdjacentFlavor: 'savory'` | Kitchen: only next to a friend of that flavor |
 | `ifLevel3: true` | Kitchen: only if you own a level 3 food |
 | `early: true` | Start of battle: resolve before everyone else |
@@ -483,11 +483,11 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Onion | Sour | 2/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack. | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
 | 2 | Garlic | Spicy | 2/6 | 3 | Start of battle: the enemy front row Burns 1/2/3, +1 per other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 2. |
 | 2 | Marshmallow | Sweet | 1/8 | 3 | Hit: the friend behind gains +1/+1, +2/+2 or +3/+3, double if Sweet. | **S'more**: Start of battle: the friend behind gains 6 Crust. |
-| 2 | Potato | Savory | 2/6 | 3 | End of day: gain +1/+1, +2/+2 or +3/+3 if you didn't reroll. | **Loaded Fries**: Eaten: adjacent friends gain +3/+3. |
+| 2 | Potato | Savory | 2/6 | 3 | End of day: gain +1/+1, +2/+2 or +3/+3 if you didn't refill. | **Loaded Fries**: Eaten: adjacent friends gain +3/+3. |
 | 2 | Mustard | Spicy | 1/6 | 3 | When the friend ahead attacks, its target Burns 2/3/4. | **Honey Mustard**: Start of battle: the friend ahead gains +2 attack. |
 | 2 | Cabbage | Sour | 1/8 | 3 | When the friend ahead is hit, the attacker Rots 1/1/2. | **Sauerkraut**: Start of battle: the enemy front row Rots 1. |
 | 2 | Ice Cream | Sweet | 2/5 | 3 | Start of battle: the enemy across is Chilled 1/1/2. | **Sundae**: Start of battle: adjacent friends gain +1/+2. |
-| 2 | Dumplings | Savory | 3/8 | 3 | Start of day: your first 1/2/3 restocks are free. | **Dim Sum Basket**: Restock: gain +1/+1. |
+| 2 | Dumplings | Savory | 3/8 | 3 | Start of day: your first 1/2/3 refills are free. | **Dim Sum Basket**: Refill: gain +1/+1. |
 | 2 | Sourdough Starter | Sour | 2/6 | 3 | Friend sold: gain +1/1/2 HP. | **Sourdough Loaf**: Start of day: everything you buy today gets +1/+1. |
 | 2 | Mochi | Sweet | 1/7 | 3 | Chewy: when hit, gain +1/2/3 HP. | **Daifuku**: Eaten: adjacent friends gain +4 HP. |
 | 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP. | **Country Loaf**: End of day: adjacent friends gain +2 HP,. |
@@ -498,7 +498,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Cheese | Savory | 3/8 | 4 | Ages: end of day, +1/2/2 HP, double next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
 | 3 | Wasabi | Spicy | 3/8 | 4 | First attack deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
 | 3 | Honey | Sweet | 2/10 | 4 | Start of battle: adjacent friends gain +1/+1, +2/+2 or +3/+3, double if Spicy. | **Honeycomb**: Every 2 turns: adjacent friends gain +1/+1. |
-| 3 | Pickle | Sour | 2/8 | 4 | Brines: in the freezer, +1/+1 or +2/+2 a day. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
+| 3 | Pickle | Sour | 2/8 | 4 | Brines: in the fridge, +1/+1 or +2/+2 a day. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
 | 3 | Anchovy | Salty | 2/7 | 4 | Every 2 turns: it and the friend in its lane gain 2/3/4 Crust. | **Caesar Salad**: Start of battle: front-row friends gain 3 Crust. |
 | 3 | Fortune Cookie | Sweet | 2/7 | 4 | Start of day: +1/1/2 HP per gold of interest earned. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
 | 3 | Kebab | Savory | 4/10 | 4 | Pierce attack: also hits the enemy behind its target for half. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
@@ -514,7 +514,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 4 | Watermelon | Sweet | 2/16 | 4 | Every 2nd time hit: summon a 2/2, 3/3 or 4/4 Slice. | **Fruit Salad**: Eaten: summon three 4/4 Slices. |
 | 4 | Grapefruit | Sour | 3/9 | 4 | Start of battle: the enemy front row loses 1/1/2 attack. | **Sorbet**: Start of battle: the enemy front row is Chilled 1 and loses 1 attack. |
 | 4 | Bacon | Salty | 4/8 | 4 | Hit: deal 2/3/4 damage to the attacker. | **BLT**: Start of battle: adjacent friends gain 3 Crust. |
-| 4 | Soy Sauce | Salty | 2/10 | 4 | Restock: a random friend gains +1/+1 or +2/+2. | **Aged Shoyu**: Restock: another random friend gains +1/+1 too. |
+| 4 | Soy Sauce | Salty | 2/10 | 4 | Refill: a random friend gains +1/+1 or +2/+2. | **Aged Shoyu**: Refill: another random friend gains +1/+1 too. |
 | 4 | Blue Cheese | Sour + Savory | 3/10 | 4 | Hit: the attacker Rots 1/2/3. | **Roquefort**: Start of battle: all enemies Rot 1. |
 | 4 | Sweet & Sour Pork | Sweet + Sour | 3/12 | 4 | Deals +2/3/4 damage to Rotting enemies. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
 | 4 | Peanut Butter | Salty | 3/10 | 4 | End of day: adjacent friends gain +1/1/2 HP. | **PB&J**: Start of battle: adjacent friends gain 4 Crust. |
@@ -580,7 +580,7 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 - **Captions:** one short line per moment. Three or more targets are counted ("Durian: 3 enemies Rot 1"), several foods taking Burn and Rot share one line ("Burn & Rot: Popcorn 4, Kimchi 2"), repeats collapse ("+1/+1 ×3"), and each plate's end-of-turn effects get their own moment. Anything still longer than two lines ends in an ellipsis.
 - **Battle:** side view across a dining table, lanes receding into depth, foods lunging at each other and getting eaten by a fork; a plaque per team counts the foods left. Hits are built for impact: a slow wind-up, an accelerating dash, a short freeze on contact (hit-stop) while the target flashes white, a ring and sparks where they connect, then the target is knocked back and tipped away and springs back while the table jolts (big hits shake it). The damage number and the reaction wait for contact. Burn, Rot and Chill show as pixel flame, mould and snowflake badges on the food.
 - **Input:** drag and drop (mouse and touch) for buying, freezing, moving, merging, items, selling, opening specials and picking from packs. Clicking only selects, to read a food in the cookbook.
-- **Sound:** modelled on Super Auto Pets: soft real instruments and bubbly pops, all in C major so everything agrees (CC0 samples from the Versilian Community Sample Library, OpenGameArt and Kenney, as WAVs in `src/ui/sfx/`, credits there; instrument notes tuned exactly on import). A marimba plays the meaningful moments as little tunes: two notes up to buy, down to sell, a three-note rise to merge, a four-note run with a glockenspiel ding to level up, a fanfare with a clap to win, a sinking line to lose. A glockenspiel sparkles for heals, interest coins, freezing (with a triangle) and cooking. A woodblock ticks for taps and knocks for Crust, a high bongo bonks each hit (a slapstick and low bongo for big hits), a log drum goes "nuh-uh" when an action isn't allowed, a pop and plop pick up and place a food, the shop restock is a shaker and five rising pops as the new stock appears, and an eaten food gets the knife, a synthesized poof and a falling note. Buffs, heals, growth and interest coins within 0.35 s of each other climb a pentatonic scale, so a chain of buffs plays like a run up the marimba. A few kitchen sounds stay: coins, the fridge door, the pot lid for blocks, the service bell, a squish for Rot, and a synthesized sizzle for Burn. No ambient bed. Mute with the speaker button or `m`; the choice is remembered. `tools/import-sfx.mjs` converts .ogg, .wav or .mp3 files, with optional length caps and tuning.
+- **Sound:** modelled on Super Auto Pets: soft real instruments and bubbly pops, all in C major so everything agrees (CC0 samples from the Versilian Community Sample Library, OpenGameArt and Kenney, as WAVs in `src/ui/sfx/`, credits there; instrument notes tuned exactly on import). A marimba plays the meaningful moments as little tunes: two notes up to buy, down to sell, a three-note rise to merge, a four-note run with a glockenspiel ding to level up, a fanfare with a clap to win, a sinking line to lose. A glockenspiel sparkles for heals, interest coins, freezing (with a triangle) and cooking. A woodblock ticks for taps and knocks for Crust, a high bongo bonks each hit (a slapstick and low bongo for big hits), a log drum goes "nuh-uh" when an action isn't allowed, a pop and plop pick up and place a food, the shop refill is a shaker and five rising pops as the new stock appears, and an eaten food gets the knife, a synthesized poof and a falling note. Buffs, heals, growth and interest coins within 0.35 s of each other climb a pentatonic scale, so a chain of buffs plays like a run up the marimba. A few kitchen sounds stay: coins, the fridge door, the pot lid for blocks, the service bell, a squish for Rot, and a synthesized sizzle for Burn. No ambient bed. Mute with the speaker button or `m`; the choice is remembered. `tools/import-sfx.mjs` converts .ogg, .wav or .mp3 files, with optional length caps and tuning.
 - **Interest at a glance:** the tip jar is a measuring jar. Coins fill it to a height set by your gold (seen through its glass), and a line on its side for each step of interest (5, 10, 15 gold) is marked +1, +2, +3, lit gold once the coins reach it: fill it to the line to earn. Its label shows your gold; hover or tap it for the rule and tomorrow's total. Foods that raise the cap add lines.
 - **Phones:** played in landscape (held upright, a screen asks to turn the phone). Touch drags carry the food above the finger; a tap shows a tooltip until the next tap; holding a food in battle shows its card. On high-density screens the stage scales by whole device pixels, so the art stays crisp while filling more of the screen. `npm run build:single` bundles the game into one self-contained page for hosting.
 - **Angle:** every food is drawn in a 3/4 view from slightly above: containers show their top (a jar's rim and contents, a bowl's ellipse), flat foods lying down show their thickness, and round toppings are squashed ovals.
@@ -690,7 +690,7 @@ v1 exists to answer one question: is the buy, place, merge, fight loop fun on a 
 - [ ] Deterministic sim: 2x3 lane combat, triggers, resolution order, Crust
 - [ ] 50 foods, 5 flavors with 2/4/6 synergies, statuses and attack patterns, cooking at level 3
 - [ ] 11 items
-- [ ] Kitchen: market, carry-over gold with capped interest, escalating restocks, sell, fridge (2 slots), special cubby and counter tray
+- [ ] Kitchen: market, carry-over gold with capped interest, escalating refills, sell, fridge (2 slots), special cubby and counter tray
 - [ ] Battle playback from the event log, fork animation
 - [ ] Lives (5) and courses (10) run structure
 - [ ] Async ghosts, day-based matchmaking, bot fallback

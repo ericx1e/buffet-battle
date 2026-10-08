@@ -271,7 +271,7 @@ export function rerollCost(run: RunState): number {
 
 export function reroll(run: RunState): ActionResult {
   const cost = rerollCost(run);
-  if (run.gold < cost) return fail('Not enough gold to restock.');
+  if (run.gold < cost) return fail('Not enough gold to refill.');
   run.gold -= cost;
   if (run.freeRerolls > 0) run.freeRerolls--;
   run.rerolls++;
@@ -515,7 +515,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
       case 'freeReroll':
         spend();
         run.freeRerolls += amount;
-        parts.push(`${def.name}: ${amount > 1 ? `${amount} free restocks` : 'a free restock'}`);
+        parts.push(`${def.name}: ${amount > 1 ? `${amount} free refills` : 'a free refill'}`);
         return;
       case 'buyBonus':
         spend();
@@ -683,7 +683,7 @@ export function buySpecial(run: RunState): ActionResult {
     case 'premium':
       rollMarket(run, true);
       run.rerolledThisTurn = true;
-      message = 'Premium restock: the buffet is stocked with the next rarity.';
+      message = 'Premium Refill: the buffet is filled with the next rarity.';
       break;
   }
   run.gold -= s.cost;

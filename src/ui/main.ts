@@ -104,8 +104,8 @@ const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[]
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
   { re: /\bsell value\b/i, icon: () => pix('coin'), name: 'Sell value', text: 'extra gold when you sell it, on top of half its price.' },
   { re: /\binterest\b/i, icon: () => pix('coin'), name: 'Interest', text: `+1 gold at the start of each day for every ${INTEREST_STEP} gold you kept, up to your cap.` },
-  { re: /\b(freezer|fridge)\b/i, icon: () => '', name: 'Freezer', text: 'foods kept in the fridge sit out battles but still count for merging.' },
-  { re: /\brestock/i, icon: () => '', name: 'Restock', text: 'refills the buffet. Each restock in a day costs 1 more.' },
+  { re: /\bfridge\b/i, icon: () => '', name: 'Fridge', text: 'foods you bought into the fridge sit out battles but still count for merging.' },
+  { re: /\brefill/i, icon: () => '', name: 'Refill', text: 'new foods and an item in the buffet. Each refill in a day costs 1 more.' },
 ];
 
 /** `topic`: what the card is about; a keyword that names it isn't explained again. */
@@ -344,7 +344,7 @@ function onOffer(src: OfferSource) {
   if (!same) sfx('page'); // the cookbook turns to it
   const offer = getOffer(app.run, src);
   app.message = same || !offer ? '' : offer.kind === 'unit'
-    ? 'Drag it onto the platter or into the fridge to buy it, or onto a copy to merge.'
+    ? 'Drag it onto your plate or into the fridge to buy it, or onto a copy to merge.'
     : offer.itemId === 'lunchbox' ? 'Drag the Lunchbox onto any food on your plate.' : 'Drag it onto one of your foods.';
   render();
 }
@@ -802,7 +802,7 @@ const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string
   spicePack: { name: 'Spice Pack', text: 'Open it and keep 1 of 3 consumables, maybe one the buffet does not stock yet.' },
   farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to one rarity above the buffet.' },
   bundle: { name: 'Pair', text: 'Two copies of one food for about one and a half times the price. They land on the counter tray: place, merge or sell them before serving.' },
-  premium: { name: 'Premium Restock', text: 'Restocks the buffet with nothing but foods of the next rarity.' },
+  premium: { name: 'Premium Refill', text: 'Refills the buffet with nothing but foods of the next rarity.' },
   mythic: { name: 'Mythic Delivery', text: 'A one-of-a-kind dish that never shows up in the buffet.' },
 };
 
@@ -810,7 +810,7 @@ const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string
 function specialSlot(): string {
   const s = app.run.special;
   const pos = LAYOUT.market[LAYOUT.market.length - 1];
-  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', '<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Restock or, late in the run, a mythic. Restocking leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it.</p>')}>${pix('starSmall')}special</div>`;
+  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', '<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Refill or, late in the run, a mythic. Restocking leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it.</p>')}>${pix('starSmall')}special</div>`;
   if (!s) return tag;
   const key = `sp:${app.run.turn}:${s.kind}`;
   const selected = app.selected?.kind === 'special' || isSelectedSrc({ area: 'special', index: 0 });
@@ -1113,7 +1113,7 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
 function cookbook(): string {
   const s = app.selected;
   const { run } = app;
-  let left = `<div class="pg-title">Chef's notes</div><p>Drag food from the cabinet onto the platter.</p><p>Front column attacks. Back column supports.</p>`;
+  let left = `<div class="pg-title">Chef's notes</div><p>Drag food from the buffet onto your plate.</p><p>Front column attacks. Back column supports.</p>`;
   let right = `<p>Match a copy to merge it. Six copies cook it: a bonus!</p><p>Gold you keep earns interest.</p><p>Ring the bell to serve.</p>`;
   const unitPages = (defId: string, level: 1 | 2 | 3, flavors: Flavor[], atk: number, hp: number, u?: UnitInstance, price?: string) => {
     const d = unitDef(defId);
@@ -1214,7 +1214,7 @@ function renderKitchen() {
         ${spiceJars()}
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
-          ${tipBox('Refill the buffet', `<p>Restock every food and item cubby (key r). This one costs <b>${cost ? `${cost} gold` : 'nothing'}</b>; each restock in a day costs 1 more.</p><p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
+          ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r). This one costs <b>${cost ? `${cost} gold` : 'nothing'}</b>; each refill in a day costs 1 more.</p><p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
         ${marketSlots()}
         ${specialSlot()}
         ${fridgeSlots()}
@@ -1819,9 +1819,9 @@ function keywordify(html: string): string {
 const CONDITIONS = new RegExp(
   [
     'Start of battle', 'Start of day', 'start of day', 'End of day', 'end of day', 'at the end of every turn', 'First time hit', 'First attack each battle',
-    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the freezer(?: it ferments)?', 'Friend summoned', 'Friend sold', 'Level up', 'Restock', 'Start of battle, from any row',
+    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the fridge', 'Friend summoned', 'Friend sold', 'Level up', 'Refill', 'Start of battle, from any row',
     'When the friend ahead attacks', 'When the friend ahead is hit', 'when the friend ahead attacks', 'when the friend ahead is hit', 'when hit', 'each level up',
-    'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit', 'Sell', 'Bought', 'Reroll', 'Eaten',
+    'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit', 'Sell', 'Bought', 'Eaten',
   ].map((c) => `\\b${c}\\b`).join('|'),
   'g', // case-sensitive: "Sell:" is a condition, "sell value" isn't
 );
