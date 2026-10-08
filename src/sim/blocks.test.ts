@@ -148,6 +148,25 @@ describe('attack patterns', () => {
     expect(hpAt(2, 3)).toBeLessThan(60); // and by turn 2, every enemy
   });
 
+  it('a second attack is its own moment, after the lane attacks', () => {
+    const twice = food('t_twice', 2, 60, [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [1, 1, 1] }]);
+    const r = simulateBattle(plate(inst(twice)), plate(inst(wall)), 1);
+    const i = r.frames.findIndex((f) => f.text.includes('t_twice attacks again'));
+    expect(i).toBeGreaterThan(0);
+    expect(r.frames[i].marks.some((m) => m.side === 0 && m.kind === 'attack')).toBe(true);
+    expect(r.frames[i - 1].text).toContain('lane'); // the lane's first swings came just before
+  });
+
+  it('an echoed ability goes off again in its own frame', () => {
+    const pinger = food('t_ping', 1, 60, [{ trigger: 'startOfBattle', effect: 'damage', target: 'enemyInLane', values: [1, 1, 1] }]);
+    const echo = food('t_echo', 1, 60, [], { aura: 'echo' });
+    const r = simulateBattle(plate(inst(pinger), null, null, inst(echo)), plate(inst(wall)), 1);
+    const first = r.frames.findIndex((f) => f.text.startsWith('t_ping hits'));
+    const again = r.frames.findIndex((f) => f.text.startsWith('Echo! t_ping hits'));
+    expect(first).toBeGreaterThan(0);
+    expect(again).toBeGreaterThan(first);
+  });
+
   it('hitsHarder: attacks deal more to enemies with that status', () => {
     const payoff = food('t_payoff', 2, 200, [], { hitsHarder: 'burn', values: [3, 3, 3] });
     const burner = food('t_burner', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane', values: [1, 1, 1] }]);

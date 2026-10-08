@@ -187,7 +187,7 @@ class Battle {
   private marks: Mark[] = [];
   private queue: { unit: BattleUnit; source?: BattleUnit }[] = [];
   /** Reactions waiting for their own moment: each fires in its own frame after the one that caused it. */
-  private later: { unit: BattleUnit; trigger: Trigger; ctx: FireContext }[] = [];
+  private later: { unit: BattleUnit; trigger: Trigger; ctx: FireContext; echo?: number }[] = [];
   private bonus: [SideBonus, SideBonus] = [{ ...NO_BONUS }, { ...NO_BONUS }];
   private nextUid = 1;
   private triggerBudget = TRIGGER_BUDGET;
@@ -551,22 +551,21 @@ class Battle {
       const inLane = attacks.filter((a) => laneOf(a.attacker.slot) === lane);
       if (inLane.length === 0) continue;
       const followUps: string[] = [];
-      for (const { attacker, primary, hits, times } of inLane) {
-        this.mark(attacker, 'attack', times);
+      const swingOnce = (attacker: BattleUnit, hits: [BattleUnit, number, boolean][]) => {
         const burn = this.hasFlavor(attacker, 'spicy') ? this.bonus[attacker.side].spicyBurn : 0;
         const def = unitDef(attacker.defId);
         const harder = def.hitsHarder ? def.values[attacker.level - 1] + attacker.abilityBonus : 0;
-        for (let i = 0; i < times; i++) {
-          // Every swing after the first picks its targets again (the first may be eaten; escalating attacks grow).
-          const target = this.onPlate(primary) ? primary : this.targetFor((1 - attacker.side) as Side, lane);
-          const swing = i === 0 ? hits : target ? this.attackTargets(attacker, target, hits[0][1]) : [];
-          for (const [t, dmg, main] of swing) {
-            const bonus = def.hitsHarder && t[def.hitsHarder] > 0 ? harder : 0;
-            this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
-            if (main && burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
-          }
-          attacker.swings++;
+        this.mark(attacker, 'attack', 1);
+        for (const [t, dmg, main] of hits) {
+          const bonus = def.hitsHarder && t[def.hitsHarder] > 0 ? harder : 0;
+          this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
+          if (main && burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
         }
+        attacker.swings++;
+      };
+      // Everyone's first swing lands together, lane by lane.
+      for (const { attacker, primary, hits } of inLane) {
+        swingOnce(attacker, hits);
         // The food behind an attacker can react to its attack.
         const behind = this.plates[attacker.side][slotAt(lane, 1)];
         if (behind) {
@@ -576,6 +575,17 @@ class Battle {
       }
       this.snap(`Turn ${this.round} · ${LANE_NAMES[lane]} lane`);
       if (followUps.length > 0) this.snap(joinLines(followUps));
+      // A second attack (Coffee Bean, attack-twice) is its own moment: it picks its targets again (the first may be
+      // eaten; an escalating attack has grown).
+      for (const { attacker, primary, hits, times } of inLane) {
+        for (let i = 1; i < times; i++) {
+          if (!this.onPlate(attacker) || this.over()) break;
+          const target = this.onPlate(primary) ? primary : this.targetFor((1 - attacker.side) as Side, lane);
+          if (!target) break;
+          swingOnce(attacker, this.attackTargets(attacker, target, hits[0][1]));
+          this.snap(`Turn ${this.round} · ${this.name(attacker)} attacks again`);
+        }
+      }
     }
   }
 
@@ -674,10 +684,10 @@ class Battle {
       }
       // Reactions, one food at a time, each its own frame (Steak feeding a summon, Pork Crackling biting back...).
       if (this.later.length > 0) {
-        const { unit, trigger, ctx } = this.later.shift()!;
+        const { unit, trigger, ctx, echo } = this.later.shift()!;
         if (!this.onPlate(unit)) continue;
-        const line = this.fire(unit, trigger, ctx);
-        if (line) this.snap(line);
+        const line = this.fire(unit, trigger, ctx, undefined, echo);
+        if (line) this.snap(echo !== undefined ? `Echo! ${line}` : line);
         continue;
       }
 
@@ -745,15 +755,17 @@ class Battle {
   // ---- abilities (data-driven) ----
 
   /** Runs every ability of `u` with this trigger whose conditions hold. Returns the log line, if any. */
-  private fire(u: BattleUnit, trigger: Trigger, ctx: FireContext, only?: (ab: AbilityDef) => boolean): string | undefined {
+  private fire(u: BattleUnit, trigger: Trigger, ctx: FireContext, only?: (ab: AbilityDef) => boolean, echoOf?: number): string | undefined {
     const lines: string[] = [];
-    // Echo aura: a food in the back row makes the friend ahead's abilities go off twice.
-    const echo = rowOf(u.slot) === 0 ? this.plates[u.side][slotAt(laneOf(u.slot), 1)] : null;
-    const times = 1 + (echo && this.onPlate(u) && unitDef(echo.defId).aura === 'echo' ? this.levelValue(echo) : 0);
+    // Echo aura: a food in the back row makes the friend ahead's abilities go off again (its level number of
+    // times). Each repeat waits for its own moment (see resolve); an echo doesn't echo.
+    const echo = echoOf === undefined && rowOf(u.slot) === 0 ? this.plates[u.side][slotAt(laneOf(u.slot), 1)] : null;
+    const repeats = echo && this.onPlate(u) && unitDef(echo.defId).aura === 'echo' ? this.levelValue(echo) : 0;
+    const times = 1;
     const def = unitDef(u.defId);
     const own = abilitiesOf(def, u.level);
     [...own, ...u.extra].forEach((ab, index) => {
-      if (ab.trigger !== trigger || (only && !only(ab))) return;
+      if (ab.trigger !== trigger || (only && !only(ab)) || (echoOf !== undefined && index !== echoOf)) return;
       if (trigger === 'hit') {
         if (ab.once && u.hitsTaken !== 1) return;
         if (ab.every && u.hitsTaken % ab.every !== 0) return;
@@ -768,6 +780,7 @@ class Battle {
         u.fired[index] = (u.fired[index] ?? 0) + 1;
         if (index >= def.abilities.length && index < own.length) this.mark(u, 'cooked');
         lines.push(line);
+        for (let r = 0; r < repeats; r++) this.later.push({ unit: u, trigger, ctx, echo: index });
       }
     });
     // Rally aura: a friend next to a rally food gains attack (its level number) when its ability fires, a few times a battle.
