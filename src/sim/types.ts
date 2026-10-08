@@ -23,7 +23,7 @@ export type Trigger =
   | 'endTurn' // you press Serve (foods on the plate)
   | 'fridgeTurn'; // you press Serve while this food is in the fridge
 
-/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. Rot stacks to ROT_CAP. */
+/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. Burn stacks to BURN_CAP, Rot to ROT_CAP. */
 export type Status = 'burn' | 'rot' | 'chill';
 export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
 
@@ -32,9 +32,9 @@ export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
  * it. splash: also 1 damage to the front-most enemies in the neighbouring lanes. fork: hits both other lanes instead
  * of its own. snipe: hits the back row of its lane first. escalate: one target in rounds 1-2, the whole enemy front
  * row in rounds 3-4, every enemy from round 5 (secondary targets take half).
- * Projectiles (see PROJECTILES) are thrown from either row, before the front rows attack. shot: the enemy in its
- * lane. lob: the back row of its lane first. spray: 3 at random enemies for half each. volley: every enemy in the
- * front row for half each.
+ * Projectiles (see PROJECTILES) are thrown from either row, before the front rows attack, and always hit for half
+ * the thrower's attack. shot: the enemy in its lane. lob: the back row of its lane first. spray: 3 at random
+ * enemies. volley: every enemy in the front row.
  */
 export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate' | 'shot' | 'lob' | 'spray' | 'volley';
 export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate', 'shot', 'lob', 'spray', 'volley'];

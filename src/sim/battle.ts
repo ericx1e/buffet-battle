@@ -122,6 +122,8 @@ export const OVERTIME_AFTER = 15;
 export const RALLY_CAP = 3;
 /** Most Rot a food can carry. */
 export const ROT_CAP = 3;
+/** Most Burn a food can carry. */
+export const BURN_CAP = 4;
 const TRIGGER_BUDGET = 1000;
 const LANE_NAMES = ['far', 'middle', 'near'];
 
@@ -463,10 +465,10 @@ class Battle {
           let landed = 0;
           for (let i = 0; i < times; i++) {
             let hits: [BattleUnit, number][] = [];
-            if (pattern === 'shot') hits = [this.targetFor(enemy, lane)].filter((t): t is BattleUnit => !!t).map((t) => [t, damage]);
+            if (pattern === 'shot') hits = [this.targetFor(enemy, lane)].filter((t): t is BattleUnit => !!t).map((t) => [t, half]);
             else if (pattern === 'lob') {
               const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane);
-              if (t) hits = [[t, damage]];
+              if (t) hits = [[t, half]];
             } else if (pattern === 'spray') {
               for (let k = 0; k < 3; k++) {
                 const pool = this.units(enemy);
@@ -988,6 +990,7 @@ class Battle {
   private addStatus(u: BattleUnit, status: 'burn' | 'rot' | 'chill', amount: number) {
     if (amount <= 0 || !this.onPlate(u)) return;
     if (status === 'rot') amount = Math.min(amount, ROT_CAP - u.rot);
+    if (status === 'burn') amount = Math.min(amount, BURN_CAP - u.burn);
     if (amount <= 0) return;
     u[status] += amount;
     this.mark(u, status, amount);

@@ -156,7 +156,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);

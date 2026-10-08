@@ -225,12 +225,12 @@ describe('projectiles and patterns', () => {
   it('a shot is thrown from the back row too, at the enemy in its lane', () => {
     const r = simulateBattle(plate(inst(wall), null, null, inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1);
     expect(texts(r)).toContain('t_shot shoots');
-    expect(lostTurn1(r)[0]).toBeGreaterThanOrEqual(3 + 1); // the bean, plus our wall's attack
+    expect(lostTurn1(r)[0]).toBe(2 + 1); // the bean for half its 3 attack (rounded up), plus our wall's attack
   });
 
   it('a lob hits the enemy back row of its lane', () => {
     const r = simulateBattle(plate(inst(wall), null, null, inst(thrower('t_lob', 'lob'))), plate(inst(wall), null, null, inst(wall)), 1);
-    expect(lostTurn1(r)[3]).toBe(2);
+    expect(lostTurn1(r)[3]).toBe(1); // half of 2
   });
 
   it('a volley hits every enemy in the front row for half', () => {

@@ -103,8 +103,8 @@ const tipBox = (title: string, body: string) => tip(`<div class="tip-title">${ti
 
 /** Keywords explained at the bottom of any card or tooltip whose text mentions them. */
 const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[] = [
-  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1.' },
-  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Heals on a Rotting food are halved.' },
+  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1. Stacks up to 4.' },
+  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 3. Heals on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
   { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
