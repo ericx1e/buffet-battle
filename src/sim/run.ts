@@ -590,8 +590,8 @@ export function sellUnit(run: RunState, loc: Loc): ActionResult {
   const value = sellPrice(unit);
   setUnit(run, loc, null);
   run.gold += value;
-  const effect = fireShop(run, unit, null, 'sell');
-  return ok(`Sold ${unitDef(unit.defId).name} for ${value} gold${effect ? `; ${effect}` : ''}.`);
+  const effects = [fireShop(run, unit, null, 'sell'), ...run.plate.map((u, slot) => (u ? fireShop(run, u, slot, 'friendSold') : ''))].filter(Boolean);
+  return ok(`Sold ${unitDef(unit.defId).name} for ${value} gold${effects.length ? `; ${effects.join('; ')}` : ''}.`);
 }
 
 export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: Flavor): ActionResult {

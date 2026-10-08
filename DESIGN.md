@@ -137,7 +137,21 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 
 **Scaling foods:** Bean Sprout (grows the friend ahead), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every restock), and Mochi (HP each time it is hit in battle).
 
-**Team-building pairs:** engines that want a partner, so a plate is built, not just bought. Interest: Caviar raises the interest cap and Fortune Cookie turns every gold of interest into HP, so saving gold with both on the plate pays twice. Restocks: Dumplings make the first restocks of each day free and Soy Sauce grows a random friend on every restock (Potato wants the opposite: no restock at all). Summons: Egg, Popcorn, Mushroom and Watermelon make tokens that Steak and Pepperoni feed on. HP: anything that gives HP (Sweet, Apple, Maple Syrup, Mochi) sets off Hot Cocoa next to it, Birthday Cake adds 1 to every gain and Wagyu doubles it. Crust: Pretzel, Anchovy and Salty feed Pork Crackling.
+**Team-building pairs:** engines that want a partner, so a plate is built, not just bought. Each food's cookbook page names its partners ("Pairs well with Caviar"), from the `PAIRS` table in data.ts:
+
+| What | Makes it | Feeds on it |
+| --- | --- | --- |
+| Interest | Caviar (raises the cap) | Fortune Cookie (+1 HP per gold of interest) |
+| Free restocks | Dumplings (first 1/2/3 restocks free) | Soy Sauce (a random friend +1/+1 per restock) |
+| Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
+| Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Pepperoni (summon: Burn) |
+| HP gains | Apple, Mochi, Maple Syrup, Peanut Butter, Honey | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
+| Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back) |
+| Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (+damage to Burning enemies) |
+| Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies) |
+| Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
+
+Potato wants the opposite of free restocks: it grows only on days you don't restock.
 
 ## The Plate (battle)
 
@@ -195,7 +209,7 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 | `splash` | Nachos | Also 1 damage to the front-most enemies in the neighbouring lanes |
 | `fork` | Hot Pot | Hits both other lanes instead of its own (from a side lane: the middle and the far side) |
 | `snipe` | (none yet) | Hits the back row of its lane first |
-| `escalate` | Spaghetti | One target in turns 1-2, the whole enemy front row in turns 3-4, every enemy from turn 5 |
+| `escalate` | Spaghetti | Grows with each of its own attacks: its first hits one target, its second the whole enemy front row, every one after that every enemy (extra targets take half). Attacking twice (Coffee Bean, its cooked bonus) makes it grow twice as fast |
 | `shot` (opening throw) | Edamame | First turn only, from either row: the enemy in its lane, for half |
 | `lob` (opening throw) | Olive | First turn only, from either row: the enemy back row of its lane first, for half |
 | `spray` (opening throw) | Peppercorns | First turn only, from either row: 3 at random enemies, half each; Spicy bonuses Burn with every one |
@@ -469,7 +483,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Cabbage | Sour | 1/8 | 3 | Leafy shield: when the friend ahead is hit, the attacker Rots 1/1/2. | **Sauerkraut**: Start of battle: the enemy front row Rots 1. |
 | 2 | Ice Cream | Sweet | 2/5 | 3 | Start of battle: the enemy across is Chilled 1/1/2 (skips an attack). | **Sundae**: Start of battle: adjacent friends gain +1/+2. |
 | 2 | Dumplings | Savory | 3/8 | 3 | Start of day: your first 1/2/3 restocks are free. | **Dim Sum Basket**: Restock: gain +1/+1. |
-| 2 | Sourdough Starter | Sour | 2/6 | 3 | Sell: everything you buy for the rest of the day gets +1/+1 or +2/+2. | **Sourdough Loaf**: Start of day: everything you buy today gets +1/+1. |
+| 2 | Sourdough Starter | Sour | 2/6 | 3 | Feeds on scraps: whenever you sell a friend, gain +1/1/2 HP. | **Sourdough Loaf**: Start of day: everything you buy today gets +1/+1. |
 | 2 | Mochi | Sweet | 1/7 | 3 | Chewy: when hit, gain +1/2/3 HP. | **Daifuku**: Eaten: adjacent friends gain +4 HP. |
 | 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP. | **Country Loaf**: End of day: adjacent friends gain +2 HP,. |
 | 2 | Olive | Salty | 3/6 | 3 | Start of battle: lobs its pit at the enemy back row in its lane (the front if the back is empty) for half its attack, from either row. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
@@ -489,20 +503,20 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Pork Crackling | Salty | 2/11 | 4 | Crackles: whenever Crust blocks a hit on it or an adjacent friend, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 2/8 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Mushroom | Savory | 2/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore into an empty slot. | **Risotto**: Eaten: summon two 4/4 Spores. |
-| 4 | Coffee Bean | Spicy | 3/8 | 4 | Start of battle: the friend ahead (or this, if in front) attacks twice on its first 1/2/3 attacks, one more if that friend is Sweet. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
+| 4 | Coffee Bean | Spicy | 3/8 | 4 | Start of battle: the friend ahead (or this, if in front) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 2/16 | 4 | Every 2nd time hit: drop a 2/2, 3/3 or 4/4 Slice into an empty slot. | **Fruit Salad**: Eaten: summon three 4/4 Slices. |
 | 4 | Grapefruit | Sour | 3/9 | 4 | Start of battle: the enemy front row loses 1/1/2 attack. | **Sorbet**: Start of battle: the enemy front row is Chilled 1 and loses 1 attack. |
 | 4 | Bacon | Salty | 4/8 | 4 | Hit: grease splatter deals 2/3/4 damage to the attacker. | **BLT**: Start of battle: adjacent friends gain 3 Crust. |
 | 4 | Soy Sauce | Salty | 2/10 | 4 | Restock: a random friend gains +1/+1 or +2/+2. | **Aged Shoyu**: Restock: another random friend gains +1/+1 too. |
 | 4 | Blue Cheese | Sour + Savory | 3/10 | 4 | Hit: the attacker Rots 1/2/3. | **Roquefort**: Start of battle: all enemies Rot 1. |
-| 4 | Sweet & Sour Pork | Sweet + Sour | 3/12 | 4 | Every 2 turns: the enemy across Rots 1/1/2. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
+| 4 | Sweet & Sour Pork | Sweet + Sour | 3/12 | 4 | Its attacks deal +2/3/4 damage to Rotting enemies. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
 | 4 | Peanut Butter | Salty | 3/10 | 4 | Sticks together: end of day, adjacent friends gain +1/1/2 HP. | **PB&J**: Start of battle: adjacent friends gain 4 Crust. |
 | 5 | Steak | Savory | 4/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Start of battle: adjacent friends gain +3/+3. |
-| 5 | Ghost Pepper | Spicy | 4/10 | 5 | Start of battle: a random back-row enemy (front row if none) Burns 3/5/7. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
+| 5 | Ghost Pepper | Spicy | 4/12 | 5 | Its attacks deal +3/4/6 damage to Burning enemies. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 3/12 | 5 | Hit: adjacent friends gain +1/+1 or +2/+2. | **Pina Colada**: Every turn: your friends gain +1/+1. |
 | 5 | Durian | Sour | 3/14 | 5 | Hit: the stench makes every enemy in the front row Rot 1/1/2. | **Durian Crepe**: Start of battle: all enemies Rot 2. |
 | 5 | Caviar | Salty | 4/13 | 5 | Raises your interest cap by 1/2/3. | **Blini Platter**: End of day: +3 gold tomorrow. |
-| 5 | Spaghetti | Savory | 3/14 | 5 | Escalating attack: one target, then the whole front row from turn 3, then every enemy from turn 5 (extra targets take half). *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
+| 5 | Spaghetti | Savory | 3/14 | 5 | Escalating attack: its first attack hits one target, its second the whole front row, every one after that every enemy (extra targets take half). *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
 | 5 | Takoyaki | Savory | 2/14 | 5 | Volleys every turn, from either row, instead of attacking: a ball at every enemy in the front row, each for half its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
 | 6 | Pizza | Savory | 4/15 | 5 | Start of battle: adjacent friends gain +1/2/3 HP for each different flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 for each different flavor on your plate. |
 | 6 | Hot Pot | Spicy | 4/14 | 5 | Fork attack: hits both other lanes instead of its own. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |

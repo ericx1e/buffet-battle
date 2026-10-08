@@ -1,6 +1,6 @@
 import './style.css';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { UNITS, abilitiesOf, daysOf, partnersOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -1100,6 +1100,8 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
     if (all) notes.push(`${all}/${all} this battle`);
   }
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
+  const partners = partnersOf(defId).map((id) => unitDef(id).name);
+  if (partners.length) notes.push(`Pairs well with ${partners.length > 3 ? `${partners.slice(0, 3).join(', ')} and more` : partners.join(partners.length === 2 ? ' and ' : ', ')}.`);
   return notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 

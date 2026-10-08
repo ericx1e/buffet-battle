@@ -93,9 +93,9 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Restock: gain +1/+1.', abilities: [{ trigger: 'reroll', effect: 'buff', values: [1, 1, 1] }] },
     abilities: [{ trigger: 'startTurn', effect: 'freeReroll' }] },
   { id: 'sourdough', name: 'Sourdough Starter', cookedName: 'Sourdough Loaf', emoji: '🍞', tier: 2, flavor: 'sour', attack: 2, hp: 6, values: [1, 1, 2],
-    text: 'Sell: everything you buy for the rest of the day gets +{v}/+{v}.',
+    text: 'Feeds on scraps: whenever you sell a friend, gain +{v} HP.',
     cooked: { text: 'Start of day: everything you buy today gets +1/+1.', abilities: [{ trigger: 'startTurn', effect: 'buyBonus', values: [1, 1, 1] }] },
-    abilities: [{ trigger: 'sell', effect: 'buyBonus' }] },
+    abilities: [{ trigger: 'friendSold', effect: 'buff', attack: 0 }] },
 
   { id: 'mochi', name: 'Mochi', cookedName: 'Daifuku', emoji: '🍡', tier: 2, flavor: 'sweet', attack: 1, hp: 7, values: [1, 2, 3],
     text: 'Chewy: when hit, gain +{v} HP.',
@@ -181,9 +181,9 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Eaten: summon two 4/4 Spores.', abilities: [{ trigger: 'faint', effect: 'summon', count: 2, summon: { id: 'spore' }, values: [4, 4, 4] }] },
     abilities: [{ trigger: 'round', every: 2, effect: 'summon', summon: { id: 'spore' } }] },
   { id: 'coffee', name: 'Coffee Bean', cookedName: 'Espresso', emoji: '☕', tier: 4, flavor: 'spicy', attack: 3, hp: 8, values: [1, 2, 3],
-    text: 'Start of battle: the friend ahead (or this, if in front) attacks twice on its first {v} attacks, one more if that friend is Sweet.',
+    text: 'Start of battle: the friend ahead (or this, if in front) attacks twice on its first {v} attacks.',
     cooked: { text: 'Start of battle: your front row attacks twice on its first attack.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', target: 'frontRowFriends', values: [1, 1, 1] }] },
-    abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', target: 'friendAheadOrSelf', forFlavor: { flavor: 'sweet', add: 1 } }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', target: 'friendAheadOrSelf' }] },
   { id: 'watermelon', name: 'Watermelon', cookedName: 'Fruit Salad', emoji: '🍉', tier: 4, flavor: 'sweet', attack: 2, hp: 16, values: [2, 3, 4],
     text: 'Every 2nd time hit: drop a {v}/{v} Slice into an empty slot.',
     cooked: { text: 'Eaten: summon three 4/4 Slices.', abilities: [{ trigger: 'faint', effect: 'summon', count: 3, summon: { id: 'slice' }, values: [4, 4, 4] }] },
@@ -205,10 +205,11 @@ export const UNITS: UnitDef[] = [
     text: 'Hit: the attacker Rots {v}.',
     cooked: { text: 'Start of battle: all enemies Rot 1.', abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'allEnemies', values: [1, 1, 1] }] },
     abilities: [{ trigger: 'hit', effect: 'rot', target: 'attacker' }] },
-  { id: 'sweetSour', name: 'Sweet & Sour Pork', cookedName: 'Gu Lao Rou', emoji: '🍖', tier: 4, flavor: 'sweet', flavor2: 'sour', attack: 3, hp: 12, values: [1, 1, 2],
-    text: 'Every 2 turns: the enemy across Rots {v}.',
+  { id: 'sweetSour', name: 'Sweet & Sour Pork', cookedName: 'Gu Lao Rou', emoji: '🍖', tier: 4, flavor: 'sweet', flavor2: 'sour', attack: 3, hp: 12, values: [2, 3, 4],
+    text: 'Its attacks deal +{v} damage to Rotting enemies.',
     cooked: { text: 'Every 2 turns: the enemy front row Rots 2.', abilities: [{ trigger: 'round', every: 2, effect: 'rot', target: 'enemyFrontRow', values: [2, 2, 2] }] },
-    abilities: [{ trigger: 'round', every: 2, effect: 'rot', target: 'enemyInLane' }] },
+    hitsHarder: 'rot',
+    abilities: [] },
 
   { id: 'peanutButter', name: 'Peanut Butter', cookedName: 'PB&J', emoji: '🥜', tier: 4, flavor: 'salty', attack: 3, hp: 10, values: [1, 1, 2],
     text: 'Sticks together: end of day, adjacent friends gain +{v} HP.',
@@ -219,10 +220,11 @@ export const UNITS: UnitDef[] = [
     text: 'Friend summoned: give it +{v}/+{v}.',
     cooked: { text: 'Start of battle: adjacent friends gain +3/+3.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', values: [3, 3, 3] }] },
     abilities: [{ trigger: 'friendSummoned', effect: 'buff', target: 'summoned' }] },
-  { id: 'ghostPepper', name: 'Ghost Pepper', cookedName: 'Ghost Pepper Wings', emoji: '👻', tier: 5, flavor: 'spicy', attack: 4, hp: 10, values: [3, 5, 7],
-    text: 'Start of battle: a random back-row enemy (front row if none) Burns {v}.',
+  { id: 'ghostPepper', name: 'Ghost Pepper', cookedName: 'Ghost Pepper Wings', emoji: '👻', tier: 5, flavor: 'spicy', attack: 4, hp: 12, values: [3, 4, 6],
+    hitsHarder: 'burn',
+    text: 'Its attacks deal +{v} damage to Burning enemies.',
     cooked: { text: 'Start of battle: all enemies Burn 3.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'allEnemies', values: [3, 3, 3] }] },
-    abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'randomBackEnemy' }] },
+    abilities: [] },
   { id: 'pineapple', name: 'Pineapple', cookedName: 'Pina Colada', emoji: '🍍', tier: 5, flavor: 'sweet', attack: 3, hp: 12, values: [1, 1, 2],
     text: 'Hit: adjacent friends gain +{v}/+{v}.',
     cooked: { text: 'Every turn: your friends gain +1/+1.', abilities: [{ trigger: 'round', effect: 'buff', target: 'allFriends', values: [1, 1, 1] }] },
@@ -238,7 +240,7 @@ export const UNITS: UnitDef[] = [
     abilities: [] },
   { id: 'spaghetti', name: 'Spaghetti', cookedName: 'Spaghetti Bolognese', emoji: '🍝', tier: 5, flavor: 'savory', attack: 3, hp: 14, values: [1, 1, 2],
     attackPattern: 'escalate',
-    text: 'Escalating attack: one target, then the whole front row from turn 3, then every enemy from turn 5 (extra targets take half).',
+    text: 'Escalating attack: its first attack hits one target, its second the whole front row, every one after that every enemy (extra targets take half).',
     cooked: { text: 'Start of battle: attacks twice on its first 3 attacks.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [3, 3, 3] }] },
     abilities: [] },
 
@@ -368,6 +370,33 @@ export function itemDef(id: ItemId): ItemDef {
 /** A food's abilities at a level: its own, plus its cooked bonus at level 3 (always after its own, so indexes hold). */
 export function abilitiesOf(def: UnitDef, level: Level): AbilityDef[] {
   return level === 3 && def.cooked ? [...def.abilities, ...def.cooked.abilities] : def.abilities;
+}
+
+/**
+ * Team-building pairs: foods that make something, and foods that feed on it. Each food's cookbook page names its
+ * partners, so a plate gets built rather than bought. Keep this in step with the abilities.
+ */
+export const PAIRS: { what: string; makes: string[]; uses: string[] }[] = [
+  { what: 'interest', makes: ['caviar'], uses: ['fortuneCookie'] },
+  { what: 'free restocks', makes: ['dumplings'], uses: ['soySauce'] },
+  { what: 'selling', makes: ['coinChocolate', 'sugar'], uses: ['sourdough'] },
+  { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'pepperoni'] },
+  { what: 'HP gains', makes: ['apple', 'mochi', 'mapleSyrup', 'peanutButter', 'honey'], uses: ['hotCocoa', 'cake'] },
+  { what: 'Crust', makes: ['pretzel', 'anchovy', 'ramen'], uses: ['porkCrackling'] },
+  { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni'], uses: ['ghostPepper'] },
+  { what: 'Rot', makes: ['cabbage', 'blueCheese', 'durian', 'kimchi'], uses: ['sweetSour'] },
+  { what: 'extra attacks', makes: ['coffee'], uses: ['spaghetti', 'kebab', 'nachos'] },
+];
+
+/** The foods that pair with this one (it makes what they use, or uses what they make). */
+export function partnersOf(id: string): string[] {
+  const out = new Set<string>();
+  for (const p of PAIRS) {
+    if (p.makes.includes(id)) p.uses.forEach((u) => out.add(u));
+    if (p.uses.includes(id)) p.makes.forEach((m) => out.add(m));
+  }
+  out.delete(id);
+  return [...out];
 }
 
 /** The number of growth days a food's ability text means by {d}: its first day-gated ability, at this level. */

@@ -47,6 +47,8 @@ interface BattleUnit {
   /** Times each of this food's abilities has fired (by ability index), for `limitToAmount` and `grows`. */
   fired: number[];
   firstAttackDone: boolean;
+  /** Attacks it has made this battle (each swing of an attack-twice counts): what an escalating attack grows with. */
+  swings: number;
   extraAttacks: number;
   tupperwareUsed: boolean;
   /** Added to this unit's ability amounts this battle. */
@@ -220,7 +222,7 @@ class Battle {
     const def = unitDef(defId);
     return {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
-      attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false,
+      attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: 0, tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
       burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false,
     };
@@ -412,8 +414,9 @@ class Battle {
           ...lanes(laneOf(primary.slot)).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t).map((t): [BattleUnit, number, boolean] => [t, 1, false]),
         ];
       case 'escalate': {
-        if (this.round <= 2) return [[primary, damage, true]];
-        const others = this.units(enemy).filter((t) => t !== primary && (this.round >= 5 || rowOf(t.slot) === 0));
+        // Grows with each of its own attacks: one target, then the whole front row, then every enemy.
+        if (attacker.swings === 0) return [[primary, damage, true]];
+        const others = this.units(enemy).filter((t) => t !== primary && (attacker.swings >= 2 || rowOf(t.slot) === 0));
         return [[primary, damage, true], ...others.map((t): [BattleUnit, number, boolean] => [t, half, false])];
       }
       default:
@@ -539,11 +542,18 @@ class Battle {
       for (const { attacker, primary, hits, times } of inLane) {
         this.mark(attacker, 'attack', times);
         const burn = this.hasFlavor(attacker, 'spicy') ? this.bonus[attacker.side].spicyBurn : 0;
+        const def = unitDef(attacker.defId);
+        const harder = def.hitsHarder ? def.values[attacker.level - 1] + attacker.abilityBonus : 0;
         for (let i = 0; i < times; i++) {
-          for (const [t, dmg, main] of hits) {
-            this.hit(t, dmg, attacker, attacker.item === 'toothpick');
+          // Every swing after the first picks its targets again (the first may be eaten; escalating attacks grow).
+          const target = this.onPlate(primary) ? primary : this.targetFor((1 - attacker.side) as Side, lane);
+          const swing = i === 0 ? hits : target ? this.attackTargets(attacker, target, hits[0][1]) : [];
+          for (const [t, dmg, main] of swing) {
+            const bonus = def.hitsHarder && t[def.hitsHarder] > 0 ? harder : 0;
+            this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
             if (main && burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
           }
+          attacker.swings++;
         }
         // The food behind an attacker can react to its attack.
         const behind = this.plates[attacker.side][slotAt(lane, 1)];

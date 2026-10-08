@@ -129,12 +129,32 @@ describe('attack patterns', () => {
     expect(lowest(r, 1, 0)).toBe(60);
   });
 
-  it('escalate: one target early, the back row by round 5', () => {
+  it('escalate grows with each of its own attacks: one target, then the front row, then every enemy', () => {
     const swell = food('t_swell', 2, 200, [], { attackPattern: 'escalate' });
-    const r = simulateBattle(plate(inst(swell)), plate(inst(wall), null, null, inst(wall)), 1);
-    const early = r.frames.filter((f) => f.round <= 4).map((f) => f.plates[1][3]?.hp ?? 60);
-    expect(Math.min(...early)).toBe(60);
-    expect(lowest(r, 1, 3)).toBeLessThan(60);
+    const r = simulateBattle(plate(inst(swell)), plate(inst(wall), inst(wall), null, inst(wall)), 1);
+    const hpAt = (round: number, slot: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[1][slot]!.hp;
+    expect(hpAt(1, 1)).toBe(60); // first attack: one target
+    expect(hpAt(2, 1)).toBeLessThan(60); // second: the whole front row
+    expect(hpAt(2, 3)).toBe(60);
+    expect(hpAt(3, 3)).toBeLessThan(60); // third: every enemy
+  });
+
+  it('attacking twice makes an escalating attack grow twice as fast', () => {
+    const swell = food('t_swell', 2, 200, [], { attackPattern: 'escalate' });
+    const coffee = food('t_coffee', 1, 60, [{ trigger: 'startOfBattle', effect: 'extraAttacks', target: 'allFriends', values: [3, 3, 3] }]);
+    const r = simulateBattle(plate(inst(swell), null, null, null, null, inst(coffee)), plate(inst(wall), inst(wall), null, inst(wall)), 1); // the coffee waits in the back row
+    const hpAt = (round: number, slot: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[1][slot]!.hp;
+    expect(hpAt(1, 1)).toBeLessThan(60); // its second swing on turn 1 already hits the front row
+    expect(hpAt(2, 3)).toBeLessThan(60); // and by turn 2, every enemy
+  });
+
+  it('hitsHarder: attacks deal more to enemies with that status', () => {
+    const payoff = food('t_payoff', 2, 200, [], { hitsHarder: 'burn', values: [3, 3, 3] });
+    const burner = food('t_burner', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane', values: [1, 1, 1] }]);
+    const plain = simulateBattle(plate(inst(payoff)), plate(inst(wall)), 1);
+    const burning = simulateBattle(plate(inst(payoff), null, null, inst(burner)), plate(inst(wall)), 1);
+    expect(texts(burning)).not.toBe(texts(plain));
+    expect(lowest(burning, 1, 0)).toBeLessThan(lowest(plain, 1, 0) - 2);
   });
 });
 

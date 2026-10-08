@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_ROUNDS, OVERTIME_AFTER, simulateBattle } from './battle';
 import { generateGhost } from './bot';
-import { MARKET_UNITS, UNITS, flavorTally, flavorsOf, rarityOf, unitCost, unitDef } from './data';
+import { MARKET_UNITS, PAIRS, UNITS, flavorTally, partnersOf, flavorsOf, rarityOf, unitCost, unitDef } from './data';
 import {
   INCOME,
   START_GOLD,
@@ -157,7 +157,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.hitsHarder ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
@@ -166,11 +166,17 @@ describe('food data', () => {
         if (ab.target === 'attacker') expect(['hit', 'friendAheadHit', 'friendAheadAttacks', 'crustBlock'], `${u.id}: 'attacker' needs a hit or friend-ahead trigger`).toContain(ab.trigger);
         if (ab.target === 'summoned') expect(ab.trigger, `${u.id}: 'summoned' needs friendSummoned`).toBe('friendSummoned');
         if (ab.effect === 'bonusDamage') expect(ab.trigger, `${u.id}: bonusDamage needs firstAttack`).toBe('firstAttack');
-        const kitchen = ['buy', 'sell', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
+        const kitchen = ['buy', 'sell', 'friendSold', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
         if (['gold', 'sellValue', 'freeReroll', 'gainFlavor', 'buyBonus'].includes(ab.effect)) expect(kitchen, `${u.id}: ${ab.effect} is a kitchen effect`).toContain(ab.trigger);
       }
       expect(u.text.includes('{v}') || u.abilities.every((a) => a.values || a.limitToAmount), `${u.id}: text should show {v} (a limitToAmount count shows in the hover instead)`).toBe(true);
     }
+  });
+
+  it('every team-building pair names real foods, and each food in one has partners', () => {
+    for (const p of PAIRS) for (const id of [...p.makes, ...p.uses]) expect(UNITS.some((u) => u.id === id), `${p.what}: ${id}`).toBe(true);
+    expect(partnersOf('fortuneCookie')).toContain('caviar');
+    expect(partnersOf('spaghetti')).toContain('coffee');
   });
 
   it('rarity defaults from tier, and mythics stay out of the market', () => {
@@ -281,6 +287,16 @@ describe('run', () => {
     finishBattle(run, 'win');
     expect(run.lastInterest).toBe(6);
     expect(run.plate[0]!.hp).toBe(unitDef('fortuneCookie').hp + 6);
+  });
+
+  it('Sourdough grows whenever you sell a friend', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('sourdough');
+    run.plate[1] = unit('coinChocolate');
+    run.plate[2] = unit('egg');
+    sellUnit(run, { area: 'plate', index: 1 });
+    sellUnit(run, { area: 'plate', index: 2 });
+    expect(run.plate[0]!.hp).toBe(unitDef('sourdough').hp + 2);
   });
 
   it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {

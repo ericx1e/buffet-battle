@@ -17,6 +17,7 @@ export type Trigger =
   // kitchen
   | 'buy' // this food is bought (also when bought onto a copy)
   | 'sell' // this food is sold
+  | 'friendSold' // you sell another food (foods on the plate)
   | 'levelUp' // this food reaches level 2 or 3
   | 'reroll' // you restock the market (fires for foods on the plate)
   | 'startTurn' // a new turn starts, after income and interest (foods on the plate)
@@ -196,6 +197,8 @@ export interface UnitDef {
   attackPattern?: AttackPattern;
   /** While on the plate: your interest cap is raised by this (by level). */
   interestCap?: [number, number, number];
+  /** Its attacks deal +value (by level) to enemies with this status: a payoff for a plate that spreads it. */
+  hitsHarder?: 'burn' | 'rot';
   /** A plate-wide effect while this food is on the plate (see Aura). */
   aura?: Aura;
   /** Counts as every flavor for flavor bonuses. */
