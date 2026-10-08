@@ -261,6 +261,16 @@ describe('projectiles and patterns', () => {
     expect(volleys.length).toBeGreaterThan(1);
   });
 
+  it('a throw of several projectiles hits a different enemy with each, one frame each', () => {
+    const shooter = food('t_shot3', 2, 60, [], { attackPattern: 'shot', throwDamage: 2, values: [3, 3, 3] });
+    const r = simulateBattle(plate(inst(shooter)), plate(inst(wall), inst(wall), inst(wall)), 1);
+    const shots = r.frames.filter((f) => f.text.includes('t_shot3 shoots at'));
+    expect(shots.length).toBe(3);
+    const targets = shots.map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!.slot);
+    expect(new Set(targets).size).toBe(3);
+    expect(targets[0]).toBe(0); // the enemy across first
+  });
+
   it('after its opening shot, a front-row thrower attacks in melee', () => {
     const r = simulateBattle(plate(inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1);
     const hpAfter = (round: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[1][0]!.hp;

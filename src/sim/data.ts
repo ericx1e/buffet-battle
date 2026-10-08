@@ -284,7 +284,7 @@ export const UNITS: UnitDef[] = [
     text: 'Every HP gain on your plate is +{v}.',
     cooked: { text: 'Start of battle: your friends gain +2/+4.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', attack: 2, hp: 4, values: [1, 1, 1] }] },
     abilities: [] },
-  { id: 'kimchi', name: 'Kimchi', cookedName: 'Kimchi Jjigae', emoji: '🥬', tier: 6, flavor: 'sour', flavor2: 'spicy', attack: 3, hp: 10, values: [1, 2, 3],
+  { id: 'kimchi', name: 'Kimchi', cookedName: 'Kimchi Jjigae', emoji: '🥬', tier: 6, flavor: 'sour', flavor2: 'spicy', attack: 3, hp: 9, values: [1, 2, 3],
     art: 'kimchi',
     text: 'Start of battle: the enemy front row Rots {v} and Burns {v}.',
     cooked: { text: 'Every turn: all enemies Rot 1 and Burn 1.', abilities: [{ trigger: 'round', effect: 'rot', target: 'allEnemies', values: [1, 1, 1] }, { trigger: 'round', effect: 'burn', target: 'allEnemies', values: [1, 1, 1] }] },

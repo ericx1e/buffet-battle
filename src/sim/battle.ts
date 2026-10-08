@@ -482,28 +482,38 @@ class Battle {
           const half = Math.max(1, Math.ceil(damage / 2));
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
-          let landed = 0;
           const n = this.levelValue(u); // shots, lobs and peppercorns thrown; a volley's damage per ball
           const flat = unitDef(u.defId).throwDamage ?? half;
+          const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'volleys' : 'shoots';
+          const land = (t: BattleUnit, dmg: number) => {
+            this.hit(t, dmg, u, u.item === 'toothpick');
+            if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
+          };
           for (let i = 0; i < times; i++) {
-            const hits: (() => [BattleUnit, number] | null)[] = [];
-            if (pattern === 'shot') for (let k = 0; k < n; k++) hits.push(() => { const t = this.targetFor(enemy, lane); return t ? [t, flat] : null; });
-            else if (pattern === 'lob') for (let k = 0; k < n; k++) hits.push(() => { const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane); return t ? [t, flat] : null; });
-            else if (pattern === 'spray') for (let k = 0; k < n; k++) hits.push(() => { const pool = this.units(enemy); return pool.length ? [this.rng.pick(pool), flat] : null; });
-            else if (pattern === 'volley') for (const t of this.units(enemy).filter((e) => rowOf(e.slot) === 0)) hits.push(() => [t, n]); // a flat level number per ball
-            for (const pick of hits) {
-              const hit = pick();
-              if (!hit) continue;
-              const [t, dmg] = hit;
-              if (!this.onPlate(t)) continue;
-              this.hit(t, dmg, u, u.item === 'toothpick');
-              if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
-              landed++;
+            if (pattern === 'volley') {
+              const row = this.units(enemy).filter((e) => rowOf(e.slot) === 0);
+              if (row.length === 0) continue;
+              for (const t of row) land(t, n); // a flat level number per ball, all at once
+              this.mark(u, 'shoot', 1);
+              this.snap(`Turn ${this.round} · ${this.name(u)} volleys`);
+              continue;
+            }
+            // One projectile at a time, each at an enemy not hit yet in this throw, each its own moment.
+            const hit = new Set<BattleUnit>();
+            for (let k = 0; k < n; k++) {
+              const left = this.units(enemy).filter((e) => !hit.has(e) && e.hp > 0);
+              if (left.length === 0) break;
+              const near = (e: BattleUnit) => Math.abs(laneOf(e.slot) - lane);
+              let t: BattleUnit;
+              if (pattern === 'spray') t = this.rng.pick(left);
+              else if (pattern === 'lob') t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
+              else t = [...left].sort((x, y) => near(x) - near(y) || rowOf(x.slot) - rowOf(y.slot) || x.slot - y.slot)[0]; // the enemy across first, then outward
+              hit.add(t);
+              land(t, flat);
+              this.mark(u, 'shoot', 1);
+              this.snap(`Turn ${this.round} · ${this.name(u)} ${verb} at ${this.name(t)}`);
             }
           }
-          if (landed === 0) continue;
-          this.mark(u, 'shoot', times);
-          this.snap(`Turn ${this.round} · ${this.name(u)} ${pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'volleys' : 'shoots'}`);
         }
       }
     }
