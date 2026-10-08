@@ -238,7 +238,7 @@ Sweet x4 cleanses 1 Burn and 1 Rot from the front row each turn.
 
 ## Flavors and synergies
 
-Every food has one of 5 flavors; some count as two (Kimchi, Blue Cheese, Sweet & Sour Pork, Bento Box, Smoothie) and Saffron counts as all of them. Tofu gains a random new flavor each level up, and the Flavor Packet gives any food one (up to 3 flavors per food). Fielding 2, 4, 6 or 8 foods of a flavor grants a team bonus; each tier adds to the one before, so a vertical plate is a real build, while 2-of-each splashes stay useful. A plate has 6 spots, so 8 takes planning: foods that count as two flavors, Saffron (which doubles its neighbours), Tofu and Flavor Packets. Each 8 changes a rule rather than adding numbers.
+Every food has one of 5 flavors; some count as two (Kimchi, Blue Cheese, Sweet & Sour Pork, Bento Box, Smoothie) and Saffron counts as all of them. Tofu gains a random new flavor each level up, and the Flavor Packet gives any food one (up to 3 flavors per food). Fielding 2, 4, 6 or 8 **different** foods of a flavor grants a team bonus (copies of one food count once, so a bonus asks for variety, not duplicates; the best-placed copy counts, e.g. the one next to Saffron); each tier adds to the one before, so a vertical plate is a real build, while 2-of-each splashes stay useful. A plate has 6 spots, so 8 takes planning: foods that count as two flavors, Saffron (which doubles its neighbours), Tofu and Flavor Packets. Each 8 changes a rule rather than adding numbers.
 
 | Flavor | Identity | 2 on plate | 4 on plate | 6 on plate | 8 on plate |
 | --- | --- | --- | --- | --- | --- |

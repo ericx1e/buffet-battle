@@ -444,18 +444,28 @@ export function flavorsOf(u: { defId: string; flavorOverride?: Flavor; extraFlav
 }
 
 /**
- * Foods of each flavor on a plate, for the 2/4/6 flavor bonuses. A food counts once for every flavor it has (all five
- * for Saffron), and twice when it sits next to a Saffron (every food, once Saffron is cooked). The kitchen and the
- * battle both count with this, from where the foods were placed.
+ * Foods of each flavor on a plate, for the flavor bonuses. Each DIFFERENT food counts once for every flavor it has
+ * (all five for Saffron): a second Chili Pepper adds nothing, so a bonus asks for variety, not copies. A food next to
+ * a Saffron (every food, once Saffron is cooked) counts twice. The kitchen and the battle both count with this, from
+ * where the foods were placed.
  */
 export function flavorTally(plate: Plate): Map<Flavor, number> {
   const infusers = plate.flatMap((u, slot) => (u && unitDef(u.defId).aura === 'infuse' ? [{ slot, cooked: levelOf(u.copies) === 3 }] : []));
-  const counts = new Map<Flavor, number>();
+  // Best contribution of each food (by kind) to each flavor: copies don't stack, the best-placed one counts.
+  const best = new Map<string, number>();
   plate.forEach((u, slot) => {
     if (!u || unitDef(u.defId).token) return;
     const weight = infusers.some((f) => f.slot !== slot && (f.cooked || isAdjacent(f.slot, slot))) ? 2 : 1;
-    for (const fl of unitDef(u.defId).allFlavors ? FLAVORS : flavorsOf(u)) counts.set(fl, (counts.get(fl) ?? 0) + weight);
+    for (const fl of unitDef(u.defId).allFlavors ? FLAVORS : flavorsOf(u)) {
+      const key = `${u.defId}|${fl}`;
+      best.set(key, Math.max(best.get(key) ?? 0, weight));
+    }
   });
+  const counts = new Map<Flavor, number>();
+  for (const [key, weight] of best) {
+    const fl = key.slice(key.indexOf('|') + 1) as Flavor;
+    counts.set(fl, (counts.get(fl) ?? 0) + weight);
+  }
   return counts;
 }
 

@@ -1023,9 +1023,9 @@ const flavorCounts = (): Map<Flavor, number> => flavorTally(app.run.plate);
 function flavorTip(f: Flavor, n: number): string {
   const tier = flavorTier(n);
   const rows = FLAVOR_BONUS_LONG[f].map((b, i) => `<p class="tier ${n >= TIER_AT[i] ? 'on' : ''}"><b>${TIER_AT[i]}</b>${b}</p>`).join('');
-  const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more ${f} for the next bonus.${tier === 3 ? ' Foods with two flavors, Saffron and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
+  const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more different ${f} food${TIER_AT[tier] - n === 1 ? '' : 's'} for the next bonus.${tier === 3 ? ' Foods with two flavors, Saffron and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
   const saffron = app.run.plate.some((u) => u && unitDef(u.defId).aura === 'infuse') ? '<p class="dim">Foods next to Saffron count twice.</p>' : '';
-  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}`);
+  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once: copies don't add more.</p>`);
 }
 
 function spiceJars(): string {

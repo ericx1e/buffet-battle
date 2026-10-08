@@ -176,12 +176,18 @@ describe('ability blocks', () => {
     expect(highest(r, 1, 0, 'rot')).toBeGreaterThan(0);
   });
 
-  it('flavor bonuses grow at 2, 4 and 6 foods', () => {
-    const hot = food('t_hot', 1, 10, [], { flavor: 'spicy' });
-    const spicy = (n: number) => texts(simulateBattle(plate(...Array.from({ length: n }, () => inst(hot))), plate(inst(wall)), 1));
+  it('flavor bonuses grow at 2, 4 and 6 different foods', () => {
+    const hots = Array.from({ length: 6 }, (_, i) => food(`t_hot_${i}`, 1, 10, [], { flavor: 'spicy' }));
+    const spicy = (n: number) => texts(simulateBattle(plate(...hots.slice(0, n).map((h) => inst(h))), plate(inst(wall)), 1));
     expect(spicy(2)).toContain('Spicy x2: spicy attacks Burn 1');
     expect(spicy(4)).toContain('Spicy x4: spicy attacks Burn 2');
     expect(spicy(6)).toContain('Burn never fades');
+  });
+
+  it('copies of one food count once toward a flavor', () => {
+    const hot = food('t_hot_same', 1, 10, [], { flavor: 'spicy' });
+    const r = simulateBattle(plate(inst(hot), inst(hot), inst(hot), inst(hot)), plate(inst(wall)), 1);
+    expect(texts(r)).not.toContain('Spicy x');
   });
 
   it('extra flavors: a food that gained a flavor counts toward it', () => {
