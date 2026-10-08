@@ -339,14 +339,14 @@ describe('run', () => {
     run.plate[0] = unit('egg');
     run.plate[3] = unit('beanSprout');
     for (let i = 0; i < 6; i++) serve(run);
-    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 6); // every day, no limit
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 6); // +1 HP every day, no limit
   });
 
   it('Bread Dough rises: HP only', () => {
     const run = newRun(5);
     run.plate[0] = unit('breadDough');
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 2 * 9); // +2 every day
+    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 9); // +1 every day
     expect(run.plate[0]!.attack).toBe(unitDef('breadDough').attack);
   });
 

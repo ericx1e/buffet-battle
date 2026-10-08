@@ -48,6 +48,21 @@ function box(s, x0, x1, top, bottom, depth, front, topFill) {
   s.poly([[x0 + 2, top - depth], [x1 - 2, top - depth], [x1, top], [x0, top]], topFill);
   s.rect(x0, top, x1 - x0 + 1, 1, front[0]); // the near edge catches the light
 }
+/**
+ * A round bowl, dish or plate from the side and a little above: its outside (below the rim, shaded like a cylinder),
+ * the rim (an ellipse `ry` tall, catching the light) and its opening, filled by `inside(x, y)`.
+ */
+function bowl(s, cx, rimY, rx, ry, depth, ramp, inside) {
+  s.fill(Math.floor(cx - rx - 1), Math.floor(rimY - ry - 1), Math.ceil(cx + rx + 1), Math.ceil(rimY + depth + 1), (x, y) => {
+    const t = (x - cx) / rx;
+    if (Math.abs(t) > 1) return null;
+    if (((x - cx) / rx) ** 2 + ((y - rimY) / ry) ** 2 <= 1) {
+      return ((x - cx) / (rx - 1.3)) ** 2 + ((y - rimY) / (ry - 0.9)) ** 2 <= 1 ? inside(x, y) : ramp[0];
+    }
+    if (y < rimY || y > rimY + depth * Math.sqrt(1 - t * t)) return null;
+    return cyl(ramp, t);
+  });
+}
 /** The usual side shading for a cylinder: lit on the left, a shade band and dark core on the right. */
 const cyl = (r, t) => (t < -0.62 ? r[1] : t > 0.78 ? r[4] : t > 0.45 ? r[3] : r[2]);
 
@@ -110,10 +125,10 @@ const foods = {
   },
   sugar(s) {
     s.shadow(17, 28, 11, 2);
+    // A sugar cube from the front and a little above: its front face and a thin top face, sparkling specks.
     const speck = (x, y) => ((x * 7 + y * 13) % 9 === 0);
-    s.poly([[16, 8], [26, 13], [16, 18], [6, 13]], (x, y) => (speck(x, y) ? '#e6e0ea' : '#ffffff'));
-    s.poly([[6, 13], [16, 18], [16, 28], [6, 23]], (x, y) => (speck(x, y) ? '#cfc8d6' : '#e8e3ec'));
-    s.poly([[16, 18], [26, 13], [26, 23], [16, 28]], (x, y) => (speck(x, y) ? '#aaa2b4' : '#c3bccb'));
+    box(s, 7, 25, 13, 27, 4, R('#ece8f0'), (x, y) => (speck(x, y) ? '#e6e0ea' : '#ffffff'));
+    for (const [x, y] of [[10, 17], [15, 21], [21, 18], [12, 24], [22, 24]]) s.px(x, y, '#cfc8d6');
   },
   lemon(s) {
     s.shadow(17, 27, 11, 2);
@@ -314,14 +329,15 @@ const foods = {
     s.ball(19, 16, 3, 2, R('#f3eee8'));
   },
   pizza(s) {
-    s.shadow(17, 28, 11, 2);
-    // A slice lying on the table, seen from slightly above: crust at the back, tip toward you, and the slice's
-    // thickness showing along its near edges. Toppings are squashed ovals, as flat things look from this angle.
-    s.poly([[5, 11], [27, 11], [16, 28]], C.crust[3]);
-    s.poly([[5, 9], [27, 9], [16, 26]], (x, y) => (x > 21 && y > 12 ? C.cheese[3] : y < 12 ? C.cheese[1] : C.cheese[2]));
-    s.tube([[5, 10], [10, 8], [16, 7], [22, 8], [27, 10]], 2.6, C.crust);
-    for (const [x, y, rx, ry] of [[12, 14, 3, 2.2], [20, 14, 3, 2.2], [16, 20, 2.4, 1.8]]) s.ball(x, y, rx, ry, C.pepperoni);
-    s.tube([[23, 16], [23, 19]], 1, C.cheese);
+    s.shadow(17, 28, 12, 2);
+    // A slice lying on the table, the camera low and a little above: the slice is foreshortened (wide crust at the
+    // back, the tip toward you, not far below it), its thickness showing as a band along the near edges, toppings
+    // squashed into flat ovals.
+    s.poly([[4, 14], [28, 14], [16, 25]], C.crust[3]); // the edge band, one pixel deeper than the top
+    s.poly([[4, 12], [28, 12], [16, 23]], (x, y) => (x > 21 && y > 14 ? C.cheese[3] : y < 14 ? C.cheese[1] : C.cheese[2]));
+    s.tube([[4, 12], [10, 10], [16, 9.5], [22, 10], [28, 12]], 2.2, C.crust);
+    for (const [x, y, rx, ry] of [[11, 14, 2.8, 1.4], [20, 14, 2.8, 1.4], [16, 18, 2.2, 1.1]]) s.ball(x, y, rx, ry, C.pepperoni);
+    s.tube([[23, 16], [23, 19]], 0.9, C.cheese); // a drip of cheese over the edge
   },
   hotPot(s) {
     s.shadow(17, 29, 13, 2);
@@ -337,36 +353,39 @@ const foods = {
   },
   cake(s) {
     s.shadow(17, 29, 13, 2);
-    s.fill(4, 14, 28, 28, (x, y) => {
-      const t = (x - 16) / 12;
-      if (Math.abs(t) > 1 || (y > 24 && ((x - 16) / 12) ** 2 + ((y - 24) / 4) ** 2 > 1)) return null;
-      const band = y === 20 || y === 21 ? C.white : C.frosting;
-      return t < -0.7 ? band[1] : t > 0.55 ? band[3] : band[2];
-    });
-    s.ball(16, 14, 12, 4, C.white, { bias: 0.3 });
-    for (const [x, len] of [[7, 3], [12, 4], [20, 3], [25, 2]]) s.tube([[x, 16], [x, 16 + len]], 1, C.white);
-    s.rect(15, 5, 2, 8, '#8fc3e8');
-    s.px(15, 7, '#ffffff'); s.px(16, 9, '#ffffff'); s.px(15, 11, '#ffffff');
-    s.ball(16, 3, 1, 2, R('#ffc23a'));
+    // A round birthday cake from the side and a little above: pink sides with a cream band, the frosted top (an
+    // ellipse), cream drips over the edge and a candle in the middle.
+    const band = (t, v) => (v === 6 || v === 7 ? cyl(C.white, t) : cyl(C.frosting, t));
+    cylinder(s, 16, 15, 26, 12, 12, 4, band, (x, y) => (y < 14 ? C.white[1] : C.white[0]));
+    for (const [x, len] of [[7, 3], [12, 4], [20, 3], [25, 2]]) s.tube([[x, 17 + (Math.abs(x - 16) < 6 ? 1 : 0)], [x, 17 + len]], 0.9, C.white);
+    s.rect(15, 6, 2, 8, '#8fc3e8');
+    s.px(15, 8, '#ffffff'); s.px(16, 10, '#ffffff'); s.px(15, 12, '#ffffff');
+    s.ball(16, 4, 1, 2, R('#ffc23a'));
   },
   kimchi(s) {
     s.shadow(17, 29, 13, 2);
-    s.ball(12, 17, 6, 5, C.kimchi, { tone: (nx, ny, x, y) => ((x + y) % 6 === 0 ? -2 : 0) });
-    s.ball(20, 16, 6, 5, C.kimchi, { tone: (nx, ny, x, y) => ((x * 2 + y) % 7 === 0 ? -2 : 0) });
-    s.ball(16, 13, 5, 4, C.kimchi, { tone: (nx, ny, x, y) => ((x + y * 2) % 6 === 0 ? -2 : 0) });
-    s.ball(16, 21, 13, 7, C.bowl, { clip: (x, y) => y >= 19 });
-    s.rect(4, 19, 25, 1, C.bowl[1]);
+    // A white bowl from the side and a little above, heaped with red kimchi leaves rising out of its opening.
+    bowl(s, 16, 18, 12.5, 3.8, 9, C.bowl, () => C.kimchi[3]);
+    s.ball(12, 16, 6, 4.5, C.kimchi, { tone: (nx, ny, x, y) => ((x + y) % 6 === 0 ? -2 : 0) });
+    s.ball(20, 16, 6, 4.5, C.kimchi, { tone: (nx, ny, x, y) => ((x * 2 + y) % 7 === 0 ? -2 : 0) });
+    s.ball(16, 12, 5, 4, C.kimchi, { tone: (nx, ny, x, y) => ((x + y * 2) % 6 === 0 ? -2 : 0) });
+    for (const [x, y] of [[10, 14], [18, 11], [22, 15]]) s.px(x, y, '#f2e6c8'); // pale cabbage ribs
   },
   ramen(s) {
     s.shadow(17, 29, 13, 2);
-    s.tube([[7, 4], [20, 15]], 0.9, C.wood);
-    s.tube([[10, 3], [22, 14]], 0.9, C.wood);
-    s.ball(16, 20, 13, 8, C.ramenBowl, { clip: (x, y) => y >= 18 });
-    s.ball(16, 17, 12, 4, C.yolk.map((c) => shade(c, 0.05)), { bias: 0.3, tone: (nx, ny, x, y) => (Math.sin(x * 1.4 + y * 2) > 0.7 ? -2 : 0) });
-    s.ball(21, 16, 3, 2, C.white);
-    s.px(21, 16, '#f29a1e'); s.px(22, 16, '#f29a1e');
-    s.rect(8, 14, 3, 4, '#2e4a2c');
-    s.rect(3, 18, 27, 1, '#f4ece4');
+    // A red ramen bowl from the side and a little above: golden broth in the opening with noodles, a half egg, a
+    // slice of chashu and scallions, a sheet of nori standing at the back, chopsticks resting across the rim.
+    const broth = R('#e8a84a');
+    s.rect(7, 9, 4, 8, '#2e4a2c'); // nori, behind
+    s.rect(7, 9, 1, 8, '#4a6a44');
+    bowl(s, 16, 16, 13, 4.2, 11, C.ramenBowl, (x, y) => (Math.sin(x * 1.3 + y * 2.1) > 0.75 ? broth[0] : y < 15 ? broth[2] : broth[1]));
+    s.ball(12, 16, 3, 1.6, R('#e8a0a0'), { bias: 0.3 }); // chashu
+    s.px(12, 16, '#c86a6a');
+    s.ball(20, 15, 3, 1.8, C.white, { bias: 0.3 }); // half egg
+    s.ball(20, 15, 1.4, 0.9, R('#f29a1e'));
+    for (const [x, y] of [[15, 17], [17, 15], [24, 16], [9, 17]]) s.px(x, y, C.leaf[1]);
+    s.tube([[13, 13], [29, 3]], 0.8, C.wood); // chopsticks resting on the far rim
+    s.tube([[15, 14], [30, 5]], 0.8, C.wood);
   },
   dumplings(s) {
     s.shadow(17, 29, 13, 2);
@@ -426,12 +445,9 @@ const foods = {
   // Flavor overhaul foods
   tofu(s) {
     s.shadow(17, 29, 12, 2);
-    // A soft white block seen from above-front, with a sprinkle of scallion.
-    const tofu = R('#f4edd9');
-    s.poly([[16, 9], [27, 14], [16, 19], [5, 14]], (x, y) => ((x * 3 + y * 7) % 11 === 0 ? tofu[1] : tofu[0]));
-    s.poly([[5, 14], [16, 19], [16, 28], [5, 23]], tofu[2]);
-    s.poly([[16, 19], [27, 14], [27, 23], [16, 28]], tofu[3]);
-    for (const [x, y] of [[12, 13], [17, 12], [20, 15], [14, 16]]) { s.px(x, y, C.leaf[1]); s.px(x + 1, y, C.leaf[2]); }
+    // A soft white block from the front and a little above, a sprinkle of scallion on its thin top face.
+    box(s, 5, 27, 15, 27, 5, R('#f4edd9'), (x, y) => ((x * 3 + y * 7) % 11 === 0 ? '#ece2c8' : '#fbf6e8'));
+    for (const [x, y] of [[11, 13], [16, 11], [20, 13], [14, 14]]) { s.px(x, y, C.leaf[1]); s.px(x + 1, y, C.leaf[2]); }
   },
   coinChocolate(s) {
     s.shadow(17, 27, 12, 2);
@@ -516,17 +532,17 @@ const foods = {
     for (const [x, y, r] of chunks) s.ball(x, y, 3, 3, r);
   },
   nachos(s) {
-    s.shadow(17, 29, 13, 2);
-    // A pile of tortilla chips under a molten cheese drip.
+    s.shadow(17, 29, 14, 2);
+    // A pile of tortilla chips on a shallow plate (from the side and a little above) under a molten cheese drip.
+    bowl(s, 16, 24, 14, 3.6, 3, C.bowl, () => C.bowl[1]);
     const chip = R('#f0b84a');
-    for (const pts of [[[4, 26], [14, 12], [18, 27]], [[12, 27], [22, 11], [28, 26]], [[8, 20], [20, 17], [12, 28]], [[17, 23], [26, 16], [27, 28]]]) {
-      s.poly(pts, (x, y) => ((x * 5 + y * 3) % 13 === 0 ? chip[3] : y < 18 ? chip[1] : chip[2]));
+    for (const pts of [[[4, 24], [14, 11], [18, 25]], [[12, 25], [22, 10], [28, 24]], [[8, 19], [20, 16], [12, 26]], [[17, 22], [26, 15], [27, 25]]]) {
+      s.poly(pts, (x, y) => ((x * 5 + y * 3) % 13 === 0 ? chip[3] : y < 17 ? chip[1] : chip[2]));
     }
-    s.tube([[11, 17], [21, 17]], 1.3, C.cheese);
-    s.tube([[12, 17], [11, 22]], 1, C.cheese);
-    s.tube([[20, 17], [21, 20]], 1, C.cheese);
-    for (const x of [8, 15, 23]) s.line(x, 25, x + 2, 23, chip[4]); // chip edges
-    s.px(15, 16, C.stem[2]); s.px(18, 16, C.red[2]);
+    s.tube([[11, 16], [21, 16]], 1.3, C.cheese);
+    s.tube([[12, 16], [11, 21]], 1, C.cheese);
+    s.tube([[20, 16], [21, 19]], 1, C.cheese);
+    s.px(15, 15, C.stem[2]); s.px(18, 15, C.red[2]);
   },
   soySauce(s) {
     s.shadow(17, 29, 8, 2);
@@ -549,21 +565,21 @@ const foods = {
   },
   sweetSour(s) {
     s.shadow(17, 29, 13, 2);
-    // Glossy red-orange pork chunks and pineapple in a white bowl.
-    s.ball(16, 21, 13, 7, C.bowl, { clip: (x, y) => y >= 19 });
+    // Glossy red-orange pork and pineapple heaped in a white bowl, seen from the side and a little above.
+    bowl(s, 16, 19, 12.5, 3.8, 8, C.bowl, () => '#b8402a');
     const glaze = R('#e0532a');
-    for (const [x, y] of [[10, 16], [16, 14], [22, 16], [13, 19], [20, 19]]) s.ball(x, y, 3.5, 3, glaze, { bias: 0.15 });
-    for (const [x, y] of [[17, 18], [8, 19], [24, 19]]) s.rect(x - 1, y - 1, 3, 2, C.pine[1]);
-    s.rect(3, 19, 27, 1, '#f4ece4');
+    for (const [x, y] of [[11, 16], [16, 14], [21, 16], [13, 18], [19, 18]]) s.ball(x, y, 3.5, 3, glaze, { bias: 0.2 });
+    for (const [x, y] of [[16, 18], [8, 18], [24, 18]]) { s.rect(x - 1, y - 1, 3, 2, C.pine[1]); s.px(x - 1, y - 1, C.pine[0]); }
+    for (const [x, y] of [[12, 13], [17, 11]]) s.px(x, y, '#ffd0a0'); // the shine of the glaze
   },
   spaghetti(s) {
-    s.shadow(17, 29, 13, 2);
-    // A twirl of noodles under red sauce and a meatball.
-    s.ball(16, 22, 14, 6, C.bowl, { bias: 0.2 });
-    s.ball(16, 18, 10, 6, C.noodle, { tone: (nx, ny, x, y) => (Math.sin(x * 1.3 + y * 0.7) > 0.6 ? 1 : 0) });
-    s.ball(16, 16, 6, 3, R('#cf3524'), { bias: 0.2 });
-    s.ball(19, 14, 3, 3, C.steak);
-    s.px(13, 14, C.leaf[1]); s.px(14, 14, C.leaf[2]);
+    s.shadow(17, 29, 14, 2);
+    // A shallow white plate from the side and a little above, a mound of spaghetti on it, red sauce and a meatball.
+    bowl(s, 16, 22, 14, 4.5, 3, C.bowl, (x, y) => (y < 21 ? C.bowl[1] : C.bowl[0]));
+    s.ball(16, 18, 9.5, 5.5, C.noodle, { tone: (nx, ny, x, y) => (Math.sin(x * 1.3 + y * 0.9) > 0.6 ? 1 : 0) });
+    s.ball(16, 15, 6, 2.6, R('#cf3524'), { bias: 0.2 });
+    s.ball(19, 13, 3, 2.6, C.steak);
+    s.px(12, 14, C.leaf[1]); s.px(13, 14, C.leaf[2]);
   },
   bento(s) {
     s.shadow(17, 29, 14, 2);
@@ -583,13 +599,13 @@ const foods = {
   },
   smoothie(s) {
     s.shadow(16, 30, 8, 2);
-    // A tall cup of berry smoothie seen from slightly above: the pink drink's surface inside the rim, a striped straw
-    // and a lemon slice on the rim.
+    // A tall cup of berry smoothie from the side and a little above: the rim and the pink surface inside it, a
+    // striped straw and a lemon slice on the rim.
     const berry = R('#f27aa8');
-    cylinder(s, 16, 10, 28, 7.5, 5.5, 2.2, (t) => cyl(berry, t), (x, y) => (((x - 16) / 6.2) ** 2 + ((y - 10.4) / 1.5) ** 2 <= 1 ? '#f9a8c8' : '#fff0f6'));
+    cylinder(s, 16, 10, 28, 7.5, 5.5, 3, (t) => cyl(berry, t), (x, y) => (((x - 16) / 6.2) ** 2 + ((y - 10.5) / 2.1) ** 2 <= 1 ? (y < 10 ? '#f48cb8' : '#f9a8c8') : '#fff0f6'));
     s.tube([[18, 10], [21, 2]], 1, C.stripeWhite, (off, t) => (Math.floor(t * 8) % 2 ? C.stripeRed : C.stripeWhite));
     s.ball(9, 10, 3, 3, C.lemon, { clip: (x, y) => y <= 11 });
-    s.rect(11, 14, 1, 9, '#ffe0ec');
+    s.rect(11, 15, 1, 9, '#ffe0ec');
   },
   edamame(s) {
     s.shadow(17, 28, 11, 2);
@@ -610,14 +626,8 @@ const foods = {
   },
   peppercorn(s) {
     s.shadow(17, 29, 12, 2);
-    // A little wooden dish heaped with black peppercorns, a few spilled in front.
-    const wood = R('#a8693a');
-    s.fill(5, 20, 27, 27, (x, y) => {
-      const nx = (x - 16) / 11, ny = (y - 20) / 7;
-      if (nx * nx + ny * ny > 1) return null;
-      return nx < -0.6 ? wood[1] : nx > 0.5 ? wood[3] : wood[2];
-    });
-    s.ball(16, 20, 11, 3.5, R('#7a4a26'), { bias: 0.2 });
+    // A little wooden dish from the side and a little above, heaped with black peppercorns, a few spilled in front.
+    bowl(s, 16, 20, 11, 3.4, 6, R('#a8693a'), () => '#5a3a20');
     for (const [x, y] of [[9, 19], [12, 17], [15, 15], [18, 15], [21, 16], [23, 18], [12, 20], [15, 18], [18, 18], [21, 20], [16, 21]]) s.ball(x, y, 1.6, 1.6, R('#4a3a34'));
     for (const [x, y] of [[8, 28], [24, 28], [27, 26]]) s.ball(x, y, 1.4, 1.4, R('#4a3a34'));
   },
@@ -643,16 +653,19 @@ const foods = {
   },
   takoyaki(s) {
     s.shadow(17, 29, 13, 2);
-    // Three takoyaki in a paper boat seen from slightly above, glazed with sauce, a line of mayo and green flakes.
+    // A paper boat from the side and a little above: the inside of the tray (its far half), five takoyaki sitting in
+    // it glazed with sauce, mayo and green flakes, then the tray's near wall over their bottoms.
     const tray = R('#e8d6b0');
-    s.poly([[3, 19], [29, 19], [26, 27], [6, 27]], (x, y) => (y < 21 ? tray[1] : tray[2]));
-    for (const [x, y] of [[9, 17], [16, 16], [23, 17]]) {
-      s.ball(x, y, 5, 4.5, R('#c88a3e'));
-      s.ball(x, y - 2, 4, 2.2, R('#6a3a1e'), { bias: 0.3 });
-      s.line(x - 3, y - 2, x + 2, y - 3, '#fff6e0');
+    s.poly([[6, 15], [26, 15], [29, 20], [3, 20]], tray[3]); // inside, in shade
+    const ball = (x, y) => {
+      s.ball(x, y, 4.2, 3.8, R('#c88a3e'));
+      s.ball(x, y - 1.5, 3.4, 1.8, R('#6a3a1e'), { bias: 0.3 });
+      s.line(x - 2, y - 2, x + 2, y - 2, '#fff6e0');
       s.px(x - 1, y - 3, '#5aa63a');
-      s.px(x + 2, y - 1, '#5aa63a');
-    }
+    };
+    for (const x of [11, 21]) ball(x, 14);
+    for (const x of [7, 16, 25]) ball(x, 18);
+    s.poly([[3, 20], [29, 20], [26, 27], [6, 27]], (x, y) => (y === 20 ? tray[0] : x < 8 ? tray[1] : x > 24 ? tray[3] : tray[2]));
   },
   hotCocoa(s) {
     s.shadow(16, 30, 10, 2);
@@ -690,10 +703,10 @@ const foods = {
   },
   saffron(s) {
     s.shadow(17, 28, 11, 2);
-    // A tiny brass dish heaped with crimson saffron threads.
-    s.ball(16, 22, 11, 5, R('#d6ad45'), { bias: 0.2 });
-    s.ball(16, 20, 9, 3, R('#c23a1c'), { bias: 0.25, tone: (nx, ny, x, y) => ((x + y * 2) % 3 === 0 ? -1 : 0) });
-    for (const [a, b] of [[[10, 19], [13, 12]], [[16, 19], [17, 10]], [[21, 19], [19, 12]], [[13, 18], [9, 13]], [[19, 18], [24, 13]]]) s.tube([a, b], 0.6, R('#d8361a'));
+    // A tiny brass dish from the side and a little above, heaped with crimson saffron threads.
+    bowl(s, 16, 20, 10.5, 3.2, 5, R('#d6ad45'), () => '#a82a14');
+    s.ball(16, 18, 7.5, 3, R('#c23a1c'), { bias: 0.25, tone: (nx, ny, x, y) => ((x + y * 2) % 3 === 0 ? -1 : 0) });
+    for (const [a, b] of [[[11, 18], [13, 12]], [[16, 17], [17, 10]], [[20, 18], [19, 12]], [[13, 18], [9, 13]], [[19, 18], [24, 13]]]) s.tube([a, b], 0.6, R('#d8361a'));
     for (const [x, y] of [[13, 12], [17, 10], [19, 12], [9, 13], [24, 13]]) s.px(x, y, '#f2a41e');
   },
   wagyu(s) {

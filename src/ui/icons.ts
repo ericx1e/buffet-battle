@@ -94,17 +94,18 @@ const ICONS = {
     '.ooooooooo.',
     '..ppppppp..',
   ],
+  // Crust: a baked loaf, scored on top, with a dark baked rim (shield-shaped: it blocks damage).
   shield: [
-    'ccccccccccc',
-    'cCCcccccccc',
-    'cCccccccccc',
-    'cCcccccccck',
-    'cccccccccck',
-    '.cccccccck.',
-    '..cccccck..',
-    '...cccck...',
-    '....cck....',
-    '.....k.....',
+    '..kkkkkkk..',
+    '.kChCChCck.',
+    'kCChCChCcdk',
+    'kCCccccccdk',
+    'kCcccccccdk',
+    'kCcccccccdk',
+    '.kcccccccdk',
+    '..kcccccdk.',
+    '...kcccdk..',
+    '....kkkk...',
   ],
   flame: [
     '....f......',
@@ -345,7 +346,7 @@ const STAT_ICON = { atk: 'medal', hp: 'heart', crust: 'shield', burn: 'flame', r
 
 /**
  * A stat as a pixel badge with its number on top: attack on an orange medallion, HP in a heart, Crust on a
- * shield; statuses on a flame (Burn), a mould blob (Rot) and a snowflake (Chill). `attrs` carries animation keys; `cls` adds states (boosted, hurt).
+ * baked loaf; statuses on a flame (Burn), a mould blob (Rot) and a snowflake (Chill). `attrs` carries animation keys; `cls` adds states (boosted, hurt).
  */
 export function statBadge(stat: keyof typeof STAT_ICON, value: number, scale = 1, attrs = '', cls = ''): string {
   return `<span class="stat-badge sb-${stat} ${cls}" ${attrs}>${pix(STAT_ICON[stat], scale)}<b>${value}</b></span>`;

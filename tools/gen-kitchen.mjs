@@ -279,6 +279,8 @@ function blob(x0, y0, x1, y1, colorAt, outline, heavy = true, cast = false) {
   }
 }
 const inEllipse = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+/** How far a horizontal band on a round body dips toward you at `t` (-1..1 across): the camera is a little above. */
+const dip = (t, ry) => Math.round(ry * Math.sqrt(Math.max(0, 1 - t * t)));
 const shadow = () => {}; // props sit flat on the counter like the rest of the scene
 
 const BRASS = ['#fff4c2', '#f6d36b', '#e2ac3c', '#b97c23', '#7f4f14'];
@@ -290,14 +292,14 @@ prop('bell', () => {
   const cx = 280, baseY = 304; // baseY = centre of the base's top face
   const TOP = ['#7c6f6a', '#6a5e59', '#54484400', '#3d3431', '#2c2422'];
   // Base: oval top face plus a 4px front band, outlined, casting the counter shadow.
-  blob(cx - 23, baseY - 6, cx + 23, baseY + 10, (x, y) => {
-    if (inEllipse(x, y, cx, baseY, 22, 5)) {
+  blob(cx - 23, baseY - 8, cx + 23, baseY + 12, (x, y) => {
+    if (inEllipse(x, y, cx, baseY, 22, 7)) {
       // Top face: flat, with a lighter rim along its front-left edge
-      const front = !inEllipse(x, y - 1, cx, baseY, 22, 5);
+      const front = !inEllipse(x, y - 1, cx, baseY, 22, 7);
       return front && x < cx + 8 ? '#6a5e59' : '#4a3f3b';
     }
     const band = y >= baseY && y <= baseY + 4 && Math.abs(x - cx) <= 22;
-    if (band || (y > baseY + 4 && inEllipse(x, y, cx, baseY + 4, 22, 5))) {
+    if (band || (y > baseY + 4 && inEllipse(x, y, cx, baseY + 4, 22, 7))) {
       const t = (x - cx) / 22;
       return t < -0.75 ? '#4e4440' : t > 0.7 ? '#1f1918' : '#2f2725';
     }
@@ -336,22 +338,25 @@ prop('tipjar', () => {
   blob(cx - rx, neckTop - 3, cx + rx, bottom + 3, (x, y) => {
     const t = (x - cx) / rx;
     // Opening seen from above
-    if (y <= neckTop + 2 && inEllipse(x, y, cx, neckTop, 12, 3)) {
-      return inEllipse(x, y, cx, neckTop + 1, 10, 2) ? '#7da3a1' : GLASS[1];
+    if (y <= neckTop + 4 && inEllipse(x, y, cx, neckTop, 12, 4.5)) {
+      return inEllipse(x, y, cx, neckTop + 1, 10, 3) ? '#7da3a1' : GLASS[1];
     }
     // Threaded neck
     if (y > neckTop && y < bodyTop) {
       if (Math.abs(x - cx) > 12) return null;
-      return y === neckTop + 3 || y === neckTop + 6 ? GLASS[4] : side((x - cx) / 12, GLASS);
+      const d = dip((x - cx) / 12, 2);
+      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 12, 4.5)) return null;
+      return y === neckTop + 4 + d || y === neckTop + 7 + d ? GLASS[4] : side((x - cx) / 12, GLASS);
     }
     // Body with a rounded bottom
-    const inBody = y <= bottom ? Math.abs(t) <= 1 && y >= bodyTop : inEllipse(x, y, cx, bottom, rx, 3);
+    const inBody = y <= bottom ? Math.abs(t) <= 1 && y >= bodyTop : inEllipse(x, y, cx, bottom, rx, 5);
     if (!inBody) return null;
-    if (y === bodyTop || y === bodyTop + 1) return Math.abs(t) > 0.85 ? null : GLASS[2]; // shoulder
-    // Label (blank, for the gold count)
-    if (y >= 274 && y <= 286 && x >= cx - 10 && x <= cx + 10) {
-      if (y === 274 || y === 286) return '#d9c89f';
-      return x >= cx + 8 ? '#eadcb8' : '#fbf2da';
+    if (y <= bodyTop + 1 + dip(t, 2)) return Math.abs(t) > 0.85 ? null : GLASS[2]; // shoulder, curving round
+    // Label (blank, for the gold count), wrapped round the jar: its edges dip toward you
+    const ld = dip((x - cx) / rx, 2);
+    if (y >= 273 + ld && y <= 285 + ld && x >= cx - 10 && x <= cx + 10) {
+      if (y === 273 + ld || y === 285 + ld) return '#d9c89f';
+      return x >= cx + 8 ? '#eadcb8' : x <= cx - 8 ? '#f2e6c8' : '#fbf2da';
     }
     // Glass: the counter shows through, tinted, with highlight streaks and a darker right edge
     if (t > -0.72 && t < -0.55) return GLASS[0];
@@ -370,15 +375,16 @@ prop('bin', () => {
     if (y >= lidY - 9 && y <= lidY - 7 && Math.abs(x - cx) <= 6) return y === lidY - 9 ? STEEL[1] : STEEL[3];
     if (y > lidY - 7 && y <= lidY - 5 && (x === cx - 5 || x === cx + 5)) return STEEL[4];
     // Domed lid
-    if (y <= lidY + 2 && inEllipse(x, y, cx, lidY + 1, rx + 2, 6)) return lit((x - cx) / (rx + 3), (y - lidY - 1) / 7, STEEL);
+    if (y <= lidY + 3 && inEllipse(x, y, cx, lidY + 1, rx + 2, 8)) return lit((x - cx) / (rx + 3), (y - lidY - 1) / 9, STEEL);
     if (y > lidY + 2 && y <= bodyTop && Math.abs(x - cx) <= rx + 1) return side((x - cx) / (rx + 1), STEEL.map((c, i) => [c, '#d6dde2', '#aeb8bf', '#808b93', '#58626a'][i]));
     // Body
-    const inBody = y <= bottom ? Math.abs(t) <= 1 && y > bodyTop : inEllipse(x, y, cx, bottom, rx, 4);
+    const inBody = y <= bottom ? Math.abs(t) <= 1 && y > bodyTop : inEllipse(x, y, cx, bottom, rx, 6);
     if (!inBody) return null;
-    if (y === 266 || y === 299) return STEEL[4]; // pressed ridges
-    if (y === 267 || y === 300) return STEEL[1];
+    const d = dip(t, 4); // pressed ridges wrap round the body, dipping toward you
+    if (y === 264 + d || y === 297 + d) return STEEL[4];
+    if (y === 265 + d || y === 298 + d) return STEEL[1];
     // Pedal at the front bottom
-    if (y >= bottom - 2 && Math.abs(x - cx) <= 7) return y === bottom - 2 ? '#5a5250' : '#2c2726';
+    if (y >= bottom + 2 && Math.abs(x - cx) <= 7) return y === bottom + 2 ? '#5a5250' : '#2c2726';
     // Leaf badge
     if (inEllipse(x, y, cx, 283, 5, 7)) return x === cx ? LEAF[4] : lit((x - cx) / 5.5, (y - 283) / 7.5, LEAF);
     return side(t, STEEL);

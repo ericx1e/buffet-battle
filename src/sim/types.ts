@@ -200,6 +200,8 @@ export interface UnitDef {
   interestCap?: [number, number, number];
   /** Its attacks deal +value (by level) to enemies with this status: a payoff for a plate that spreads it. */
   hitsHarder?: 'burn' | 'rot';
+  /** Projectile foods: each throw deals this flat damage (levels add throws, not damage). */
+  throwDamage?: number;
   /** A plate-wide effect while this food is on the plate (see Aura). */
   aura?: Aura;
   /** Counts as every flavor for flavor bonuses. */

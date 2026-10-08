@@ -186,6 +186,8 @@ class Battle {
   private frames: BattleFrame[] = [];
   private marks: Mark[] = [];
   private queue: { unit: BattleUnit; source?: BattleUnit }[] = [];
+  /** Reactions waiting for their own moment: each fires in its own frame after the one that caused it. */
+  private later: { unit: BattleUnit; trigger: Trigger; ctx: FireContext }[] = [];
   private bonus: [SideBonus, SideBonus] = [{ ...NO_BONUS }, { ...NO_BONUS }];
   private nextUid = 1;
   private triggerBudget = TRIGGER_BUDGET;
@@ -481,12 +483,13 @@ class Battle {
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
           let landed = 0;
-          const n = this.levelValue(u); // shots, lobs and peppercorns thrown; a volley's extra damage
+          const n = this.levelValue(u); // shots, lobs and peppercorns thrown; a volley's damage per ball
+          const flat = unitDef(u.defId).throwDamage ?? half;
           for (let i = 0; i < times; i++) {
             const hits: (() => [BattleUnit, number] | null)[] = [];
-            if (pattern === 'shot') for (let k = 0; k < n; k++) hits.push(() => { const t = this.targetFor(enemy, lane); return t ? [t, half] : null; });
-            else if (pattern === 'lob') for (let k = 0; k < n; k++) hits.push(() => { const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane); return t ? [t, half] : null; });
-            else if (pattern === 'spray') for (let k = 0; k < n; k++) hits.push(() => { const pool = this.units(enemy); return pool.length ? [this.rng.pick(pool), half] : null; });
+            if (pattern === 'shot') for (let k = 0; k < n; k++) hits.push(() => { const t = this.targetFor(enemy, lane); return t ? [t, flat] : null; });
+            else if (pattern === 'lob') for (let k = 0; k < n; k++) hits.push(() => { const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane); return t ? [t, flat] : null; });
+            else if (pattern === 'spray') for (let k = 0; k < n; k++) hits.push(() => { const pool = this.units(enemy); return pool.length ? [this.rng.pick(pool), flat] : null; });
             else if (pattern === 'volley') for (const t of this.units(enemy).filter((e) => rowOf(e.slot) === 0)) hits.push(() => [t, n]); // a flat level number per ball
             for (const pick of hits) {
               const hit = pick();
@@ -658,6 +661,14 @@ class Battle {
           }
         }
         if (lines.length > 0) this.snap(joinLines(lines));
+        continue;
+      }
+      // Reactions, one food at a time, each its own frame (Steak feeding a summon, Pork Crackling biting back...).
+      if (this.later.length > 0) {
+        const { unit, trigger, ctx } = this.later.shift()!;
+        if (!this.onPlate(unit)) continue;
+        const line = this.fire(unit, trigger, ctx);
+        if (line) this.snap(line);
         continue;
       }
 
@@ -986,7 +997,7 @@ class Battle {
       if (absorbed > 0) this.mark(target, 'crust', -absorbed);
       if (absorbed > 0 && foe && !reaction) {
         if (this.bonus[target.side].thorns) this.hit(foe, absorbed, target, false, true); // Salty x8
-        for (const f of [target, ...this.adjacent(target)]) this.fire(f, 'crustBlock', { source: foe });
+        for (const f of [target, ...this.adjacent(target)]) this.later.push({ unit: f, trigger: 'crustBlock', ctx: { source: foe } });
       }
     }
     if (rest > 0) {
@@ -1041,7 +1052,7 @@ class Battle {
     this.plates[side][unit.slot] = unit;
     this.mark(unit, 'summon');
     for (const friend of this.units(side)) {
-      if (friend !== unit) this.fire(friend, 'friendSummoned', { summoned: unit });
+      if (friend !== unit) this.later.push({ unit: friend, trigger: 'friendSummoned', ctx: { summoned: unit } });
     }
     return unit;
   }
@@ -1051,7 +1062,7 @@ class Battle {
     const gained = this.gainHp(u, hp);
     if (attack === 0 && gained === 0) return;
     this.mark(u, 'buff', attack, gained);
-    if (gained > 0) for (const f of this.adjacent(u)) this.fire(f, 'friendHealed', { friend: u });
+    if (gained > 0) for (const f of this.adjacent(u)) this.later.push({ unit: f, trigger: 'friendHealed', ctx: { friend: u } });
   }
 
   private debuff(u: BattleUnit, attack: number) {
