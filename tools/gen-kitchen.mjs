@@ -367,24 +367,29 @@ prop('tipjar', () => {
 
 // Scrap bin: brushed-steel pedal bin with a domed lid and a compost leaf badge.
 prop('bin', () => {
-  const cx = 392, lidY = 252, bodyTop = 256, bottom = 309, rx = 25;
+  // One round body seen from the side and a little above: every edge across it (the lid's top, the lid's lower
+  // rim, the pressed ridges and the bottom) is part of the same ellipse, `ry` deep, so they all curve together.
+  const cx = 392, lidY = 252, bottom = 307, rx = 25, ry = 6;
+  const lidRx = rx + 2, lidBand = 4;
   shadow(cx + 4, bottom + 5, 30);
-  blob(cx - rx - 2, lidY - 9, cx + rx + 2, bottom + 4, (x, y) => {
+  const LID = ['#ffffff', '#d6dde2', '#aeb8bf', '#808b93', '#58626a'];
+  blob(cx - lidRx - 1, lidY - 10, cx + lidRx + 1, bottom + ry + 2, (x, y) => {
+    const tl = (x - cx) / lidRx;
     const t = (x - cx) / rx;
-    // Lid handle
-    if (y >= lidY - 9 && y <= lidY - 7 && Math.abs(x - cx) <= 6) return y === lidY - 9 ? STEEL[1] : STEEL[3];
-    if (y > lidY - 7 && y <= lidY - 5 && (x === cx - 5 || x === cx + 5)) return STEEL[4];
-    // Domed lid
-    if (y <= lidY + 3 && inEllipse(x, y, cx, lidY + 1, rx + 2, 8)) return lit((x - cx) / (rx + 3), (y - lidY - 1) / 9, STEEL);
-    if (y > lidY + 2 && y <= bodyTop && Math.abs(x - cx) <= rx + 1) return side((x - cx) / (rx + 1), STEEL.map((c, i) => [c, '#d6dde2', '#aeb8bf', '#808b93', '#58626a'][i]));
-    // Body
-    const inBody = y <= bottom ? Math.abs(t) <= 1 && y > bodyTop : inEllipse(x, y, cx, bottom, rx, 6);
-    if (!inBody) return null;
-    const d = dip(t, 4); // pressed ridges wrap round the body, dipping toward you
-    if (y === 264 + d || y === 297 + d) return STEEL[4];
-    if (y === 265 + d || y === 298 + d) return STEEL[1];
+    // Lid handle: a bar on two posts, standing on the middle of the lid
+    if (y >= lidY - 10 && y <= lidY - 8 && Math.abs(x - cx) <= 6) return y === lidY - 10 ? STEEL[1] : STEEL[3];
+    if (y > lidY - 8 && y <= lidY - 4 && (x === cx - 5 || x === cx + 5)) return STEEL[4];
+    // Lid top: the ellipse, lit from the top-left
+    if (inEllipse(x, y, cx, lidY, lidRx, ry)) return lit((x - cx) / (lidRx + 1), (y - lidY) / (ry + 1), STEEL);
+    // Lid band: its side, from the top ellipse down to a lower rim that follows the same curve
+    if (Math.abs(tl) <= 1 && y > lidY && y <= lidY + lidBand + dip(tl, ry)) return y === lidY + lidBand + dip(tl, ry) ? LID[4] : side(tl, LID);
+    // Body: below the lid, down to a bottom on the same curve
+    if (Math.abs(t) > 1 || y <= lidY + lidBand + dip(tl, ry) || y > bottom + dip(t, ry)) return null;
+    const d = dip(t, ry);
+    if (y === 264 + d || y === 295 + d) return STEEL[4]; // pressed ridges wrap round the body
+    if (y === 265 + d || y === 296 + d) return STEEL[1];
     // Pedal at the front bottom
-    if (y >= bottom + 2 && Math.abs(x - cx) <= 7) return y === bottom + 2 ? '#5a5250' : '#2c2726';
+    if (y >= bottom + d - 2 && Math.abs(x - cx) <= 7) return y === bottom + d - 2 ? '#5a5250' : '#2c2726';
     // Leaf badge
     if (inEllipse(x, y, cx, 283, 5, 7)) return x === cx ? LEAF[4] : lit((x - cx) / 5.5, (y - 283) / 7.5, LEAF);
     return side(t, STEEL);
