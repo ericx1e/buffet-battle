@@ -396,6 +396,7 @@ function merge(run: RunState, target: UnitInstance, incoming: UnitInstance): Act
   target.copies = Math.min(6, target.copies + incoming.copies);
   target.attack = Math.max(target.attack, incoming.attack) + 1;
   target.hp = Math.max(target.hp, incoming.hp) + 1;
+  afterHpGain(run, target);
   target.item ??= incoming.item;
   target.tempAttack = (target.tempAttack ?? 0) + (incoming.tempAttack ?? 0) || undefined;
   target.sellBonus = (target.sellBonus ?? 0) + (incoming.sellBonus ?? 0) || undefined;
@@ -491,6 +492,21 @@ function gainFlavor(run: RunState, u: UnitInstance): Flavor | null {
   const f = withRng(run, (rng) => rng.pick(options));
   u.extraFlavors = [...(u.extraFlavors ?? []), f];
   return f;
+}
+
+/**
+ * A food gained HP in the kitchen (from an ability, an item or a merge): Birthday Cake adds its +1/2/3 as a gift of
+ * its own, and neighbours that react to a friend gaining HP (Hot Cocoa) go off.
+ */
+function afterHpGain(run: RunState, t: UnitInstance, parts: string[] = []) {
+  if (!run.plate.includes(t)) return;
+  for (const cake of run.plate) {
+    if (!cake || unitDef(cake.defId).aura !== 'soothe') continue;
+    const extra = unitDef(cake.defId).values[levelOf(cake.copies) - 1];
+    t.hp += extra;
+    run.growth.push({ uid: t.uid, attack: 0, hp: extra, from: cake.uid, source: unitDef(cake.defId).name });
+  }
+  kitchenHpGain(run, t, parts);
 }
 
 /**
@@ -607,20 +623,11 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         if (targets.length === 0) return;
         const a = amount * (ab.attack ?? 1);
         const h = amount * (ab.hp ?? 1);
-        // Birthday Cake: every HP gain on your plate is +1/2/3, in the kitchen too, as a gift of its own from the cake.
-        const cakes = run.plate.filter((o): o is UnitInstance => !!o && unitDef(o.defId).aura === 'soothe');
         for (const t of targets) {
           t.attack += a;
           t.hp += h;
           run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name });
-          if (h > 0) {
-            for (const cake of cakes) {
-              const extra = unitDef(cake.defId).values[levelOf(cake.copies) - 1];
-              t.hp += extra;
-              run.growth.push({ uid: t.uid, attack: 0, hp: extra, from: cake.uid, source: unitDef(cake.defId).name });
-            }
-            kitchenHpGain(run, t, parts);
-          }
+          if (h > 0) afterHpGain(run, t, parts);
         }
         grew();
         const who = targets.length > 1 ? `${targets.length} friends` : targets[0] === unit ? def.name : unitDef(targets[0].defId).name;
@@ -662,6 +669,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       unit!.attack += 1;
       unit!.hp += 2;
       run.growth.push({ uid: unit!.uid, attack: 1, hp: 2, source: def.name });
+      afterHpGain(run, unit!);
       break;
     case 'hotSauce':
       unit!.tempAttack = (unit!.tempAttack ?? 0) + 3;
@@ -671,10 +679,12 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       unit!.hp += 1;
       unit!.sellBonus = (unit!.sellBonus ?? 0) + 2;
       run.growth.push({ uid: unit!.uid, attack: 1, hp: 1, sell: 2, source: def.name });
+      afterHpGain(run, unit!);
       break;
     case 'boneBroth':
       unit!.hp += 4;
       run.growth.push({ uid: unit!.uid, attack: 0, hp: 4, source: def.name });
+      afterHpGain(run, unit!);
       break;
     case 'flavorPacket': {
       const f = gainFlavor(run, unit!);
@@ -705,6 +715,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
         u.attack += attack;
         u.hp += hp;
         run.growth.push({ uid: u.uid, attack, hp, source: def.name });
+        afterHpGain(run, u);
       }
       break;
     }
@@ -714,6 +725,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
         u.attack += 1;
         u.hp += 2;
         run.growth.push({ uid: u.uid, attack: 1, hp: 2, source: def.name });
+        afterHpGain(run, u);
       }
       break;
   }

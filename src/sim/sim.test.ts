@@ -348,6 +348,17 @@ describe('run', () => {
     expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + unitDef('breadDough').values[0] + unitDef('cake').values[0]);
   });
 
+  it('Birthday Cake adds to HP from items and merges while planning', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('egg');
+    run.plate[1] = unit('cake');
+    run.market[run.market.length - 1] = { kind: 'item', itemId: 'boneBroth' };
+    run.gold = 10;
+    expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 4 + unitDef('cake').values[0]);
+    expect(run.growth.some((g) => g.from === run.plate[1]!.uid)).toBe(true); // shown as the cake's own gift
+  });
+
   it('Birthday Cake adds to HP gains in battle', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { hp: 40 }), 3: unit('apple', { hp: 40 }), 4: unit('cake', { hp: 40 }) }), plate({ 0: unit('cheese', { attack: 3, hp: 80 }) }), 1);
     // the Apple's gain first, then the Cake's extra as its own buff, from the Cake
