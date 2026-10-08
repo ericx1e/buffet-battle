@@ -442,6 +442,37 @@ const foods = {
     s.rect(9, 27, 14, 1, china[3]); // foot
     s.rect(11, 28, 10, 1, china[4]);
   },
+  cherry(s) {
+    s.shadow(17, 29, 11, 2);
+    // A pair of glossy cherries on joined stems, seen from the side and a little above.
+    const cherry = R('#c8233a');
+    s.tube([[11, 18], [15, 8], [18, 4]], 0.7, C.stem);
+    s.tube([[22, 18], [19, 8], [18, 4]], 0.7, C.stem);
+    s.ball(19, 4, 3, 1.6, C.leaf, { bias: 0.2 });
+    s.ball(11, 21, 6, 6, cherry, { bias: 0.25 });
+    s.ball(22, 21, 6, 6, cherry, { bias: 0.25 });
+    for (const [x, y] of [[9, 18], [20, 18]]) { s.px(x, y, '#ffd0d6'); s.px(x + 1, y, '#ff9aa8'); }
+  },
+  croutons(s) {
+    s.shadow(17, 29, 13, 2);
+    // A little heap of golden toasted bread cubes, each with its lit top face and a darker side, flecked with herbs.
+    const toast = R('#d99a45');
+    const cube = (x, y, w) => box(s, x, x + w, y, y + w - 1, 2, toast, () => R('#f2c37a')[1]);
+    cube(4, 20, 7); cube(13, 21, 7); cube(21, 19, 7); cube(9, 13, 7); cube(17, 12, 7);
+    for (const [x, y] of [[7, 22], [15, 23], [24, 21], [12, 15], [20, 14]]) s.px(x, y, '#5a8a3a');
+  },
+  baguette(s) {
+    s.shadow(17, 29, 14, 2);
+    // A long golden baguette lying on the table, seen from the side and a little above: its rounded top lit, the
+    // diagonal scores showing pale crumb, the underside in shade.
+    const crust = R('#d0893a');
+    s.tube([[3, 23], [29, 13]], (t) => 4.6 - 1.2 * Math.abs(t - 0.5), crust);
+    for (const x of [8, 13, 18, 23]) {
+      const y = Math.round(23 - ((x - 3) * 10) / 26);
+      s.line(x - 2, y - 1, x + 1, y - 3, '#f6e2b0');
+      s.line(x - 1, y - 1, x + 2, y - 3, '#e8c88a');
+    }
+  },
   // Flavor overhaul foods
   tofu(s) {
     s.shadow(17, 29, 12, 2);
@@ -872,6 +903,24 @@ const I = {
   stew: R('#d9822b'), oven: R('#c9cfd4'), lunch: R('#c8443a'), latch: R('#d6ad45'),
 };
 const items = {
+  sprinkles(s) {
+    s.shadow(17, 29, 9, 2);
+    // A little shaker jar of rainbow sprinkles from the side and a little above: the glass shows the sprinkles, a
+    // white cap with holes on top.
+    cylinder(s, 16, 12, 28, 7.5, 7.5, 2.4, (t) => cyl(R('#f4eadc'), t));
+    const dots = ['#e8504a', '#f2c21e', '#4aa8e0', '#6cc95a', '#e86fa8'];
+    let k = 0;
+    for (let y = 16; y <= 27; y += 2) for (let x = 10 + (y % 4 === 0 ? 1 : 0); x <= 22; x += 3) s.px(x, y, dots[k++ % dots.length]);
+    cylinder(s, 16, 8, 12, 7.5, 7.5, 2.4, (t) => cyl(R('#f2f4f6'), t), (x, y) => ((x + y) % 3 === 0 ? '#b8c2c8' : '#ffffff'));
+  },
+  partyMix(s) {
+    s.shadow(17, 29, 13, 2);
+    // A bowl of party mix from the side and a little above: nuts, pretzels and crackers heaped in a blue bowl.
+    bowl(s, 16, 20, 12.5, 3.6, 8, R('#4f7fc4'), () => '#8a5a2a');
+    for (const [x, y, c] of [[11, 17, '#c8833a'], [16, 15, '#e0a85a'], [21, 17, '#a8642a'], [13, 19, '#f0c47a'], [19, 19, '#c8833a'], [16, 18, '#7a4a22']]) s.ball(x, y, 2.6, 2, R(c), { bias: 0.25 });
+    s.tube([[7, 18], [10, 15], [12, 18]], 0.7, R('#a8642a')); // a little pretzel
+    s.px(24, 15, '#f2e2b0'); s.px(9, 14, '#f2e2b0');
+  },
   butter(s) {
     s.shadow(17, 27, 13, 2);
     s.ball(16, 23, 13, 4, I.dish, { bias: 0.25 });

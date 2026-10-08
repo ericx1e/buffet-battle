@@ -299,6 +299,33 @@ describe('run', () => {
     expect(run.plate[0]!.hp).toBe(unitDef('fortuneCookie').hp + 6);
   });
 
+  it('Cherries lob a pit at the enemy back row whenever a friend is eaten, in its own moment', () => {
+    const r = simulateBattle(plate({ 0: unit('egg', { attack: 1, hp: 1 }), 3: unit('cherry', { hp: 40 }) }), plate({ 0: unit('cheese', { attack: 5, hp: 60 }), 3: unit('cheese', { attack: 1, hp: 60 }) }), 1);
+    const lob = r.frames.find((f) => f.text.startsWith('Cherries'));
+    expect(lob).toBeTruthy();
+    expect(lob!.marks.some((m) => m.side === 0 && m.kind === 'shoot')).toBe(true); // drawn as a throw
+    expect(lob!.marks.some((m) => m.side === 1 && m.slot === 3 && m.kind === 'hit')).toBe(true); // the back row
+  });
+
+  it('Croutons arm friends with Crust; Baguette gains attack when its Crust breaks', () => {
+    const r = simulateBattle(plate({ 0: unit('baguette'), 1: unit('pretzel'), 3: unit('croutons') }), plate({ 0: unit('cheese', { attack: 4, hp: 60 }) }), 1);
+    const said = (t: string) => r.frames.some((f) => f.text.includes(t));
+    expect(said('Croutons:')).toBe(true);
+    expect(said('Baguette:')).toBe(true);
+    const atk = Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0));
+    expect(atk).toBeGreaterThanOrEqual(unitDef('baguette').attack + 1 + 2);
+  });
+
+  it('Sprinkles give 3 random foods +1/+1', () => {
+    const run = newRun(9);
+    for (let i = 0; i < 4; i++) run.plate[i] = unit('egg');
+    run.market[run.market.length - 1] = { kind: 'item', itemId: 'sprinkles' };
+    run.gold = 10;
+    const before = run.plate.reduce((n, u) => n + (u?.attack ?? 0), 0);
+    expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    expect(run.plate.reduce((n, u) => n + (u?.attack ?? 0), 0)).toBe(before + 3);
+  });
+
   it('Sourdough grows whenever you sell a friend', () => {
     const run = newRun(5);
     run.plate[0] = unit('sourdough');

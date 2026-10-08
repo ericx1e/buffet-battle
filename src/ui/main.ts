@@ -345,7 +345,7 @@ function onOffer(src: OfferSource) {
   const offer = getOffer(app.run, src);
   app.message = same || !offer ? '' : offer.kind === 'unit'
     ? 'Drag it onto your plate or into the fridge to buy it, or onto a copy to merge.'
-    : offer.itemId === 'lunchbox' ? 'Drag the Lunchbox onto any food on your plate.' : 'Drag it onto one of your foods.';
+    : itemDef(offer.itemId).anywhere ? `Drag the ${itemDef(offer.itemId).name} onto any food on your plate.` : 'Drag it onto one of your foods.';
   render();
 }
 
@@ -435,7 +435,7 @@ function pickOnto(index: number, loc: Loc) {
   const pack = run.pack;
   if (!pack) return render();
   if (pack.kind === 'spice') {
-    if (!getUnit(run, loc) && pack.items[index] !== 'lunchbox') return report({ ok: false, error: 'Drop it onto one of your foods.' });
+    if (!getUnit(run, loc) && !itemDef(pack.items[index]).anywhere) return report({ ok: false, error: 'Drop it onto one of your foods.' });
     const picked = pickPack(run, index);
     if (!picked.ok) return report(picked);
     const name = itemDef(pack.items[index]).name;
@@ -1420,7 +1420,9 @@ function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: 
   const shooter = f.marks.find((m) => m.kind === 'shoot');
   if (!shooter) return;
   const defId = f.plates[shooter.side][shooter.slot]?.defId;
-  const pattern = defId ? unitDef(defId).attackPattern ?? 'shot' : 'shot';
+  // A food with a thrown ability (Cherries) lobs; projectile foods throw by their pattern.
+  const def = defId ? unitDef(defId) : undefined;
+  const pattern = def?.attackPattern ?? ([...def?.abilities ?? [], ...def?.cooked?.abilities ?? []].some((a) => a.thrown) ? 'lob' : 'shot');
   const from = fighterPoint(shooter.side, shooter.slot);
   const el = root.querySelector<HTMLElement>(`.fighter[data-inspect="${shooter.side}:${shooter.slot}"] .f-art`);
   const back = shooter.side === 0 ? -4 : 4;
@@ -1819,7 +1821,7 @@ function keywordify(html: string): string {
 const CONDITIONS = new RegExp(
   [
     'Start of battle', 'Start of day', 'start of day', 'End of day', 'end of day', 'at the end of every turn', 'First time hit', 'First attack each battle',
-    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the fridge', 'Friend summoned', 'Friend sold', 'Level up', 'Refill', 'Start of battle, from any row',
+    'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the fridge', 'Friend summoned', 'Friend sold', 'Friend eaten', 'Crust broken', 'Level up', 'Refill', 'Start of battle, from any row',
     'When the friend ahead attacks', 'When the friend ahead is hit', 'when the friend ahead attacks', 'when the friend ahead is hit', 'when hit', 'each level up',
     'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit', 'Sell', 'Bought', 'Eaten',
   ].map((c) => `\\b${c}\\b`).join('|'),

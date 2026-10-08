@@ -838,6 +838,7 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .bit.proj-edamame { background: #8fd05a; width: 5px; height: 4px; }
 .bit.proj-olive { background: #4a3a52; width: 5px; height: 6px; margin: -3px 0 0 -3px; }
 .bit.proj-peppercorn { background: #3a2a22; width: 3px; height: 3px; margin: -1px 0 0 -1px; box-shadow: 0 0 0 1px #e4502a; }
+.bit.proj-cherry { background: #e8d2a8; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 2px; box-shadow: 0 0 0 1px #8a2a2a; }
 .bit.proj-takoyaki { background: #c88a3e; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; box-shadow: inset -1px -1px 0 #8a5530, inset 1px 1px 0 #ffe0a0; }
 
 /* Level in battle: a chunky gold number on a dark tab, lit from above with a shadow under it (orange when cooked). */

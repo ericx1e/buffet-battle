@@ -12,6 +12,8 @@ export type Trigger =
   | 'friendAheadHit' // the friend ahead of this food is hit (`attacker` = who hit it)
   | 'friendAheadAttacks' // the friend ahead of this food attacks (`attacker` = the food it attacked)
   | 'friendFaint' // an adjacent friend is eaten
+  | 'anyFriendEaten' // any friend is eaten
+  | 'crustBreak' // a hit uses up the last of this food's Crust
   | 'friendHealed' // an adjacent friend is healed (`friend` = who)
   | 'crustBlock' // Crust blocks damage on this food or an adjacent friend (`attacker` = who hit)
   // kitchen
@@ -59,6 +61,7 @@ export type Target =
   | 'enemyFrontRow'
   | 'allEnemies'
   | 'randomBackEnemy' // random back-row enemy, front row if the back is empty
+  | 'crustedFriends' // every friend that has Crust
   | 'highestAttackEnemy'
   | 'nearestEnemyLanes' // front-row enemies in the N lanes nearest this one (N = the ability's amount)
   | 'attacker' // hit trigger: the enemy that hit this food
@@ -134,6 +137,10 @@ export interface AbilityDef {
   ifAdjacentFlavor?: Flavor;
   /** Start of battle: resolve before every other Start of battle ability (e.g. copyAbility, so copies fire). */
   early?: boolean;
+  /** Start of battle: goes off after every other Start of battle ability (to see the Crust they gave, say). */
+  late?: boolean;
+  /** Shown as a thrown projectile (a lob) rather than a spark. */
+  thrown?: boolean;
   /** The amount goes up by 1 every time this ability fires this battle. */
   grows?: boolean;
   /** Kitchen: this ability gives at most this much in total over the run (per stat). Battle: it fires at most this many times a battle. */
@@ -211,7 +218,7 @@ export interface UnitDef {
 }
 
 export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware';
-export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth';
+export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix';
 
 export interface ItemDef {
   id: ItemId;
@@ -221,6 +228,8 @@ export interface ItemDef {
   cost: number;
   held: boolean;
   text: string;
+  /** Works on the whole plate: drop it on any of your foods. */
+  anywhere?: boolean;
 }
 
 /** A unit owned by the player, between battles. Stats here are permanent. */

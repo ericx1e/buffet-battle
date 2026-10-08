@@ -358,15 +358,15 @@ class Battle {
     }
   }
 
-  /** Early abilities for everyone first, then every other Start of battle ability, food by food. */
+  /** Early abilities for everyone first, then the usual ones, then late ones, food by food. */
   private startOfBattle() {
     this.truffleCook();
     const order = ([0, 1] as Side[]).flatMap((side) => this.units(side));
-    for (const early of [true, false]) {
+    for (const phase of ['early', 'normal', 'late'] as const) {
       for (const u of order) {
         if (this.over()) return;
         if (!this.onPlate(u)) continue;
-        const line = this.fire(u, 'startOfBattle', {}, (ab) => !!ab.early === early);
+        const line = this.fire(u, 'startOfBattle', {}, (ab) => (ab.early ? 'early' : ab.late ? 'late' : 'normal') === phase);
         if (line) this.snap(line);
         this.resolve();
       }
@@ -711,6 +711,7 @@ class Battle {
           const l2 = this.fire(n, 'friendFaint', {});
           if (l2) lines.push(l2);
         }
+        for (const f of this.units(u.side)) if (f.hp > 0) this.later.push({ unit: f, trigger: 'anyFriendEaten', ctx: {} });
         if (b.hearty && !u.token && neighbours.length > 0) {
           for (const n of neighbours) this.buff(n, 1, 1);
           lines.push(`hearty: ${this.name(u)}'s neighbours +1/+1`);
@@ -835,7 +836,7 @@ class Battle {
       }
     }
     if (targets.length === 0) return;
-    this.mark(u, 'ability');
+    this.mark(u, ab.thrown ? 'shoot' : 'ability');
 
     switch (ab.effect) {
       case 'damage':
@@ -922,6 +923,8 @@ class Battle {
         return this.units(enemy);
       case 'statusEnemies':
         return this.units(enemy).filter((t) => t.burn + t.rot + t.chill > 0);
+      case 'crustedFriends':
+        return this.units(u.side).filter((t) => t !== u && t.crust > 0);
       case 'randomBackEnemy': {
         const all = this.units(enemy);
         const back = all.filter((t) => rowOf(t.slot) === 1);
@@ -995,6 +998,7 @@ class Battle {
       target.crust -= absorbed;
       rest -= absorbed;
       if (absorbed > 0) this.mark(target, 'crust', -absorbed);
+      if (absorbed > 0 && target.crust === 0) this.later.push({ unit: target, trigger: 'crustBreak', ctx: { source: foe } });
       if (absorbed > 0 && foe && !reaction) {
         if (this.bonus[target.side].thorns) this.hit(foe, absorbed, target, false, true); // Salty x8
         for (const f of [target, ...this.adjacent(target)]) this.later.push({ unit: f, trigger: 'crustBlock', ctx: { source: foe } });

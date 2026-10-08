@@ -595,7 +595,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
   const cost = src.area === 'special' ? 0 : def.cost;
   if (run.gold < cost) return fail('Not enough gold.');
   const unit = getUnit(run, target);
-  if (!unit && def.id !== 'lunchbox') return fail('Use items on a unit.');
+  if (!unit && !def.anywhere) return fail('Use items on a unit.');
 
   let result: ActionResult = ok();
   switch (def.id) {
@@ -636,6 +636,17 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       if (unit!.copies >= 6) return fail('Already cooked.');
       const copy: UnitInstance = { ...unit!, copies: 1, sellBonus: undefined, extraFlavors: undefined, gains: undefined };
       result = merge(run, unit!, copy);
+      break;
+    }
+    case 'sprinkles':
+    case 'partyMix': {
+      const [count, attack, hp] = def.id === 'sprinkles' ? [3, 1, 1] : [4, 2, 1];
+      const foods = run.plate.filter((u): u is UnitInstance => !!u);
+      for (const u of withRng(run, (rng) => rng.sample(foods, count))) {
+        u.attack += attack;
+        u.hp += hp;
+        run.growth.push({ uid: u.uid, attack, hp, source: def.name });
+      }
       break;
     }
     case 'lunchbox':
