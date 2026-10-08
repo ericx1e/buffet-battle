@@ -273,15 +273,15 @@ describe('projectiles and patterns', () => {
     expect(lostTurn1(r)[3]).toBe(1); // half of 2
   });
 
-  it('a volley hits every enemy in the front row for half', () => {
+  it('a volley hits every enemy in the front row for its level number', () => {
     const r = simulateBattle(plate(null, inst(wall), null, null, inst(thrower('t_volley', 'volley', 4))), plate(inst(wall), inst(wall), inst(wall)), 1);
-    expect(lostTurn1(r).slice(0, 3)).toEqual([2, 2 + 1, 2]); // our wall hits the middle one too
+    expect(lostTurn1(r).slice(0, 3)).toEqual([1, 1 + 1, 1]); // its level number (1) each; our wall hits the middle one too
   });
 
   it('fork hits both other lanes, from a side lane too', () => {
     const forker = food('t_fork', 3, 60, [], { attackPattern: 'fork' });
     const r = simulateBattle(plate(inst(forker)), plate(inst(wall), inst(wall), inst(wall)), 1);
-    expect(lostTurn1(r).slice(0, 3)).toEqual([0, 3, 3]);
+    expect(lostTurn1(r).slice(0, 3)).toEqual([0, 4, 4]); // 3, +1 at level 1
   });
 });
 

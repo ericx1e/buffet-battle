@@ -144,9 +144,9 @@ describe('flavor synergy in abilities', () => {
 
   it('kitchen growth has no cap: it keeps growing every turn', () => {
     const run = newRun(3);
-    run.plate[0] = unit('cheese', { copies: 6 }); // +2 HP a turn
+    run.plate[0] = unit('cheese', { copies: 6 }); // +3 HP a turn
     for (let i = 0; i < 5; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 10);
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 15);
   });
 });
 
@@ -176,6 +176,14 @@ describe('food data', () => {
     for (const p of PAIRS) for (const id of [...p.makes, ...p.uses]) expect(UNITS.some((u) => u.id === id), `${p.what}: ${id}`).toBe(true);
     expect(partnersOf('fortuneCookie')).toContain('caviar');
     expect(partnersOf('spaghetti')).toContain('coffee');
+  });
+
+  it('every food grows with level: its numbers rise at level 2 and again at 3', () => {
+    for (const u of UNITS.filter((d) => !d.token && rarityOf(d) !== 'mythic' && d.id !== 'tofu')) {
+      const [a, b, c] = u.values;
+      const scales = u.text.includes('{v}') || u.abilities.some((ab) => ab.limitToAmount) || u.interestCap;
+      expect(scales && a < b && b < c, `${u.id}: ${u.values.join('/')}`).toBeTruthy();
+    }
   });
 
   it('rarity defaults from tier, and mythics stay out of the market', () => {

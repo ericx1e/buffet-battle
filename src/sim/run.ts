@@ -85,6 +85,8 @@ export interface RunState {
   rerolls: number;
   /** Free restocks left this turn (Soy Sauce). */
   freeRerolls: number;
+  /** A mythic has been offered this run (only ever one). */
+  mythicOffered?: boolean;
   /** Foods bought for the rest of this turn get +n/+n. */
   buyBonus: number;
   /** Interest and income paid at the start of this turn. */
@@ -246,7 +248,9 @@ function rollMarket(run: RunState, premium = false) {
 function rollSpecial(run: RunState) {
   const { maxTier } = turnConfig(run.turn);
   run.special = withRng(run, (rng): SpecialOffer => {
-    if (run.turn >= 9 && rng.next() < 0.25) {
+    // Mythics are rare: from day 10, a 10% chance a day, and only one is ever offered in a run.
+    if (run.turn >= 10 && !run.mythicOffered && rng.next() < 0.1) {
+      run.mythicOffered = true;
       const def = rng.pick(MYTHIC_UNITS);
       return { kind: 'mythic', defId: def.id, cost: unitCost(def) };
     }

@@ -392,7 +392,8 @@ class Battle {
   private attackTargets(attacker: BattleUnit, primary: BattleUnit, damage: number): [BattleUnit, number, boolean][] {
     const enemy = primary.side;
     const lane = laneOf(attacker.slot);
-    const half = Math.max(1, Math.ceil(damage / 2));
+    // Pierce and escalate: extra targets take the attacker's level number as a percentage (50/75/100).
+    const share = Math.max(1, Math.ceil((damage * this.levelValue(attacker)) / 100));
     const pattern: AttackPattern = unitDef(attacker.defId).attackPattern ?? 'single';
     const lanes = (l: number) => [l - 1, l + 1].filter((x) => x >= 0 && x <= 2);
     switch (pattern) {
@@ -401,23 +402,24 @@ class Battle {
         return [[back ?? primary, damage, true]];
       }
       case 'fork': {
+        const prong = damage + this.levelValue(attacker);
         const prongs = [0, 1, 2].filter((l) => l !== lane).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t);
-        return prongs.length > 0 ? prongs.map((t) => [t, damage, true]) : [[primary, damage, true]];
+        return prongs.length > 0 ? prongs.map((t) => [t, prong, true]) : [[primary, prong, true]];
       }
       case 'pierce': {
         const behind = rowOf(primary.slot) === 0 ? this.plates[enemy][slotAt(laneOf(primary.slot), 1)] : null;
-        return behind ? [[primary, damage, true], [behind, half, false]] : [[primary, damage, true]];
+        return behind ? [[primary, damage, true], [behind, share, false]] : [[primary, damage, true]];
       }
       case 'splash':
         return [
           [primary, damage, true],
-          ...lanes(laneOf(primary.slot)).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t).map((t): [BattleUnit, number, boolean] => [t, 1, false]),
+          ...lanes(laneOf(primary.slot)).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t).map((t): [BattleUnit, number, boolean] => [t, this.levelValue(attacker), false]),
         ];
       case 'escalate': {
         // Grows with each of its own attacks: one target, then the whole front row, then every enemy.
         if (attacker.swings === 0) return [[primary, damage, true]];
         const others = this.units(enemy).filter((t) => t !== primary && (attacker.swings >= 2 || rowOf(t.slot) === 0));
-        return [[primary, damage, true], ...others.map((t): [BattleUnit, number, boolean] => [t, half, false])];
+        return [[primary, damage, true], ...others.map((t): [BattleUnit, number, boolean] => [t, share, false])];
       }
       default:
         return [[primary, damage, true]];
@@ -479,19 +481,17 @@ class Battle {
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
           let landed = 0;
+          const n = this.levelValue(u); // shots, lobs and peppercorns thrown; a volley's extra damage
           for (let i = 0; i < times; i++) {
-            let hits: [BattleUnit, number][] = [];
-            if (pattern === 'shot') hits = [this.targetFor(enemy, lane)].filter((t): t is BattleUnit => !!t).map((t) => [t, half]);
-            else if (pattern === 'lob') {
-              const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane);
-              if (t) hits = [[t, half]];
-            } else if (pattern === 'spray') {
-              for (let k = 0; k < 3; k++) {
-                const pool = this.units(enemy);
-                if (pool.length) hits.push([this.rng.pick(pool), half]);
-              }
-            } else if (pattern === 'volley') hits = this.units(enemy).filter((t) => rowOf(t.slot) === 0).map((t) => [t, half]);
-            for (const [t, dmg] of hits) {
+            const hits: (() => [BattleUnit, number] | null)[] = [];
+            if (pattern === 'shot') for (let k = 0; k < n; k++) hits.push(() => { const t = this.targetFor(enemy, lane); return t ? [t, half] : null; });
+            else if (pattern === 'lob') for (let k = 0; k < n; k++) hits.push(() => { const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane); return t ? [t, half] : null; });
+            else if (pattern === 'spray') for (let k = 0; k < n; k++) hits.push(() => { const pool = this.units(enemy); return pool.length ? [this.rng.pick(pool), half] : null; });
+            else if (pattern === 'volley') for (const t of this.units(enemy).filter((e) => rowOf(e.slot) === 0)) hits.push(() => [t, n]); // a flat level number per ball
+            for (const pick of hits) {
+              const hit = pick();
+              if (!hit) continue;
+              const [t, dmg] = hit;
               if (!this.onPlate(t)) continue;
               this.hit(t, dmg, u, u.item === 'toothpick');
               if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
@@ -728,7 +728,7 @@ class Battle {
     const lines: string[] = [];
     // Echo aura: a food in the back row makes the friend ahead's abilities go off twice.
     const echo = rowOf(u.slot) === 0 ? this.plates[u.side][slotAt(laneOf(u.slot), 1)] : null;
-    const times = 1 + (echo && this.onPlate(u) && unitDef(echo.defId).aura === 'echo' ? 1 : 0);
+    const times = 1 + (echo && this.onPlate(u) && unitDef(echo.defId).aura === 'echo' ? this.levelValue(echo) : 0);
     const def = unitDef(u.defId);
     const own = abilitiesOf(def, u.level);
     [...own, ...u.extra].forEach((ab, index) => {
@@ -749,22 +749,28 @@ class Battle {
         lines.push(line);
       }
     });
-    // Rally aura: a friend next to a rally food gains +1 attack when its ability fires (capped per battle).
+    // Rally aura: a friend next to a rally food gains attack (its level number) when its ability fires, a few times a battle.
     if (lines.length > 0 && this.onPlate(u) && u.rallied < RALLY_CAP) {
-      const rally = this.adjacent(u).some((f) => unitDef(f.defId).aura === 'rally');
-      if (rally) {
+      const rallies = this.adjacent(u).filter((f) => unitDef(f.defId).aura === 'rally');
+      if (rallies.length > 0) {
+        const gain = Math.max(...rallies.map((f) => this.levelValue(f)));
         u.rallied++;
-        u.attack++;
-        this.mark(u, 'buff');
-        lines.push(`rallied: ${this.name(u)} +1 attack`);
+        u.attack += gain;
+        this.mark(u, 'buff', gain, 0);
+        lines.push(`rallied: ${this.name(u)} +${gain} attack`);
       }
     }
     return lines.length > 0 ? lines.join(' · ') : undefined;
   }
 
-  /** How many foods with this aura are on a side right now. */
-  private auraCount(side: Side, aura: string): number {
-    return this.units(side).filter((f) => unitDef(f.defId).aura === aura).length;
+  /** A food's level number (its value at its level): what its pattern, throw or aura scales with. */
+  private levelValue(u: BattleUnit): number {
+    return unitDef(u.defId).values[u.level - 1] + u.abilityBonus;
+  }
+
+  /** The sum of the level numbers of every food on a side with this aura (Birthday Cake's +1/+2/+3). */
+  private auraTotal(side: Side, aura: string): number {
+    return this.units(side).filter((f) => unitDef(f.defId).aura === aura).reduce((n, f) => n + this.levelValue(f), 0);
   }
 
   /** The ability's number: level value + bonuses, + per-friend flavor bonus, x distinct flavors, + level 3 friends. */
@@ -998,7 +1004,7 @@ class Battle {
    */
   private gainHp(u: BattleUnit, amount: number): number {
     if (amount <= 0) return 0;
-    amount += this.auraCount(u.side, 'soothe');
+    amount += this.auraTotal(u.side, 'soothe');
     if (this.basted(u)) amount *= 2;
     if (u.rot > 0) amount = Math.floor(amount / 2);
     u.hp += amount;
