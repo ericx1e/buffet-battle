@@ -7,6 +7,7 @@ import {
   type Flavor,
   type HeldItemId,
   type Level,
+  PROJECTILES,
   type Plate,
   PLATE_SIZE,
   type Trigger,
@@ -60,6 +61,8 @@ interface BattleUnit {
   chill: number;
   /** Attack gained from rally auras this battle (capped). */
   rallied: number;
+  /** Sweet x8 already saved it once this battle. */
+  rushed: boolean;
 }
 
 export interface UnitView {
@@ -83,7 +86,9 @@ export type MarkKind =
   | 'attack' | 'hit' | 'heal' | 'blocked' | 'buff' | 'debuff' | 'crust' | 'summon' | 'ability' | 'faint'
   | 'burn' | 'rot' | 'chill' | 'cleanse'
   /** A cooked bonus (level 3) went off, or Golden Truffle cooked this food. */
-  | 'cooked';
+  | 'cooked'
+  /** It threw a projectile (see PROJECTILES). */
+  | 'shoot';
 
 /** A visual cue for playback, on a slot of one side's plate. */
 export interface Mark {
@@ -113,11 +118,13 @@ export const MAX_ROUNDS = 40;
 export const OVERTIME_AFTER = 15;
 /** Most a food's attack can grow from rally auras in one battle. */
 export const RALLY_CAP = 3;
+/** Most Rot a food can carry. */
+export const ROT_CAP = 3;
 const TRIGGER_BUDGET = 1000;
 const LANE_NAMES = ['far', 'middle', 'near'];
 
-/** Flavor bonus tier for a count of foods: 2 / 4 / 6. */
-export const flavorTier = (n: number) => (n >= 6 ? 3 : n >= 4 ? 2 : n >= 2 ? 1 : 0);
+/** Flavor bonus tier for a count of foods: 2 / 4 / 6 / 8 (8 needs foods that count as two flavors, or Saffron). */
+export const flavorTier = (n: number) => (n >= 8 ? 4 : n >= 6 ? 3 : n >= 4 ? 2 : n >= 2 ? 1 : 0);
 
 /** Deterministic: the same plates and seed always produce the same result and frames. */
 export function simulateBattle(a: Plate, b: Plate, seed: number): BattleResult {
@@ -127,6 +134,7 @@ export function simulateBattle(a: Plate, b: Plate, seed: number): BattleResult {
 interface FireContext {
   source?: BattleUnit; // hit: who hit this food; friendAheadHit: who hit the friend ahead; friendAheadAttacks: who it attacked
   summoned?: BattleUnit; // friendSummoned: who just arrived
+  friend?: BattleUnit; // friendHealed: who was healed
 }
 
 /** What each side's flavor bonuses switched on (see applySynergies). */
@@ -141,11 +149,17 @@ interface SideBonus {
   hearty: boolean; // a friend eaten: its adjacent friends +1/+1
   crumbs: boolean; // a friend eaten leaves a 2/2 Crumb
   rotSpreads: boolean; // an enemy eaten passes its Rot to its adjacent friends
+  flare: boolean; // Spicy x8: Burning enemies take +2 from every hit
+  rotWeakens: boolean; // Sour x6: Rotting enemies deal 1 less damage
+  sugarRush: boolean; // Sweet x8: each friend survives being eaten once, at 1 HP
+  thorns: boolean; // Salty x8: Crust that blocks a hit deals that much back
+  feast: boolean; // Savory x8: a friend eaten gives every friend +2/+2
 }
 
 const NO_BONUS: SideBonus = {
   spicyBurn: 0, burnSticks: false, sweetHeal: 0, sweetCleanse: false, overheal: false, saltyRegen: 0,
-  summonBonus: 0, hearty: false, crumbs: false, rotSpreads: false,
+  summonBonus: 0, hearty: false, crumbs: false, rotSpreads: false, flare: false, rotWeakens: false, sugarRush: false,
+  thorns: false, feast: false,
 };
 
 class Battle {
@@ -192,7 +206,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, maxHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false,
       extraAttacks: 0, tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, rallied: 0,
+      burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false,
     };
   }
 
@@ -205,6 +219,10 @@ class Battle {
     }
 
     for (this.round = 1; this.round <= MAX_ROUNDS && !this.over(); this.round++) {
+      if (this.stepUp()) this.snap('The back row steps up.');
+      this.shootStep();
+      this.resolve();
+      if (this.over()) break;
       if (this.stepUp()) this.snap('The back row steps up.');
       this.attackStep();
       this.resolve();
@@ -277,35 +295,39 @@ class Battle {
         switch (flavor) {
           case 'spicy':
             b.spicyBurn = tier >= 2 ? 2 : 1;
-            if (tier === 3) b.burnSticks = true;
-            lines.push(`Spicy x${n}: spicy attacks Burn ${b.spicyBurn}${tier === 3 ? ', and Burn never fades' : ''}`);
+            b.burnSticks = tier >= 3;
+            b.flare = tier >= 4;
+            lines.push(`Spicy x${n}: spicy attacks Burn ${b.spicyBurn}${tier >= 3 ? ', Burn never fades' : ''}${tier >= 4 ? ', Burning enemies take +2 from every hit' : ''}`);
             break;
           case 'sweet':
             b.sweetHeal = tier >= 2 ? 2 : 1;
             b.sweetCleanse = tier >= 2;
-            b.overheal = tier === 3;
-            lines.push(`Sweet x${n}: front row heals ${b.sweetHeal} a turn${tier >= 2 ? ' and sheds Burn and Rot' : ''}${tier === 3 ? ', overheal becomes Crust' : ''}`);
+            b.overheal = tier >= 3;
+            b.sugarRush = tier >= 4;
+            lines.push(`Sweet x${n}: front row heals ${b.sweetHeal} a turn${tier >= 2 ? ' and sheds Burn and Rot' : ''}${tier >= 3 ? ', overheal becomes Crust' : ''}${tier >= 4 ? ', sugar rush' : ''}`);
             break;
           case 'sour': {
             const targets = tier >= 2 ? this.units(enemy) : this.units(enemy).filter((u) => rowOf(u.slot) === 0);
             for (const u of targets) this.addStatus(u, 'rot', 1);
-            if (tier >= 2) for (const u of this.units(enemy)) if (rowOf(u.slot) === 0) this.debuff(u, 1);
-            b.rotSpreads = tier === 3;
-            lines.push(`Sour x${n}: ${tier >= 2 ? 'every enemy Rots 1, the front row -1 attack' : 'enemy front row Rots 1'}${tier === 3 ? ', Rot spreads' : ''}`);
+            b.rotWeakens = tier >= 3;
+            b.rotSpreads = tier >= 4;
+            lines.push(`Sour x${n}: ${tier >= 2 ? 'every enemy Rots 1' : 'enemy front row Rots 1'}${tier >= 3 ? ', Rotting enemies hit 1 softer' : ''}${tier >= 4 ? ', Rot spreads' : ''}`);
             break;
           }
           case 'salty': {
             const amount = tier >= 2 ? 4 : 2;
             for (const u of front()) this.giveCrust(u, amount);
-            b.saltyRegen = tier === 3 ? 2 : 0;
-            lines.push(`Salty x${n}: front row +${amount} Crust${tier === 3 ? ', +2 more every turn' : ''}`);
+            b.saltyRegen = tier >= 3 ? 2 : 0;
+            b.thorns = tier >= 4;
+            lines.push(`Salty x${n}: front row +${amount} Crust${tier >= 3 ? ', +2 more every turn' : ''}${tier >= 4 ? ', Crust bites back' : ''}`);
             break;
           }
           case 'savory':
             b.summonBonus = tier >= 2 ? 2 : 1;
             b.hearty = tier >= 2;
-            b.crumbs = tier === 3;
-            lines.push(`Savory x${n}: summons +${b.summonBonus}/+${b.summonBonus}${tier >= 2 ? ', friends grow when a neighbour is eaten' : ''}${tier === 3 ? ', the eaten leave Crumbs' : ''}`);
+            b.crumbs = tier >= 3;
+            b.feast = tier >= 4;
+            lines.push(`Savory x${n}: summons +${b.summonBonus}/+${b.summonBonus}${tier >= 2 ? ', friends grow when a neighbour is eaten' : ''}${tier >= 3 ? ', the eaten leave Crumbs' : ''}${tier >= 4 ? ', feast' : ''}`);
             break;
         }
       }
@@ -361,7 +383,7 @@ class Battle {
         return [[back ?? primary, damage, true]];
       }
       case 'fork': {
-        const prongs = lanes(lane).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t);
+        const prongs = [0, 1, 2].filter((l) => l !== lane).map((l) => this.frontMost(enemy, l)).filter((t): t is BattleUnit => !!t);
         return prongs.length > 0 ? prongs.map((t) => [t, damage, true]) : [[primary, damage, true]];
       }
       case 'pierce': {
@@ -383,6 +405,80 @@ class Battle {
     }
   }
 
+  /** Whether a food throws projectiles (from either row) instead of attacking with the front row. */
+  private throws(u: BattleUnit): boolean {
+    return PROJECTILES.includes(unitDef(u.defId).attackPattern ?? 'single');
+  }
+
+  /** An attack's damage and how many times it goes off: first-attack bonuses, attack-twice, and Sour x6. */
+  private swing(attacker: BattleUnit): [number, number] {
+    let damage = attacker.attack;
+    if (!attacker.firstAttackDone) {
+      for (const ab of abilitiesOf(unitDef(attacker.defId), attacker.level)) {
+        if (ab.trigger === 'firstAttack' && ab.effect === 'bonusDamage') damage += this.amountOf(attacker, ab);
+      }
+      attacker.firstAttackDone = true;
+    }
+    if (attacker.rot > 0 && this.bonus[(1 - attacker.side) as Side].rotWeakens) damage = Math.max(1, damage - 1);
+    let times = 1;
+    if (attacker.extraAttacks > 0) {
+      attacker.extraAttacks--;
+      times = 2;
+    }
+    return [damage, times];
+  }
+
+  /**
+   * Projectiles: every thrower, front or back row, lane by lane, before the front rows attack. Each throw is its own
+   * moment on screen, so you can follow what flew where.
+   */
+  private shootStep() {
+    const order: Side[] = this.round % 2 === 1 ? [0, 1] : [1, 0];
+    for (let lane = 0; lane < 3; lane++) {
+      for (const side of order) {
+        for (const row of [0, 1]) {
+          const u = this.plates[side][slotAt(lane, row)];
+          if (!u || !this.throws(u) || !this.onPlate(u)) continue;
+          if (this.over()) return;
+          if (u.chill > 0) {
+            u.chill--;
+            this.mark(u, 'chill', 0);
+            this.snap(`${this.name(u)} is chilled and skips a throw`);
+            continue;
+          }
+          const enemy = (1 - side) as Side;
+          const [damage, times] = this.swing(u);
+          const half = Math.max(1, Math.ceil(damage / 2));
+          const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
+          const pattern = unitDef(u.defId).attackPattern;
+          let landed = 0;
+          for (let i = 0; i < times; i++) {
+            let hits: [BattleUnit, number][] = [];
+            if (pattern === 'shot') hits = [this.targetFor(enemy, lane)].filter((t): t is BattleUnit => !!t).map((t) => [t, damage]);
+            else if (pattern === 'lob') {
+              const t = this.plates[enemy][slotAt(lane, 1)] ?? this.targetFor(enemy, lane);
+              if (t) hits = [[t, damage]];
+            } else if (pattern === 'spray') {
+              for (let k = 0; k < 3; k++) {
+                const pool = this.units(enemy);
+                if (pool.length) hits.push([this.rng.pick(pool), half]);
+              }
+            } else if (pattern === 'volley') hits = this.units(enemy).filter((t) => rowOf(t.slot) === 0).map((t) => [t, half]);
+            for (const [t, dmg] of hits) {
+              if (!this.onPlate(t)) continue;
+              this.hit(t, dmg, u, u.item === 'toothpick');
+              if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
+              landed++;
+            }
+          }
+          if (landed === 0) continue;
+          this.mark(u, 'shoot', times);
+          this.snap(`Turn ${this.round} · ${this.name(u)} ${pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'volleys' : 'shoots'}`);
+        }
+      }
+    }
+  }
+
   /**
    * Every front-row food picks its targets at the same moment; the hits are then shown lane by lane
    * (far, middle, near) so they are easy to follow. Faints and on-hit abilities resolve after all three.
@@ -395,7 +491,7 @@ class Battle {
       const enemy = (1 - side) as Side;
       for (let lane = 0; lane < 3; lane++) {
         const attacker = this.plates[side][slotAt(lane, 0)];
-        if (!attacker) continue;
+        if (!attacker || this.throws(attacker)) continue;
         if (attacker.chill > 0) {
           attacker.chill--;
           chilled.push(attacker);
@@ -403,18 +499,7 @@ class Battle {
         }
         const primary = this.targetFor(enemy, lane);
         if (!primary) continue;
-        let damage = attacker.attack;
-        if (!attacker.firstAttackDone) {
-          for (const ab of abilitiesOf(unitDef(attacker.defId), attacker.level)) {
-            if (ab.trigger === 'firstAttack' && ab.effect === 'bonusDamage') damage += this.amountOf(attacker, ab);
-          }
-          attacker.firstAttackDone = true;
-        }
-        let times = 1;
-        if (attacker.extraAttacks > 0) {
-          attacker.extraAttacks--;
-          times = 2;
-        }
+        const [damage, times] = this.swing(attacker);
         attacks.push({ attacker, primary, hits: this.attackTargets(attacker, primary, damage), times });
       }
     }
@@ -548,6 +633,14 @@ class Battle {
         this.mark(u, 'heal', u.maxHp);
       }
       if (revived.length > 0) this.snap(`${revived.map((u) => this.name(u)).join(', ')} comes back for more!`);
+      // Sweet x8: each friend hangs on once at 1 HP.
+      const rushed = dead.filter((u) => u.hp <= 0 && !u.token && !u.rushed && this.bonus[u.side].sugarRush);
+      for (const u of rushed) {
+        u.rushed = true;
+        u.hp = 1;
+        this.mark(u, 'heal', 1);
+      }
+      if (rushed.length > 0) this.snap(`Sugar rush! ${rushed.map((u) => this.name(u)).join(', ')} ${rushed.length > 1 ? 'hang' : 'hangs'} on at 1 HP`);
       dead = dead.filter((u) => u.lives === 0 && u.hp <= 0);
       if (dead.length === 0) {
         if (revived.length > 0) continue;
@@ -571,6 +664,10 @@ class Battle {
         if (b.hearty && !u.token && neighbours.length > 0) {
           for (const n of neighbours) this.buff(n, 1, 1);
           lines.push(`hearty: ${this.name(u)}'s neighbours +1/+1`);
+        }
+        if (b.feast && !u.token) {
+          for (const f of this.units(u.side)) this.buff(f, 2, 2);
+          lines.push(`feast: every friend +2/+2`);
         }
         if (b.crumbs && !u.token && unitDef(u.defId).id !== 'crumb') {
           if (this.summon(u.side, u.slot, 'crumb', 2, 2, u.flavor)) lines.push(`${this.name(u)} leaves a Crumb behind`);
@@ -606,7 +703,7 @@ class Battle {
       if (ab.max && (u.fired[index] ?? 0) >= ab.max) return; // at most `max` times a battle
       for (let t = 0; t < times; t++) {
         if (!this.spendTrigger()) return;
-        const line = this.execute(u, ab, this.amountOf(u, ab, index), ctx, trigger === 'hit');
+        const line = this.execute(u, ab, this.amountOf(u, ab, index), ctx, trigger === 'hit' || trigger === 'crustBlock');
         if (!line) continue;
         u.fired[index] = (u.fired[index] ?? 0) + 1;
         if (index >= def.abilities.length && index < own.length) this.mark(u, 'cooked');
@@ -814,6 +911,8 @@ class Battle {
       }
       case 'summoned':
         return one(ctx.summoned && this.onPlate(ctx.summoned) ? ctx.summoned : null);
+      case 'thatFriend':
+        return one(ctx.friend && this.onPlate(ctx.friend) ? ctx.friend : null);
     }
   }
 
@@ -827,6 +926,8 @@ class Battle {
    */
   private hit(target: BattleUnit, amount: number, source?: BattleUnit, ignoreCrust = false, reaction = false) {
     if (amount <= 0 || !this.onPlate(target)) return;
+    const foe = source && source.side !== target.side ? source : undefined;
+    if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
     if (target.item === 'tupperware' && !target.tupperwareUsed) {
       target.tupperwareUsed = true;
       this.mark(target, 'blocked');
@@ -838,6 +939,10 @@ class Battle {
       target.crust -= absorbed;
       rest -= absorbed;
       if (absorbed > 0) this.mark(target, 'crust', -absorbed);
+      if (absorbed > 0 && foe && !reaction) {
+        if (this.bonus[target.side].thorns) this.hit(foe, absorbed, target, false, true); // Salty x8
+        for (const f of [target, ...this.adjacent(target)]) this.fire(f, 'crustBlock', { source: foe });
+      }
     }
     if (rest > 0) {
       target.hp -= rest;
@@ -857,6 +962,7 @@ class Battle {
     if (gained > 0) {
       u.hp += gained;
       this.mark(u, 'heal', gained);
+      for (const f of this.adjacent(u)) this.fire(f, 'friendHealed', { friend: u });
     }
     const spare = amount - Math.max(0, gained);
     if (spare > 0 && this.bonus[u.side].overheal) this.giveCrust(u, spare);
@@ -864,6 +970,8 @@ class Battle {
 
   private addStatus(u: BattleUnit, status: 'burn' | 'rot' | 'chill', amount: number) {
     if (amount <= 0 || !this.onPlate(u)) return;
+    if (status === 'rot') amount = Math.min(amount, ROT_CAP - u.rot);
+    if (amount <= 0) return;
     u[status] += amount;
     this.mark(u, status, amount);
   }

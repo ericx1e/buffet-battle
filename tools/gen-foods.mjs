@@ -269,11 +269,14 @@ const foods = {
     s.ball(19, 16, 3, 2, R('#f3eee8'));
   },
   pizza(s) {
-    s.shadow(17, 29, 10, 2);
-    s.poly([[5, 9], [27, 9], [16, 29]], (x, y) => (x > 21 && y > 12 ? C.cheese[3] : y < 12 ? C.cheese[1] : C.cheese[2]));
-    s.tube([[5, 9], [10, 7], [16, 6], [22, 7], [27, 9]], 2.4, C.crust);
-    for (const [x, y, r] of [[12, 13, 3], [20, 14, 3], [16, 21, 2.5]]) s.ball(x, y, r, r, C.pepperoni);
-    s.tube([[23, 17], [23, 20]], 1, C.cheese);
+    s.shadow(17, 28, 11, 2);
+    // A slice lying on the table, seen from slightly above: crust at the back, tip toward you, and the slice's
+    // thickness showing along its near edges. Toppings are squashed ovals, as flat things look from this angle.
+    s.poly([[5, 11], [27, 11], [16, 28]], C.crust[3]);
+    s.poly([[5, 9], [27, 9], [16, 26]], (x, y) => (x > 21 && y > 12 ? C.cheese[3] : y < 12 ? C.cheese[1] : C.cheese[2]));
+    s.tube([[5, 10], [10, 8], [16, 7], [22, 8], [27, 10]], 2.6, C.crust);
+    for (const [x, y, rx, ry] of [[12, 14, 3, 2.2], [20, 14, 3, 2.2], [16, 20, 2.4, 1.8]]) s.ball(x, y, rx, ry, C.pepperoni);
+    s.tube([[23, 16], [23, 19]], 1, C.cheese);
   },
   hotPot(s) {
     s.shadow(17, 29, 13, 2);
@@ -467,17 +470,18 @@ const foods = {
   },
   bento(s) {
     s.shadow(17, 29, 14, 2);
-    // A lacquered box split into rice, salmon, broccoli and tamagoyaki.
-    s.poly([[3, 11], [29, 11], [29, 27], [3, 27]], (x, y) => (y === 11 || x === 3 ? '#4a2c2a' : '#2c1a1c'));
-    s.rect(5, 13, 12, 12, '#f6f3ea');
-    s.ball(11, 19, 2, 2, R('#d6455a'));
-    s.rect(19, 13, 8, 5, '#f08a5a');
-    s.rect(19, 13, 8, 1, '#ffb08a');
-    s.rect(19, 20, 4, 5, '#f2c94c');
-    s.rect(19, 20, 4, 1, '#ffe28a');
-    s.ball(25, 22, 2, 2, C.leaf);
-    s.rect(18, 13, 1, 12, '#4a2c2a');
-    s.rect(19, 19, 8, 1, '#4a2c2a');
+    // A lacquered box seen from slightly above: its dark front side with a red band, then the open top split into
+    // rice with a plum, salmon, tamagoyaki and broccoli, foreshortened so the compartments are wider than tall.
+    s.poly([[3, 20], [29, 20], [29, 27], [3, 27]], (x, y) => (y === 20 ? '#5a3430' : x < 6 ? '#3a2224' : '#2c1a1c'));
+    s.rect(3, 23, 27, 1, '#b8434a');
+    s.poly([[5, 9], [27, 9], [29, 20], [3, 20]], '#4a2c2a');
+    s.poly([[7, 11], [16, 11], [16, 18], [6, 18]], (x, y) => (y === 11 ? '#fffdf6' : '#f2eee2'));
+    s.ball(11, 14, 1.6, 1.2, R('#d6455a'));
+    s.poly([[18, 11], [25, 11], [26, 14], [18, 14]], '#f08a5a');
+    s.rect(18, 11, 7, 1, '#ffb08a');
+    s.poly([[18, 15], [22, 15], [22, 18], [18, 18]], '#f2c94c');
+    s.rect(18, 15, 4, 1, '#ffe28a');
+    s.ball(25, 16.5, 2, 1.6, C.leaf);
   },
   smoothie(s) {
     s.shadow(16, 30, 7, 1);
@@ -488,6 +492,83 @@ const foods = {
     s.tube([[18, 10], [21, 2]], 1, C.stripeWhite, (off, t) => (Math.floor(t * 8) % 2 ? C.stripeRed : C.stripeWhite));
     s.ball(9, 10, 3, 3, C.lemon, { clip: (x, y) => y <= 11 });
     s.rect(11, 14, 1, 10, '#ffe0ec');
+  },
+  edamame(s) {
+    s.shadow(17, 28, 11, 2);
+    // Two green pods lying across each other, beans bulging through the skin.
+    s.tube([[5, 21], [12, 17], [20, 14], [27, 11]], (t) => 3.2 - Math.abs(t - 0.5) * 2, R('#6fb03a'));
+    for (const [x, y] of [[10, 18], [16, 15.5], [22, 13]]) s.ball(x, y, 3, 2.6, R('#8ad04a'));
+    s.tube([[7, 26], [14, 24], [22, 24], [27, 21]], (t) => 2.8 - Math.abs(t - 0.5) * 2, R('#5a9a30'));
+    for (const [x, y] of [[12, 24.5], [18, 23.5]]) s.ball(x, y, 2.6, 2.2, R('#7cc03e'));
+    s.line(26, 11, 28, 9, '#3f6a22');
+  },
+  olive(s) {
+    s.shadow(17, 29, 10, 2);
+    // A fat green olive stuffed with red pimento, a darker one behind it.
+    s.ball(23, 14, 5, 6, R('#5a7a24'));
+    s.ball(14, 19, 8, 9, R('#8aa83a'), { bias: 0.15 });
+    s.ball(10, 12, 3, 2, R('#d6352a'), { bias: 0.2 });
+    s.px(9, 11, '#ff8a6a');
+  },
+  peppercorn(s) {
+    s.shadow(17, 29, 12, 2);
+    // A little wooden dish heaped with black peppercorns, a few spilled in front.
+    const wood = R('#a8693a');
+    s.fill(5, 20, 27, 27, (x, y) => {
+      const nx = (x - 16) / 11, ny = (y - 20) / 7;
+      if (nx * nx + ny * ny > 1) return null;
+      return nx < -0.6 ? wood[1] : nx > 0.5 ? wood[3] : wood[2];
+    });
+    s.ball(16, 20, 11, 3.5, R('#7a4a26'), { bias: 0.2 });
+    for (const [x, y] of [[9, 19], [12, 17], [15, 15], [18, 15], [21, 16], [23, 18], [12, 20], [15, 18], [18, 18], [21, 20], [16, 21]]) s.ball(x, y, 1.6, 1.6, R('#4a3a34'));
+    for (const [x, y] of [[8, 28], [24, 28], [27, 26]]) s.ball(x, y, 1.4, 1.4, R('#4a3a34'));
+  },
+  porkCrackling(s) {
+    s.shadow(17, 28, 12, 2);
+    // A heap of puffed, blistered pork crackling.
+    const bumpy = { tone: (nx, ny, x, y) => ((x * 5 + y * 3) % 7 === 0 ? -1 : (x + y * 2) % 9 === 0 ? 1 : 0) };
+    s.ball(10, 21, 6, 5, R('#e2a24e'), bumpy);
+    s.ball(22, 21, 6, 5, R('#d8923e'), bumpy);
+    s.ball(16, 14, 7, 5, R('#eab05a'), bumpy);
+    s.tube([[11, 18], [19, 12]], 1, R('#f6e2b8'));
+  },
+  pepperoni(s) {
+    s.shadow(17, 29, 13, 2);
+    // A pepperoni stick with two slices cut from its end, flecked with fat; the slices lie flat, so they are ovals.
+    const meat = R('#b8392c');
+    const fleck = { tone: (nx, ny, x, y) => ((x * 7 + y * 3) % 6 === 0 ? -2 : 0) };
+    s.tube([[4, 16], [20, 10]], 4.5, meat);
+    s.ball(21, 10, 3.5, 4.5, R('#d8564a'), fleck);
+    s.ball(16, 23, 6, 3.4, meat, fleck);
+    s.ball(25, 25, 5, 3, meat, fleck);
+    for (const [x, y] of [[6, 15], [10, 13], [14, 14], [9, 17]]) s.px(x, y, '#f1dcc4');
+  },
+  takoyaki(s) {
+    s.shadow(17, 29, 13, 2);
+    // Three takoyaki in a paper boat seen from slightly above, glazed with sauce, a line of mayo and green flakes.
+    const tray = R('#e8d6b0');
+    s.poly([[3, 19], [29, 19], [26, 27], [6, 27]], (x, y) => (y < 21 ? tray[1] : tray[2]));
+    for (const [x, y] of [[9, 17], [16, 16], [23, 17]]) {
+      s.ball(x, y, 5, 4.5, R('#c88a3e'));
+      s.ball(x, y - 2, 4, 2.2, R('#6a3a1e'), { bias: 0.3 });
+      s.line(x - 3, y - 2, x + 2, y - 3, '#fff6e0');
+      s.px(x - 1, y - 3, '#5aa63a');
+      s.px(x + 2, y - 1, '#5aa63a');
+    }
+  },
+  hotCocoa(s) {
+    s.shadow(16, 30, 10, 2);
+    // A red mug of cocoa seen from slightly above, marshmallows bobbing on top.
+    const mug = R('#d04a4a');
+    s.tube([[23, 16], [28, 18], [28, 23], [23, 25]], 1.4, mug);
+    s.fill(6, 13, 24, 29, (x, y) => {
+      const t = (x - 15) / 9;
+      if (Math.abs(t) > 1 || (y > 27 && t * t + ((y - 27) / 2.5) ** 2 > 1)) return null;
+      return t < -0.6 ? mug[1] : t > 0.5 ? mug[3] : mug[2];
+    });
+    s.ball(15, 13, 9, 3.5, R('#f0e6e0'), { bias: 0.3 });
+    s.ball(15, 13, 7.5, 2.6, R('#6e3f20'));
+    for (const [x, y] of [[11, 12], [16, 13], [14, 11]]) s.rect(x, y, 2, 2, '#fffdf6');
   },
   goldenTruffle(s) {
     s.shadow(17, 28, 11, 2);
@@ -567,17 +648,26 @@ const foods = {
     s.ball(14, 12, 2, 2, R('#c2304a'));
   },
   chiliOil(s) {
-    s.shadow(17, 30, 9, 2);
-    // A squat glass jar of red chili oil, thick with flakes, under a black lid.
-    s.fill(8, 12, 24, 29, (x, y) => {
-      const t = (x - 16) / 8;
-      if (Math.abs(t) > 1 || (y > 27 && ((x - 16) / 8) ** 2 + ((y - 27) / 2) ** 2 > 1)) return null;
+    s.shadow(17, 30, 10, 2);
+    // An open glass jar of chili oil seen from slightly above: red oil through the glass, the glass rim, and the
+    // oil's surface thick with flakes, a spoon resting in it.
+    const oil = R('#c8331e');
+    s.fill(7, 12, 25, 29, (x, y) => {
+      const t = (x - 16) / 9;
+      if (Math.abs(t) > 1 || (y > 26 && t * t + ((y - 26) / 3) ** 2 > 1)) return null;
       if ((x * 7 + y * 5) % 9 === 0 && y > 15) return '#5a1a10';
-      return y < 15 ? '#e8b8a8' : t < -0.6 ? '#e2452a' : t > 0.5 ? '#9c2414' : '#c8331e';
+      return t < -0.6 ? oil[1] : t > 0.5 ? oil[3] : oil[2];
     });
-    s.rect(7, 8, 19, 4, '#2c2c30');
-    s.rect(7, 8, 19, 1, '#55555c');
-    s.rect(10, 16, 1, 9, '#f6b0a0');
+    s.rect(9, 16, 1, 8, '#f6b0a0');
+    s.ball(16, 12, 9, 3.5, R('#ece4e2'), { bias: 0.3 });
+    s.fill(8, 9, 24, 15, (x, y) => {
+      const nx = (x - 16) / 7.5, ny = (y - 12) / 2.6;
+      if (nx * nx + ny * ny > 1) return null;
+      if ((x * 5 + y * 3) % 4 === 0) return '#ff8a3a';
+      if ((x * 3 + y * 7) % 7 === 0) return '#5a1a10';
+      return '#a8260f';
+    });
+    s.tube([[19, 12], [25, 3]], 0.9, R('#d8dee6'));
   },
   mapleSyrup(s) {
     s.shadow(17, 30, 9, 2);

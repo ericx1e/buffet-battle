@@ -489,6 +489,12 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
   const parts: string[] = [];
   abilitiesOf(def, level).forEach((ab, index) => {
     if (ab.trigger !== trigger) return;
+    // Day-gated growth: it has a set number of days in it (more at higher levels).
+    const days = ab.days?.[level - 1];
+    if (days !== undefined && (unit.gains?.[index] ?? 0) >= days) return;
+    const spend = () => {
+      if (days !== undefined) unit.gains = { ...unit.gains, [index]: (unit.gains?.[index] ?? 0) + 1 };
+    };
     if (ab.ifNoReroll && run.rerolledThisTurn) return;
     if (ab.ifLevel3 && !run.plate.some((o) => o && levelOf(o.copies) === 3)) return;
     if (ab.ifAdjacentFlavor) {
@@ -500,13 +506,12 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
     if (ab.perFriend) amount += run.plate.filter((o) => o && o !== unit && flavorsOf(o).includes(ab.perFriend!)).length;
     if (ab.perInterest) amount *= run.lastInterest;
     if (ab.perLevel3) amount += run.plate.filter((o) => o && o !== unit && levelOf(o.copies) === 3).length;
-    if (ab.max !== undefined) amount = Math.min(amount, ab.max - (unit.gains?.[index] ?? 0));
+    if (ab.doubleNextTo && slot !== null && run.plate.some((o, i) => o && o !== unit && isAdjacent(i, slot) && flavorsOf(o).includes(ab.doubleNextTo!))) amount *= 2;
     if (amount <= 0) return;
-    const grew = () => {
-      if (ab.max !== undefined) unit.gains = { ...unit.gains, [index]: (unit.gains?.[index] ?? 0) + amount };
-    };
+    const grew = spend;
     switch (ab.effect) {
       case 'gold':
+        spend();
         run.bonusGoldNext += amount;
         parts.push(`${def.name}: +${amount} gold tomorrow`);
         return;
@@ -517,10 +522,12 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         parts.push(`${def.name} is worth +${amount}`);
         return;
       case 'freeReroll':
+        spend();
         run.freeRerolls += amount;
         parts.push(`${def.name}: ${amount > 1 ? `${amount} free restocks` : 'a free restock'}`);
         return;
       case 'buyBonus':
+        spend();
         run.buyBonus += amount;
         parts.push(`${def.name}: foods bought today +${run.buyBonus}/+${run.buyBonus}`);
         return;

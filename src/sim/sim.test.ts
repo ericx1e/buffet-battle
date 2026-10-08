@@ -162,7 +162,7 @@ describe('food data', () => {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
           expect(UNITS.find((t) => t.id === ab.summon!.id)!.token, `${u.id} should summon a token`).toBe(true);
         }
-        if (ab.target === 'attacker') expect(['hit', 'friendAheadHit', 'friendAheadAttacks'], `${u.id}: 'attacker' needs a hit or friend-ahead trigger`).toContain(ab.trigger);
+        if (ab.target === 'attacker') expect(['hit', 'friendAheadHit', 'friendAheadAttacks', 'crustBlock'], `${u.id}: 'attacker' needs a hit or friend-ahead trigger`).toContain(ab.trigger);
         if (ab.target === 'summoned') expect(ab.trigger, `${u.id}: 'summoned' needs friendSummoned`).toBe('friendSummoned');
         if (ab.effect === 'bonusDamage') expect(ab.trigger, `${u.id}: bonusDamage needs firstAttack`).toBe('firstAttack');
         const kitchen = ['buy', 'sell', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
@@ -263,11 +263,13 @@ describe('run', () => {
     expect(sellPrice(unit('egg', { sellBonus: 3 }))).toBe(4);
   });
 
-  it('Coin Chocolate gains sell value as it sits on the plate', () => {
+  it('Coin Chocolate gains sell value for its growth days, more days at higher levels', () => {
     const run = newRun(5);
     run.plate[0] = unit('coinChocolate');
+    run.plate[1] = unit('coinChocolate', { copies: 3 });
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.sellBonus).toBe(9);
+    expect(run.plate[0]!.sellBonus).toBe(3); // 3 days at level 1
+    expect(run.plate[1]!.sellBonus).toBe(5); // 5 days at level 2
   });
 
   it('Ice Cream grows in the freezer, not on the plate', () => {
@@ -285,18 +287,18 @@ describe('run', () => {
     run.plate[0] = unit('egg');
     run.plate[3] = unit('beanSprout');
     for (let i = 0; i < 6; i++) serve(run);
-    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 6);
+    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 3); // 3 growth days at level 1
   });
 
   it('Bread Dough rises: HP only', () => {
     const run = newRun(5);
     run.plate[0] = unit('breadDough');
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 18);
+    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 6); // +2 for 3 days
     expect(run.plate[0]!.attack).toBe(unitDef('breadDough').attack);
   });
 
-  it('Yogurt grows faster with other Sour friends', () => {
+  it('Yogurt grows twice as fast next to a Sour friend', () => {
     const run = newRun(5);
     run.plate[0] = unit('yogurt');
     run.plate[1] = unit('lemon');

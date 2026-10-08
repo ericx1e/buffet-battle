@@ -12,6 +12,8 @@ export type Trigger =
   | 'friendAheadHit' // the friend ahead of this food is hit (`attacker` = who hit it)
   | 'friendAheadAttacks' // the friend ahead of this food attacks (`attacker` = the food it attacked)
   | 'friendFaint' // an adjacent friend is eaten
+  | 'friendHealed' // an adjacent friend is healed (`friend` = who)
+  | 'crustBlock' // Crust blocks damage on this food or an adjacent friend (`attacker` = who hit)
   // kitchen
   | 'buy' // this food is bought (also when bought onto a copy)
   | 'sell' // this food is sold
@@ -21,18 +23,23 @@ export type Trigger =
   | 'endTurn' // you press Serve (foods on the plate)
   | 'fridgeTurn'; // you press Serve while this food is in the fridge
 
-/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. */
+/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. Rot stacks to ROT_CAP. */
 export type Status = 'burn' | 'rot' | 'chill';
 export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
 
 /**
  * How a front-row food's attack lands. single: the enemy in its lane. pierce: also half damage to the food behind
- * it. splash: also 1 damage to the front-most enemies in the neighbouring lanes. fork: hits the neighbouring lanes
- * instead of its own. snipe: hits the back row of its lane first. escalate: one target in rounds 1-2, the whole
- * enemy front row in rounds 3-4, every enemy from round 5 (secondary targets take half).
+ * it. splash: also 1 damage to the front-most enemies in the neighbouring lanes. fork: hits both other lanes instead
+ * of its own. snipe: hits the back row of its lane first. escalate: one target in rounds 1-2, the whole enemy front
+ * row in rounds 3-4, every enemy from round 5 (secondary targets take half).
+ * Projectiles (see PROJECTILES) are thrown from either row, before the front rows attack. shot: the enemy in its
+ * lane. lob: the back row of its lane first. spray: 3 at random enemies for half each. volley: every enemy in the
+ * front row for half each.
  */
-export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate';
-export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate'];
+export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate' | 'shot' | 'lob' | 'spray' | 'volley';
+export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate', 'shot', 'lob', 'spray', 'volley'];
+/** Patterns thrown from either row. */
+export const PROJECTILES: readonly AttackPattern[] = ['shot', 'lob', 'spray', 'volley'];
 
 export type Tier = 1 | 2 | 3 | 4 | 5 | 6;
 export type Level = 1 | 2 | 3;
@@ -63,6 +70,7 @@ export type Target =
   | 'mostDamagedFriend'
   | 'summoned' // friendSummoned trigger: the food that was just summoned
   | 'level3Friends' // kitchen: a random friend at level 3 (`count` of them)
+  | 'thatFriend' // friendHealed: the friend that was healed
   | 'statusEnemies'; // enemies that have any status
 
 export type Effect =
@@ -132,6 +140,10 @@ export interface AbilityDef {
   perInterest?: boolean;
   /** +1 to the amount for each level 3 friend (Golden Truffle). */
   perLevel3?: boolean;
+  /** Kitchen: fires on at most this many days over the run, by level (Cheese ages for 4/6/10 days). */
+  days?: [number, number, number];
+  /** Kitchen: double the amount next to a friend of this flavor. */
+  doubleNextTo?: Flavor;
 }
 
 /**

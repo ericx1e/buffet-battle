@@ -1,6 +1,6 @@
 import './style.css';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { UNITS, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -82,7 +82,10 @@ const SAVE_KEY = 'buffetbattle.run';
 const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware' } as const;
 
 /** Attack pattern names, called out in battle when the food attacks (see the pattern maps in icons.ts). */
-const PATTERN_NAME: Record<AttackPattern, string> = { single: 'Hit', pierce: 'Pierce', splash: 'Splash', fork: 'Fork', snipe: 'Snipe', escalate: 'Escalate' };
+const PATTERN_NAME: Record<AttackPattern, string> = {
+  single: 'Hit', pierce: 'Pierce', splash: 'Splash', fork: 'Fork', snipe: 'Snipe', escalate: 'Escalate',
+  shot: 'Shoot', lob: 'Lob', spray: 'Spray', volley: 'Volley',
+};
 /** A food's attack pattern, if it isn't a plain single-target attack. */
 const patternOf = (defId: string): AttackPattern | null => {
   const p = unitDef(defId).attackPattern;
@@ -984,21 +987,24 @@ function freezerMagnets(): string {
     </div>`;
 }
 
-/** Team flavor bonuses at 2, 4 and 6 of a flavor (see battle.ts, flavor bonuses). Each tier adds to the one before. */
-const FLAVOR_BONUS: Record<Flavor, [string, string, string]> = {
-  spicy: ['spicy hits Burn 1', 'spicy hits Burn 2', 'Burn never fades'],
-  sweet: ['front row heals 1', 'heals 2 + cleanses', 'overheal → Crust'],
-  sour: ['enemy front Rots 1', 'all Rot, front -1 atk', 'Rot spreads on death'],
-  salty: ['front row 2 Crust', 'front row 4 Crust', '+2 Crust a turn'],
-  savory: ['summons +1/+1', '+2/+2, eaten feed', 'eaten leave Crumbs'],
+/**
+ * Team flavor bonuses at 2, 4, 6 and 8 of a flavor (see battle.ts, flavor bonuses). Each tier adds to the one before.
+ * 8 needs foods that count as two flavors (or Saffron), and changes a rule.
+ */
+const FLAVOR_BONUS: Record<Flavor, [string, string, string, string]> = {
+  spicy: ['spicy hits Burn 1', 'spicy hits Burn 2', 'Burn never fades', 'Burning take +2'],
+  sweet: ['front row heals 1', 'heals 2 + cleanses', 'overheal → Crust', 'sugar rush'],
+  sour: ['enemy front Rots 1', 'every enemy Rots 1', 'Rotting hit softer', 'Rot spreads'],
+  salty: ['front row 2 Crust', 'front row 4 Crust', '+2 Crust a turn', 'Crust bites back'],
+  savory: ['summons +1/+1', '+2/+2, eaten feed', 'eaten leave Crumbs', 'feast'],
 };
 /** The same bonuses spelled out, for tooltips. */
-const FLAVOR_BONUS_LONG: Record<Flavor, [string, string, string]> = {
-  spicy: ['Your Spicy foods\' attacks Burn their target 1.', 'They Burn 2 instead.', 'Burn on enemies never fades.'],
-  sweet: ['Your front row heals 1 at the end of each turn.', 'It heals 2 and cleanses 1 Burn and 1 Rot.', 'Healing past full HP becomes Crust.'],
-  sour: ['The enemy front row Rots 1 at the start of battle.', 'Every enemy Rots 1, and the enemy front row loses 1 attack.', 'When a Rotting enemy is eaten, its Rot spreads to its neighbours.'],
-  salty: ['Your front row gains 2 Crust at the start of battle.', 'It gains 4 Crust instead.', 'Your front row regains 2 Crust every turn.'],
-  savory: ['Your summoned foods get +1/+1.', 'They get +2/+2, and when a friend is eaten its neighbours gain +1/+1.', 'Eaten friends leave a 2/2 Crumb behind.'],
+const FLAVOR_BONUS_LONG: Record<Flavor, [string, string, string, string]> = {
+  spicy: ['Your Spicy foods\' attacks Burn their target 1.', 'They Burn 2 instead.', 'Burn on enemies never fades.', 'Burning enemies take +2 damage from every hit.'],
+  sweet: ['Your front row heals 1 at the end of each turn.', 'It heals 2 and cleanses 1 Burn and 1 Rot.', 'Healing past full HP becomes Crust.', 'Sugar rush: each of your foods survives being eaten once, at 1 HP.'],
+  sour: ['The enemy front row Rots 1 at the start of battle.', 'Every enemy Rots 1 instead.', 'Rotting enemies deal 1 less damage.', 'When a Rotting enemy is eaten, its Rot spreads to its neighbours.'],
+  salty: ['Your front row gains 2 Crust at the start of battle.', 'It gains 4 Crust instead.', 'Your front row regains 2 Crust every turn.', 'Crust bites back: damage it blocks is dealt back to the attacker.'],
+  savory: ['Your summoned foods get +1/+1.', 'They get +2/+2, and when a friend is eaten its neighbours gain +1/+1.', 'Eaten friends leave a 2/2 Crumb behind.', 'Feast: when a friend is eaten, every friend gains +2/+2.'],
 };
 const FLAVOR_ROLE: Record<Flavor, string> = {
   spicy: 'Damage over time with Burn.',
@@ -1007,7 +1013,7 @@ const FLAVOR_ROLE: Record<Flavor, string> = {
   salty: 'Crust to soak up hits.',
   savory: 'Summons and growth.',
 };
-const TIER_AT = [2, 4, 6];
+const TIER_AT = [2, 4, 6, 8];
 
 /** Flavor counts on the plate, exactly as the battle counts them (Saffron doubles its neighbours). */
 const flavorCounts = (): Map<Flavor, number> => flavorTally(app.run.plate);
@@ -1016,7 +1022,7 @@ const flavorCounts = (): Map<Flavor, number> => flavorTally(app.run.plate);
 function flavorTip(f: Flavor, n: number): string {
   const tier = flavorTier(n);
   const rows = FLAVOR_BONUS_LONG[f].map((b, i) => `<p class="tier ${n >= TIER_AT[i] ? 'on' : ''}"><b>${TIER_AT[i]}</b>${b}</p>`).join('');
-  const next = tier < 3 ? `<p class="tip-next">${TIER_AT[tier] - n} more ${f} for the next bonus.</p>` : '<p class="tip-next">Every bonus is active!</p>';
+  const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more ${f} for the next bonus.${tier === 3 ? ' Foods with two flavors, Saffron and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
   const saffron = app.run.plate.some((u) => u && unitDef(u.defId).aura === 'infuse') ? '<p class="dim">Foods next to Saffron count twice.</p>' : '';
   return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}`);
 }
@@ -1040,7 +1046,7 @@ function chalkboard(): string {
     const text = tier ? FLAVOR_BONUS[f][tier - 1] : f;
     return `<div class="chalk-line ${tier ? 'on' : ''}" data-vk="chalk:${f}" data-v="${tier}" data-va="flash" ${flavorTip(f, n)}><b>${n}</b><span class="chalk-pips">${pips}</span>${text}</div>`;
   }).join('');
-  return `<div class="chalkboard" style="${box(LAYOUT.chalkboard)}"><div class="chalk-title">flavors 2·4·6</div>${lines}</div>`;
+  return `<div class="chalkboard" style="${box(LAYOUT.chalkboard)}"><div class="chalk-title">flavors 2·4·6·8</div>${lines}</div>`;
 }
 
 /**
@@ -1069,10 +1075,18 @@ function interestWidget(): string {
       data-vk="interest" data-v="${earn}" data-va="hop">+${earn}g interest${earn >= cap ? ' · max' : ''}</div>`;
 }
 
-/** Extra lines about a food beyond its ability text: interest, gained sell value and flavors. */
+/** Extra lines about a food beyond its ability text: growth days left, interest, gained sell value and flavors. */
 function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   const d = unitDef(defId);
   const notes: string[] = [];
+  if (u) {
+    abilitiesOf(d, level).forEach((ab, i) => {
+      const days = ab.days?.[level - 1];
+      if (days === undefined) return;
+      const left = Math.max(0, days - (u.gains?.[i] ?? 0));
+      notes.push(left > 0 ? `Growing: ${left} of ${days} days left.` : `Fully grown (${days} days). Level up for more days.`);
+    });
+  }
   if (d.interestCap) notes.push(`Interest cap +${d.interestCap[level - 1]} on the plate.`);
   if (u) notes.push(`Sells for ${sellPrice(u)}g${u.sellBonus ? ` (+${u.sellBonus} saved up)` : ''}.`);
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
@@ -1095,7 +1109,8 @@ function cookbook(): string {
       <p class="stat-line">${statBadge('atk', atk)} attack ${statBadge('hp', hp)} HP</p>
       ${cookedChip(defId, level)}`;
     // Only foods with a number that grows by level show the ladder.
-    right = `<p>${foodText(d.text, d.values[level - 1])}</p>${foodNotes(defId, level, u)}${d.text.includes('{v}') ? `<p class="dim">by level: ${values}</p>` : ''}`;
+    const days = d.text.includes('{d}') ? ` · days ${[1, 2, 3].map((l) => (l === level ? `<b>${daysOf(d, l as 1 | 2 | 3)}</b>` : daysOf(d, l as 1 | 2 | 3))).join('/')}` : '';
+    right = `<p>${foodText(d.text, d.values[level - 1], daysOf(d, level))}</p>${foodNotes(defId, level, u)}${d.text.includes('{v}') ? `<p class="dim">by level: ${values}${days}</p>` : ''}`;
   };
   if (s?.kind === 'offer') {
     const offer = getOffer(run, s.src);
@@ -1117,7 +1132,7 @@ function cookbook(): string {
     const art = sp.kind === 'bundle' || sp.kind === 'mythic' ? unitArt(sp.defId, false) : specialArt(sp.kind);
     const what = sp.kind === 'bundle' ? `${sp.count} ${unitDef(sp.defId).name}` : sp.kind === 'mythic' ? unitDef(sp.defId).name : '';
     left = `<div class="pg-art">${art}</div><div class="pg-title">${info.name}</div><p>${what ? `${what} · ` : ''}${sp.cost} gold</p><p class="dim">once a day</p>`;
-    right = `<p>${info.text}</p>${sp.kind === 'mythic' ? `<p>${foodText(unitDef(sp.defId).text, unitDef(sp.defId).values[0])}</p>` : ''}<p class="dim">Drag it onto the counter tray${sp.kind === 'premium' ? ' or the refill sign' : ''}.</p>`;
+    right = `<p>${info.text}</p>${sp.kind === 'mythic' ? `<p>${foodText(unitDef(sp.defId).text, unitDef(sp.defId).values[0], daysOf(unitDef(sp.defId), 1))}</p>` : ''}<p class="dim">Drag it onto the counter tray${sp.kind === 'premium' ? ' or the refill sign' : ''}.</p>`;
   } else if (s?.kind === 'pick' && run.pack) {
     const pack = run.pack;
     if (pack.kind === 'spice') {
@@ -1308,7 +1323,7 @@ function attackPairs(f: BattleFrame): { a: Mark; t: Mark; mutual: boolean }[] {
   }));
 }
 /** Seconds (at 1x) until the action lands: attackers reach their targets, or a spark arrives. */
-const contactDelay = (f: BattleFrame) => (attackPairs(f).length ? 0.26 : sourceOf(f) ? 0.18 : 0);
+const contactDelay = (f: BattleFrame) => (f.marks.some((m) => m.kind === 'shoot') ? 0.3 : attackPairs(f).length ? 0.26 : sourceOf(f) ? 0.18 : 0);
 const currentFrame = (b: PendingBattle) => b.result.frames[Math.min(app.frame, b.result.frames.length - 1)];
 
 const SPARK_KINDS = new Set(['hit', 'heal', 'buff', 'debuff', 'crust', 'blocked', 'summon', 'burn', 'rot', 'chill', 'cleanse', 'cooked']);
@@ -1363,6 +1378,34 @@ function battleSounds(f: BattleFrame, delay: number, after: number, speed: numbe
   if (f.marks.some((m) => m.kind === 'faint')) sfx('nom', after + 120 / speed);
   const present = EFFECT_SOUNDS.filter(([kind]) => f.marks.some((m) => m.kind === kind && (kind !== 'crust' || (m.amount ?? 0) > 0)));
   present.slice(0, 3).forEach(([, name], i) => sfx(name, after + (60 + i * 70) / speed));
+}
+
+/**
+ * A thrown attack: the thrower recoils and names its pattern, and a projectile (bean, pit, peppercorn, ball) arcs to
+ * every food it hits, landing as the hit shows (contactDelay).
+ */
+function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: number) {
+  const shooter = f.marks.find((m) => m.kind === 'shoot');
+  if (!shooter) return;
+  const defId = f.plates[shooter.side][shooter.slot]?.defId;
+  const pattern = defId ? unitDef(defId).attackPattern ?? 'shot' : 'shot';
+  const from = fighterPoint(shooter.side, shooter.slot);
+  const el = root.querySelector<HTMLElement>(`.fighter[data-inspect="${shooter.side}:${shooter.slot}"] .f-art`);
+  const back = shooter.side === 0 ? -4 : 4;
+  el?.animate([{ translate: '0 0' }, { translate: `${back}px 1px`, scale: '0.9 1.1', offset: 0.3 }, { translate: '0 0' }], { duration: 260 / speed, delay, easing: 'ease-out' });
+  floater(stage, from[0], from[1] - 44, `${PATTERN_NAME[pattern]}!`, 'callout', speed, delay);
+  const arc = pattern === 'lob' ? 46 : pattern === 'volley' ? 22 : pattern === 'spray' ? 14 : 6;
+  const hits = f.marks.filter((m) => m.side !== shooter.side && (m.kind === 'hit' || m.kind === 'blocked' || (m.kind === 'crust' && (m.amount ?? 0) < 0)));
+  const seen = new Map<string, number>();
+  hits.slice(0, 8).forEach((m, i) => {
+    const key = `${m.slot}`;
+    const n = seen.get(key) ?? 0;
+    seen.set(key, n + 1);
+    if (m.kind === 'crust' && n > 0) return;
+    const [tx, ty] = fighterPoint(m.side, m.slot);
+    fling(stage, from, [tx + (n % 2 ? 6 : 0), ty - n * 3], `proj proj-${defId}`, { speed, delay: delay + i * 40 / speed, ms: 280, arc });
+  });
+  sfx('pew', delay);
 }
 
 function battleEffects(b: PendingBattle, delay: number) {
@@ -1443,6 +1486,7 @@ function battleEffects(b: PendingBattle, delay: number) {
     if (m.kind === 'faint') burst(stage, fighterPoint(m.side, m.slot), 'crumb', { speed, delay: after, count: 14, spread: 32 });
     if (m.kind === 'summon') burst(stage, fighterPoint(m.side, m.slot), 'puff', { speed, delay, count: 10, spread: 26 });
   }
+  throwEffects(f, stage, delay, speed);
   battleSounds(f, delay, after, speed, pairs.length > 0, !!src);
   if (app.frame >= b.result.frames.length - 1) {
     const o = b.result.outcome;
@@ -1496,7 +1540,7 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
   const d = unitDef(u.defId);
   const flavors = d.allFlavors ? 'every flavor' : (u.flavors ?? [u.flavor]).map(flavorTag).join(' ');
   const cooked = u.level === 3 && d.cooked ? ` <span class="cooked-line">${pix('flame')} Cooked: ${foodText(d.cooked.text, 0)}</span>` : '';
-  const text = foodText(d.text, d.values[u.level - 1]) + cooked;
+  const text = foodText(d.text, d.values[u.level - 1], daysOf(d, u.level)) + cooked;
   // Each badge stays with its label, so a line only ever breaks between stats.
   const pair = (badge: string, label: string) => `<span class="stat-pair">${badge}${label}</span>`;
   const stats = [
@@ -1733,7 +1777,7 @@ const CONDITIONS = new RegExp(
  * A food's ability text for display: conditions coloured, a leading nickname ("Piggy bank:", "Chewy:") muted, the
  * level's value in bold, and keywords hoverable.
  */
-function foodText(text: string, value: number): string {
+function foodText(text: string, value: number, days?: number): string {
   const nick = /^([A-Z][^:.]{2,24}): /.exec(text);
   const isCondition = nick && new RegExp(`^(?:${CONDITIONS.source})$`, 'i').test(nick[1]);
   let body = nick && !isCondition ? text.slice(nick[0].length) : text;
@@ -1741,6 +1785,7 @@ function foodText(text: string, value: number): string {
   if (nick && !isCondition) body = `<span class="nick">${nick[1]}:</span> ${body}`;
   // The Marbled-style lower-case "hit," also counts.
   body = body.replace(/(<\/span> )hit,/, '$1<span class="cond">hit</span>,');
+  if (days !== undefined) body = body.replace(/\{d\}/g, `<b>${days}</b>`);
   return keywordify(body.replace(/\{v\}/g, `<b>${value}</b>`));
 }
 
@@ -1751,7 +1796,7 @@ const CAPTION_FOODS = (() => {
     flavorOf.set(u.name, u.flavor);
     flavorOf.set(u.cookedName, u.flavor);
   }
-  const names = [...flavorOf.keys()].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\// ---------- input: click, drag and drop, keys ----------'));
+  const names = [...flavorOf.keys()].sort((a, b) => b.length - a.length).map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   return { flavorOf, re: new RegExp(`(${names.join('|')})`, 'g') };
 })();
 

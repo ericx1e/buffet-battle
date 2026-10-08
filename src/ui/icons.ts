@@ -373,6 +373,10 @@ const PATTERN_MAPS: Record<string, [string, string, string]> = {
   fork: ['r.', '..', 'r.'],
   snipe: ['..', '.r', '..'],
   escalate: ['oo', 'ro', 'oo'],
+  shot: ['..', 'r.', '..'],
+  lob: ['..', '.r', '..'],
+  spray: ['o.', '.o', 'o.'],
+  volley: ['o.', 'o.', 'o.'],
 };
 
 /**

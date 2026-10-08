@@ -664,7 +664,8 @@ body[data-screen='battle'] {
 .chalk-pips i { width: 2px; height: 4px; background: #4b5a4f; }
 .chalk-pips i.on { background: #ffd27a; }
 .jar.t2 { outline-color: #ffb04a; }
-.jar.t3 { outline: 1px solid #ff6a3a; animation: bonus-glint 1.4s steps(1) infinite; }
+.jar.t3, .jar.t4 { outline: 1px solid #ff6a3a; animation: bonus-glint 1.4s steps(1) infinite; }
+.jar.t4 { outline: 2px solid #ff3a8a; }
 
 /* The special cubby: a gold tag over the last teal cubby; bundles wear an "x3". */
 .special-tag {
@@ -822,3 +823,10 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .sound-btn { display: grid; place-items: center; background: rgba(42, 27, 20, 0.55) !important; border: 1px solid #2a1b14 !important; }
 .sound-btn:hover { background: rgba(42, 27, 20, 0.8) !important; }
 .controls .chip .pix { vertical-align: middle; }
+
+/* Projectiles (thrown attacks), one look per food. */
+.bit.proj { z-index: 72; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #7cc04a; border-radius: 1px; }
+.bit.proj-edamame { background: #8fd05a; width: 5px; height: 4px; }
+.bit.proj-olive { background: #4a3a52; width: 5px; height: 6px; margin: -3px 0 0 -3px; }
+.bit.proj-peppercorn { background: #3a2a22; width: 3px; height: 3px; margin: -1px 0 0 -1px; box-shadow: 0 0 0 1px #e4502a; }
+.bit.proj-takoyaki { background: #c88a3e; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; box-shadow: inset -1px -1px 0 #8a5530, inset 1px 1px 0 #ffe0a0; }

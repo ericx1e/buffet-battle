@@ -229,6 +229,10 @@ const SOUNDS = {
   },
   summon: (s: number, p: number) => tone(s, p, { f: 400, to: 1200, d: 0.12, w: 'sine', v: 0.1 }),
   ability: (s: number, p: number) => tone(s, p, { f: 1000, to: 1400, d: 0.06, w: 'sine', v: 0.04 }),
+  pew: (s: number, p: number) => {
+    tone(s, p, { f: 1400, to: 500, d: 0.09, w: 'square', v: 0.04 });
+    noise(s, { d: 0.04, v: 0.03, filter: 'highpass', f: 4000 });
+  },
   cooked: (s: number, p: number) => {
     for (const [i, f] of [C6, E6, G6, C7].entries()) tone(s, p, { t: i * 0.04, f, d: 0.09, w: 'square', v: 0.035 });
   },

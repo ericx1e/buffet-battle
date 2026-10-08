@@ -212,3 +212,60 @@ describe('ability blocks', () => {
     expect(amounts.slice(0, 3)).toEqual([1, 2, 3]);
   });
 });
+
+describe('projectiles and patterns', () => {
+  const thrower = (id: string, pattern: 'shot' | 'lob' | 'spray' | 'volley', attack = 2) => food(id, attack, 60, [], { attackPattern: pattern });
+  /** HP each enemy slot lost in the first turn. */
+  const lostTurn1 = (r: BattleResult) => {
+    const before = [...r.frames].reverse().find((f) => f.round === 0)!;
+    const after = [...r.frames].reverse().find((f) => f.round === 1)!;
+    return [0, 1, 2, 3, 4, 5].map((s) => (before.plates[1][s]?.hp ?? 0) - (after.plates[1][s]?.hp ?? 0));
+  };
+
+  it('a shot is thrown from the back row too, at the enemy in its lane', () => {
+    const r = simulateBattle(plate(inst(wall), null, null, inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1);
+    expect(texts(r)).toContain('t_shot shoots');
+    expect(lostTurn1(r)[0]).toBeGreaterThanOrEqual(3 + 1); // the bean, plus our wall's attack
+  });
+
+  it('a lob hits the enemy back row of its lane', () => {
+    const r = simulateBattle(plate(inst(wall), null, null, inst(thrower('t_lob', 'lob'))), plate(inst(wall), null, null, inst(wall)), 1);
+    expect(lostTurn1(r)[3]).toBe(2);
+  });
+
+  it('a volley hits every enemy in the front row for half', () => {
+    const r = simulateBattle(plate(null, inst(wall), null, null, inst(thrower('t_volley', 'volley', 4))), plate(inst(wall), inst(wall), inst(wall)), 1);
+    expect(lostTurn1(r).slice(0, 3)).toEqual([2, 2 + 1, 2]); // our wall hits the middle one too
+  });
+
+  it('fork hits both other lanes, from a side lane too', () => {
+    const forker = food('t_fork', 3, 60, [], { attackPattern: 'fork' });
+    const r = simulateBattle(plate(inst(forker)), plate(inst(wall), inst(wall), inst(wall)), 1);
+    expect(lostTurn1(r).slice(0, 3)).toEqual([0, 3, 3]);
+  });
+});
+
+describe('Rot and the new triggers', () => {
+  it('Rot stacks only up to 3', () => {
+    const rotter = food('t_rot5', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }], {}, 5);
+    expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall)), 1), 1, 0, 'rot')).toBe(3);
+  });
+
+  it('friendHealed: a neighbour that gets healed gains attack', () => {
+    const healer = food('t_healer', 1, 60, [{ trigger: 'round', effect: 'heal', target: 'adjacentFriends' }]);
+    const cocoa = food('t_cocoa', 1, 60, [{ trigger: 'friendHealed', effect: 'buff', target: 'thatFriend', hp: 0, max: 4 }]);
+    const hurt = food('t_hurt', 1, 60);
+    // The hurt food (slot 1) sits between the healer (0) and the cocoa (2).
+    const r = simulateBattle(plate(inst(healer), inst(hurt, { hp: 10 }), inst(cocoa)), plate(inst(wall)), 1);
+    expect(highest(r, 0, 1, 'attack')).toBeGreaterThan(1);
+  });
+
+  it('crustBlock: Crust blocking a hit on a neighbour bites the attacker', () => {
+    const crackle = food('t_crackle', 1, 60, [{ trigger: 'crustBlock', effect: 'damage', target: 'attacker', max: 4 }], {}, 2);
+    const brute2 = food('t_hitter2', 3, 60);
+    const r = simulateBattle(plate(inst(wall, { item: 'saltShaker' }), null, null, inst(crackle)), plate(inst(brute2)), 1);
+    // Turn 1: the wall's Crust blocks the 3-damage hit, so the hitter takes 2 back, plus the wall's own 1.
+    const end1 = [...r.frames].reverse().find((f) => f.round === 1)!;
+    expect(60 - end1.plates[1][0]!.hp).toBe(2 + 1);
+  });
+});
