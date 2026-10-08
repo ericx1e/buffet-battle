@@ -1,6 +1,9 @@
-// Sound: short recorded effects (Kenney's CC0 Impact Sounds, RPG Audio, Interface Sounds and Music Jingles, converted
-// to WAVs in ./sfx at full quality, all normalized to the same peak) for a kitchen that sounds like one: plates set down, coins, a knife's chop, punches, a pot
-// lid, the fridge door, page flips, soft food thumps, and warm steel-drum and pizzicato jingles for rewards. Only Burn's sizzle is synthesized.
+// Sound: short recorded effects (CC0: Kenney's packs and cartoon packs from OpenGameArt; credits in ./sfx), converted
+// to WAVs at full quality, all normalized to the same peak. Cartoon first, kitchen second: bubbly bloops and plops for
+// picking up, placing and buffing, a falling boop to sell, a cartoon "blah" when you can't, a toy xylophone run on a
+// level up, a little voice when a food appears or merges, bonks for hits, plus plates, coins, the knife, the fridge and
+// warm steel-drum jingles. Good things rise in pitch, bad things fall, and a run of buffs or heals climbs a scale.
+// Only Burn's sizzle is synthesized.
 // Effects with several takes (plate_0, plate_1...) pick one at random, and every sound varies its pitch a little, so
 // repeats don't drone. Audio starts on the first tap or click (browsers require it) and can be muted; the choice is
 // remembered.
@@ -87,18 +90,28 @@ export function toggleMute(): boolean {
   return muted;
 }
 
-/** Plays a recorded effect (a random take when there are several: "plate" picks plate_0, plate_1...). */
-function play(name: string, at: number, opts: { v?: number; rate?: number } = {}) {
+/** Plays a recorded effect (a random take when there are several: "plate" picks plate_0, plate_1...). `exact` keeps the pitch in tune (for the scale). */
+function play(name: string, at: number, opts: { v?: number; rate?: number; exact?: boolean } = {}) {
   if (!ctx || !out) return;
   const takes = buffers.has(name) ? [name] : [0, 1, 2, 3].map((i) => `${name}_${i}`).filter((n) => buffers.has(n));
   if (!takes.length) return;
   const src = ctx.createBufferSource();
   src.buffer = buffers.get(takes[Math.floor(Math.random() * takes.length)])!;
-  src.playbackRate.value = (opts.rate ?? 1) * (0.96 + Math.random() * 0.08);
+  src.playbackRate.value = (opts.rate ?? 1) * (opts.exact ? 1 : 0.96 + Math.random() * 0.08);
   const g = ctx.createGain();
   g.gain.value = opts.v ?? 0.6;
   src.connect(g).connect(out);
   src.start(at);
+}
+
+/** A run of buffs, heals or coins climbs a scale, like a xylophone run: each one within half a second of the last plays a step higher. */
+const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+let lastStep = -1;
+let step = 0;
+function ladder(at: number) {
+  step = Math.abs(at - lastStep) < 0.5 ? Math.min(step + 1, SCALE.length - 1) : 0;
+  lastStep = at;
+  return 2 ** (SCALE[step] / 12);
 }
 
 /** Fat in a hot pan, synthesized: crackles over a soft hiss. */
@@ -125,24 +138,28 @@ function sizzle(at: number, d = 0.35, v = 1) {
 /** Each sound, given its start time. Every file peaks at the same level, so these volumes set the mix: taps and UI soft, impacts up front, jingles between. */
 const SOUNDS = {
   // kitchen
-  select: (s: number) => play('tick', s, { v: 0.4 }),
+  select: (s: number) => play('bloop_3', s, { v: 0.25, rate: 1.4 }),
   page: (s: number) => play('page', s, { v: 0.35, rate: 1.1 }),
-  pick: (s: number) => play('pick', s, { v: 0.4 }),
-  place: (s: number) => play('plate', s, { v: 0.6 }),
-  buy: (s: number) => {
-    play('coins', s, { v: 0.55 });
-    play('plate', s + 0.08, { v: 0.4 });
+  pick: (s: number) => play('bloop', s, { v: 0.4, rate: 1.15 }),
+  place: (s: number) => {
+    play('plop', s, { v: 0.6 });
+    play('plate', s, { v: 0.3 });
   },
-  coin: (s: number) => play('glass', s, { v: 0.35, rate: 1.3 }),
+  buy: (s: number) => {
+    play('coins', s, { v: 0.45 });
+    play('bloop', s + 0.06, { v: 0.5, rate: 1.1 });
+  },
+  coin: (s: number) => play('glass_0', s, { v: 0.35, rate: 1.3 * ladder(s), exact: true }),
   sell: (s: number) => {
-    play('thunk', s, { v: 0.7 });
-    play('coins2', s + 0.1, { v: 0.5 });
+    play('boop', s, { v: 0.55 });
+    play('coins2', s + 0.08, { v: 0.4 });
   },
   merge: (s: number) => {
-    play('squish', s, { v: 0.7 });
-    play('plate', s + 0.05, { v: 0.4 });
+    play('bloop_0', s, { v: 0.5, exact: true });
+    play('bloop_0', s + 0.07, { v: 0.5, rate: 1.335, exact: true });
+    play('yay', s + 0.1, { v: 0.35 });
   },
-  levelUp: (s: number) => play('jLevel', s, { v: 0.55 }),
+  levelUp: (s: number) => play('xylo', s, { v: 0.5 }),
   cook: (s: number) => {
     sizzle(s, 0.4, 0.8);
     play('jCook', s + 0.05, { v: 0.55 });
@@ -150,36 +167,43 @@ const SOUNDS = {
   freeze: (s: number) => play('fridge', s, { v: 0.6 }),
   item: (s: number) => play('drop', s, { v: 0.55 }),
   reroll: (s: number) => {
-    play('clatter', s, { v: 0.45 });
-    play('clatter', s + 0.07, { v: 0.3, rate: 1.1 });
+    play('clatter', s, { v: 0.35 });
+    play('bloop', s + 0.05, { v: 0.3, rate: 0.9 });
   },
   bell: (s: number) => play('bell', s, { v: 0.45, rate: 1.5 }),
-  deny: (s: number) => {
-    play('knock', s, { v: 0.5, rate: 0.9 }); // knock knock, on wood
-    play('knock', s + 0.12, { v: 0.45, rate: 0.85 });
-  },
-  grow: (s: number) => play('ding2', s, { v: 0.3, rate: 1.2 }),
+  deny: (s: number) => play('blah', s, { v: 0.5 }),
+  grow: (s: number) => play('bloop_0', s, { v: 0.35, rate: 1.3 * ladder(s), exact: true }),
   // battle
-  hit: (s: number) => play('thump', s, { v: 0.75, rate: 1.1 }),
+  hit: (s: number) => {
+    play('thump', s, { v: 0.7, rate: 1.1 });
+    play('plop', s, { v: 0.3, rate: 0.8 }); // the bonk
+  },
   bigHit: (s: number) => {
-    play('punchBig', s, { v: 0.6 });
+    play('punchBig', s, { v: 0.5 });
     play('thump', s, { v: 0.5, rate: 0.9 });
+    play('plop', s, { v: 0.35, rate: 0.6 });
   },
   nom: (s: number) => {
-    play('chop', s, { v: 0.6 });
-    play('squish', s + 0.08, { v: 0.45, rate: 0.85 });
+    play('chop', s, { v: 0.5 });
+    play('boop', s + 0.06, { v: 0.5 });
   },
-  heal: (s: number) => play('ding', s, { v: 0.3, rate: 1.1 }),
-  buff: (s: number) => play('pop', s, { v: 0.5, rate: 1.1 }),
+  heal: (s: number) => play('ding', s, { v: 0.3, rate: 1.1 * ladder(s), exact: true }),
+  buff: (s: number) => play('bloop_0', s, { v: 0.5, rate: ladder(s), exact: true }),
   debuff: (s: number) => play('knock', s, { v: 0.4, rate: 0.8 }),
   crust: (s: number) => play('knock', s, { v: 0.4, rate: 1.2 }),
   burn: (s: number) => sizzle(s),
   rot: (s: number) => play('squish', s, { v: 0.5, rate: 0.75 }),
   chill: (s: number) => play('glass', s, { v: 0.35, rate: 1.5 }),
   block: (s: number) => play('pot', s, { v: 0.35, rate: 1.2 }),
-  summon: (s: number) => play('pop', s, { v: 0.5, rate: 1.3 }),
+  summon: (s: number) => {
+    play('hi', s, { v: 0.45 });
+    play('plop', s, { v: 0.3 });
+  },
   ability: (s: number) => play('tick', s, { v: 0.3 }),
-  pew: (s: number) => play('swish', s, { v: 0.45, rate: 1.3 }),
+  pew: (s: number) => {
+    play('bloop', s, { v: 0.35, rate: 1.6 });
+    play('swish', s, { v: 0.25, rate: 1.3 });
+  },
   cooked: (s: number) => {
     sizzle(s, 0.2, 0.6);
     play('ding', s, { v: 0.35, rate: 1.3 });

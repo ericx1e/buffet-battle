@@ -1,8 +1,9 @@
-// Turns .ogg sound effects (Kenney's packs ship .ogg) into the WAVs in src/ui/sfx/: decoded in Chrome, mixed to mono
+// Turns sound effects (.ogg, .wav or .mp3) into the WAVs in src/ui/sfx/: decoded in Chrome, mixed to mono
 // 16-bit at the source's own sample rate (full quality), normalized so every sound peaks at the same level, silence
 // trimmed, with a short fade at the end. WAV plays everywhere, iPhone included.
 // Needs Chrome and playwright-core (npm i --no-save playwright-core). Usage:
-//   node tools/import-sfx.mjs <folder of .ogg files> src/ui/sfx plate_0=impactPlate_light_000.ogg bell=impactBell_heavy_000.ogg ...
+//   node tools/import-sfx.mjs <folder of sound files> src/ui/sfx plate_0=impactPlate_light_000.ogg bell=impactBell_heavy_000.ogg ...
+// A file can be named by its path inside the folder (cute/pop1.ogg) when two share a name, and given a gain (file:0.8).
 //   node tools/import-sfx.mjs <folder> --info <name=file.ogg ...>   (lengths and peaks only)
 // A name ending in _0, _1... is one take of an effect; the game picks a take at random.
 import { chromium } from 'playwright-core';
@@ -10,14 +11,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 const [root, outDir, ...pairs] = process.argv.slice(2);
 const all = new Map();
-const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : e.name.endsWith('.ogg') && all.set(e.name, path.join(d, e.name))));
+const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : /\.(ogg|wav|mp3)$/i.test(e.name) && all.set(path.relative(root, path.join(d, e.name)).split(path.sep).join('/'), path.join(d, e.name))));
 walk(root);
 const jobs = pairs.map((p) => { const [name, rest] = p.split('='); const [file, gain] = rest.split(':'); return { name, file, gain: Number(gain ?? 1) }; });
 const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const page = await browser.newPage();
 await page.setContent('<html></html>');
 for (const j of jobs) {
-  const src = all.get(j.file);
+  const src = all.get(j.file) ?? [...all].find(([k]) => k === j.file || k.endsWith('/' + j.file))?.[1];
   if (!src) throw new Error('missing ' + j.file);
   const b64 = fs.readFileSync(src).toString('base64');
   const res = await page.evaluate(async ({ b64, gain }) => {
