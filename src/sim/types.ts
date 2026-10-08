@@ -205,6 +205,8 @@ export interface UnitDef {
   attackPattern?: AttackPattern;
   /** While on the plate: your interest cap is raised by this (by level). */
   interestCap?: [number, number, number];
+  /** Multiplies the interest you earn by its level number (Mandarin). */
+  interestMult?: boolean;
   /** Its attacks deal +value (by level) to enemies with this status: a payoff for a plate that spreads it. */
   hitsHarder?: 'burn' | 'rot';
   /** Projectile foods: each throw deals this flat damage (levels add throws, not damage). */

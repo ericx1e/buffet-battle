@@ -155,7 +155,7 @@ export const UNITS: UnitDef[] = [
     text: 'Start of day: +{v} HP per gold of interest earned.',
     cooked: { text: 'End of day: +2 gold tomorrow.', abilities: [{ trigger: 'endTurn', effect: 'gold', values: [2, 2, 2] }] },
     abilities: [{ trigger: 'startTurn', effect: 'buff', attack: 0, perInterest: true }] },
-  { id: 'kebab', name: 'Kebab', cookedName: 'Shish Platter', emoji: '🍢', tier: 3, flavor: 'savory', attack: 4, hp: 10, values: [50, 75, 100],
+  { id: 'kebab', name: 'Kebab', cookedName: 'Shish Platter', emoji: '🍢', tier: 3, flavor: 'savory', attack: 4, hp: 9, values: [50, 75, 100],
     attackPattern: 'pierce',
     text: 'Pierce attack: also hits the enemy behind its target for {v}% damage.',
     cooked: { text: 'Start of battle: attacks twice on its first 2 attacks.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [2, 2, 2] }] },
@@ -235,6 +235,11 @@ export const UNITS: UnitDef[] = [
     text: 'Crust broken: gain +{v} attack.',
     cooked: { text: 'Crust broken: adjacent friends gain +2 attack.', abilities: [{ trigger: 'crustBreak', effect: 'buff', target: 'adjacentFriends', hp: 0, values: [2, 2, 2] }] },
     abilities: [{ trigger: 'crustBreak', effect: 'buff', hp: 0 }] },
+  { id: 'mandarin', name: 'Mandarin', cookedName: 'Candied Mandarin', emoji: '🍊', tier: 4, flavor: 'sweet', attack: 2, hp: 9, values: [2, 3, 4],
+    interestMult: true,
+    text: 'Interest pays {v}x.',
+    cooked: { text: 'End of day: +2 gold tomorrow.', abilities: [{ trigger: 'endTurn', effect: 'gold', values: [2, 2, 2] }] },
+    abilities: [] },
   // Tier 5 (5 gold)
   { id: 'steak', name: 'Steak', cookedName: 'Steak Frites', emoji: '🥩', tier: 5, flavor: 'savory', attack: 4, hp: 13, values: [2, 3, 4],
     text: 'Friend summoned: give it +{v}/+{v}.',
@@ -284,7 +289,7 @@ export const UNITS: UnitDef[] = [
     text: 'Every HP gain on your plate is +{v}.',
     cooked: { text: 'Start of battle: your friends gain +2/+4.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', attack: 2, hp: 4, values: [1, 1, 1] }] },
     abilities: [] },
-  { id: 'kimchi', name: 'Kimchi', cookedName: 'Kimchi Jjigae', emoji: '🥬', tier: 6, flavor: 'sour', flavor2: 'spicy', attack: 3, hp: 9, values: [1, 2, 3],
+  { id: 'kimchi', name: 'Kimchi', cookedName: 'Kimchi Jjigae', emoji: '🥬', tier: 6, flavor: 'sour', flavor2: 'spicy', attack: 2, hp: 9, values: [1, 2, 3],
     art: 'kimchi',
     text: 'Start of battle: the enemy front row Rots {v} and Burns {v}.',
     cooked: { text: 'Every turn: all enemies Rot 1 and Burn 1.', abilities: [{ trigger: 'round', effect: 'rot', target: 'allEnemies', values: [1, 1, 1] }, { trigger: 'round', effect: 'burn', target: 'allEnemies', values: [1, 1, 1] }] },
@@ -399,7 +404,7 @@ export function abilitiesOf(def: UnitDef, level: Level): AbilityDef[] {
  * partners, so a plate gets built rather than bought. Keep this in step with the abilities.
  */
 export const PAIRS: { what: string; makes: string[]; uses: string[] }[] = [
-  { what: 'interest', makes: ['caviar'], uses: ['fortuneCookie'] },
+  { what: 'interest', makes: ['caviar', 'mandarin'], uses: ['fortuneCookie'] },
   { what: 'free refills', makes: ['dumplings'], uses: ['soySauce'] },
   { what: 'selling', makes: ['coinChocolate', 'sugar'], uses: ['sourdough'] },
   { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'gravy', 'pepperoni'] },

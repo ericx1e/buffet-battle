@@ -156,7 +156,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.hitsHarder ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.interestMult ? 1 : 0) + (u.hitsHarder ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
@@ -232,12 +232,12 @@ describe('run', () => {
   it('buys onto the plate or into the fridge (the fridge holds foods you own), and sells', () => {
     const run = newRun(7);
     expect(buyUnit(run, { area: 'market', index: 0 }, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.gold).toBe(7);
+    expect(run.gold).toBe(START_GOLD - 3);
     expect(buyUnit(run, { area: 'market', index: 1 }, { area: 'fridge', index: 0 }).ok).toBe(true);
     expect(run.fridge[0]?.kind).toBe('unit');
-    expect(run.gold).toBe(4);
+    expect(run.gold).toBe(START_GOLD - 6);
     expect(sellUnit(run, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.gold).toBe(5);
+    expect(run.gold).toBe(START_GOLD - 5);
   });
 
   it('two level 2 foods merge into level 3', () => {
@@ -337,6 +337,15 @@ describe('run', () => {
     sellUnit(run, { area: 'plate', index: 1 });
     sellUnit(run, { area: 'plate', index: 2 });
     expect(run.plate[0]!.hp).toBe(unitDef('sourdough').hp + 2);
+  });
+
+  it('Mandarin multiplies interest by its level number', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('mandarin');
+    finishBattle(run, 'win');
+    run.gold = 15;
+    finishBattle(run, 'win');
+    expect(run.lastInterest).toBe(3 * 2);
   });
 
   it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {

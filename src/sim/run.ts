@@ -19,9 +19,9 @@ import {
 
 // Economy (DESIGN.md, Economy): gold carries over between turns, with income and capped interest.
 /** Gold on turn 1. */
-export const START_GOLD = 10;
+export const START_GOLD = 14;
 /** Gold every later turn, before interest. */
-export const INCOME = 8;
+export const INCOME = 9;
 /** Interest: +1 gold for every this much gold held when a turn starts... */
 export const INTEREST_STEP = 5;
 /** ...up to this many (Fortune Cookie and Caviar raise the cap). */
@@ -201,9 +201,14 @@ export function interestCap(run: RunState): number {
   return BASE_INTEREST_CAP + run.plate.reduce((sum, u) => sum + (u ? (unitDef(u.defId).interestCap?.[levelOf(u.copies) - 1] ?? 0) : 0), 0);
 }
 
+/** What each interest line pays: 1, or a Mandarin's level number (the best one on the plate). */
+export function interestMult(run: RunState): number {
+  return Math.max(1, ...run.plate.map((u) => (u && unitDef(u.defId).interestMult ? unitDef(u.defId).values[levelOf(u.copies) - 1] : 1)));
+}
+
 /** Interest a turn starting with `gold` would pay. */
 export function interestOn(run: RunState, gold: number): number {
-  return Math.min(interestCap(run), Math.floor(gold / INTEREST_STEP));
+  return Math.min(interestCap(run), Math.floor(gold / INTEREST_STEP)) * interestMult(run);
 }
 
 function startTurn(run: RunState) {

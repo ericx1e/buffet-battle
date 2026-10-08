@@ -329,15 +329,21 @@ const foods = {
     s.ball(19, 16, 3, 2, R('#f3eee8'));
   },
   pizza(s) {
-    s.shadow(17, 28, 12, 2);
-    // A slice lying on the table, the camera low and a little above: the slice is foreshortened (wide crust at the
-    // back, the tip toward you, not far below it), its thickness showing as a band along the near edges, toppings
-    // squashed into flat ovals.
-    s.poly([[4, 14], [28, 14], [16, 25]], C.crust[3]); // the edge band, one pixel deeper than the top
-    s.poly([[4, 12], [28, 12], [16, 23]], (x, y) => (x > 21 && y > 14 ? C.cheese[3] : y < 14 ? C.cheese[1] : C.cheese[2]));
-    s.tube([[4, 12], [10, 10], [16, 9.5], [22, 10], [28, 12]], 2.2, C.crust);
-    for (const [x, y, rx, ry] of [[11, 14, 2.8, 1.4], [20, 14, 2.8, 1.4], [16, 18, 2.2, 1.1]]) s.ball(x, y, rx, ry, C.pepperoni);
-    s.tube([[23, 16], [23, 19]], 0.9, C.cheese); // a drip of cheese over the edge
+    s.shadow(17, 29, 14, 2);
+    // A whole pizza on a wooden board, from the side and a little above: the board's edge, the round pie (an
+    // ellipse) with a thick golden crust rim, flat melted cheese, pepperoni ovals and one slice cut out of it.
+    bowl(s, 16, 21, 14.5, 4.5, 3, R('#b07a42'), () => '#c89058'); // the board
+    const ring = (x, y, rx, ry) => ((x - 16) / rx) ** 2 + ((y - 18) / ry) ** 2;
+    s.fill(2, 12, 30, 24, (x, y) => {
+      const r = ring(x, y, 13, 5.4);
+      if (r > 1) return null;
+      if (ring(x, y, 10.6, 3.9) > 1) return y < 17 ? C.crust[1] : y > 20 ? C.crust[3] : C.crust[2]; // crust rim
+      return y > 19 ? '#e8a830' : (x + y) % 7 === 0 ? '#ffe08a' : '#f6c440'; // cheese, a little darker toward you
+    });
+    for (const [x, y] of [[10, 17], [16, 16], [22, 17], [12, 20], [19, 20]]) { s.ball(x, y, 2, 1.1, R('#c8322a')); s.px(x - 1, y - 1, '#e8645a'); }
+    s.line(16, 18, 27, 18, '#c88a2a'); // the cuts
+    s.line(16, 18, 21, 21, '#c88a2a');
+    s.px(13, 16, C.leaf[1]); s.px(24, 19, C.leaf[1]); s.px(18, 19, C.leaf[2]);
   },
   hotPot(s) {
     s.shadow(17, 29, 13, 2);
@@ -476,6 +482,15 @@ const foods = {
       s.line(x - 2, y - 1, x + 1, y - 3, '#f6e2b0');
       s.line(x - 1, y - 1, x + 2, y - 3, '#e8c88a');
     }
+  },
+  mandarin(s) {
+    s.shadow(17, 29, 11, 2);
+    // A round mandarin from the side and a little above, its dimpled peel lit on the left, a short stem and a leaf.
+    const peel = R('#f2892a');
+    s.ball(16, 19, 10, 9, peel, { bias: 0.2, tone: (nx, ny, x, y) => ((x * 3 + y * 5) % 9 === 0 ? 1 : 0) });
+    s.ball(16, 11, 2.5, 1, peel.map((c) => shade(c, -0.15))); // the dimple where the stem goes in
+    s.tube([[16, 11], [16, 8]], 0.7, C.stem);
+    s.ball(20, 8, 4, 1.8, C.leaf, { bias: 0.2 });
   },
   // Flavor overhaul foods
   tofu(s) {

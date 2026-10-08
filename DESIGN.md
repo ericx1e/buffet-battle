@@ -71,9 +71,9 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 
 | Action | Cost / value |
 | --- | --- |
-| Gold on day 1 | 10 |
-| Income every later day | 8, plus interest |
-| Interest | +1 gold per 5 gold held when the day starts, up to 3 (Caviar raises the cap by 1/2/3) |
+| Gold on day 1 | 14: enough for four foods, or three and 5 gold saved for interest |
+| Income every later day | 9, plus interest |
+| Interest | +1 gold per 5 gold held when the day starts, up to 3 (Caviar raises the cap by 1/2/3; Mandarin multiplies what each line pays by 2/3/4) |
 | Buy a food | 3 gold (tiers 1-2), 4 (tiers 3-4), 5 (tiers 5-6), 7 (mythic) |
 | Buy an item | 2 to 7 gold (see Items) |
 | Refill the market | 1 gold, +1 for each refill already today (Dumplings make the first 1/2/3 each day free) |
@@ -145,7 +145,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 
 | What | Makes it | Feeds on it |
 | --- | --- | --- |
-| Interest | Caviar (raises the cap) | Fortune Cookie (+1 HP per gold of interest) |
+| Interest | Caviar (raises the cap), Mandarin (each line pays 2/3/4x) | Fortune Cookie (+1 HP per gold of interest) |
 | Free refills | Dumplings (first 1/2/3 refills free) | Soy Sauce (a random friend +1/+1 per refill) |
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
@@ -508,7 +508,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Pickle | Sour | 2/8 | 4 | Brines: in the fridge, +1/+1, +2/+2 or +3/+3 a day. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
 | 3 | Anchovy | Salty | 2/7 | 4 | Every 2 turns: it and the friend in its lane gain 2/3/4 Crust. | **Caesar Salad**: Start of battle: front-row friends gain 3 Crust. |
 | 3 | Fortune Cookie | Sweet | 2/7 | 4 | Start of day: +1/2/3 HP per gold of interest earned. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
-| 3 | Kebab | Savory | 4/10 | 4 | Pierce attack: also hits the enemy behind its target for 50/75/100% damage. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
+| 3 | Kebab | Savory | 4/9 | 4 | Pierce attack: also hits the enemy behind its target for 50/75/100% damage. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
 | 3 | Nachos | Salty | 3/11 | 4 | Splash attack: also hits the enemies beside its target for 1/2/3. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
 | 3 | Yogurt | Sour | 2/8 | 4 | Cultures: start of day, +1/2/3 HP, double next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
 | 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/2/3 attack, double next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
@@ -526,6 +526,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 4 | Sweet & Sour Pork | Sweet + Sour | 3/12 | 4 | Deals +2/3/4 damage to Rotting enemies. | **Gu Lao Rou**: Every 2 turns: the enemy front row Rots 2. |
 | 4 | Peanut Butter | Salty | 3/10 | 4 | End of day: adjacent friends gain +1/2/3 HP. | **PB&J**: Start of battle: adjacent friends gain 4 Crust. |
 | 4 | Baguette | Salty | 4/11 | 4 | Crust broken: gain +2/3/4 attack. | **Garlic Baguette**: Crust broken: adjacent friends gain +2 attack. |
+| 4 | Mandarin | Sweet | 2/9 | 4 | Interest pays 2/3/4x. | **Candied Mandarin**: End of day: +2 gold tomorrow. |
 | 5 | Steak | Savory | 4/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Start of battle: adjacent friends gain +3/+3. |
 | 5 | Ghost Pepper | Spicy | 4/12 | 5 | Deals +3/4/6 damage to Burning enemies. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 3/10 | 5 | Hit: adjacent friends gain +1/+1, +2/+2 or +3/+3. | **Pina Colada**: Every turn: your friends gain +1/+1. |
@@ -536,7 +537,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Pizza | Savory | 4/13 | 5 | Start of battle: adjacent friends gain +1/2/3 HP per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 per flavor on your plate. |
 | 6 | Hot Pot | Spicy | 4/12 | 5 | Fork attack: hits the other two lanes instead of its own, +1/2/3 damage. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
 | 6 | Birthday Cake | Sweet | 3/18 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
-| 6 | Kimchi | Sour + Spicy | 3/9 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
+| 6 | Kimchi | Sour + Spicy | 2/9 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 4/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 3/16 | 5 | The friend ahead's abilities trigger +1/2/3 times. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
 | 6 | Smoothie | Sweet + Sour | 3/12 | 5 | Adjacent friends gain +1/2/3 attack when their ability fires. *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |

@@ -20,6 +20,7 @@ import {
   getOffer,
   getUnit,
   interestCap,
+  interestMult,
   interestOn,
   INCOME,
   INTEREST_STEP,
@@ -1070,23 +1071,26 @@ function jarCoins(): string {
 
 function jarMarks(): string {
   const { run } = app;
-  const earn = interestOn(run, run.gold);
+  const mult = interestMult(run);
+  const earn = interestOn(run, run.gold) / mult;
   return Array.from({ length: interestCap(run) }, (_, i) => {
     const y = Math.round(JAR.bottom - INTEREST_STEP * (i + 1) * jarScale());
     const on = i < earn;
-    return `<div class="jar-mark ${on ? 'on' : ''}" style="left:${JAR.cx + 10}px;top:${y}px" ${interestTip()} data-vk="jm:${i}" data-v="${on ? 1 : 0}" data-va="hop"><i></i><b>+${i + 1}</b></div>`;
+    return `<div class="jar-mark ${on ? 'on' : ''}" style="left:${JAR.cx + 10}px;top:${y}px" ${interestTip()} data-vk="jm:${i}" data-v="${on ? 1 : 0}" data-va="hop"><i></i><b>+${(i + 1) * mult}</b></div>`;
   }).join('');
 }
 
 /** The jar's tooltip: gold, the interest rule, and what tomorrow brings. */
 function interestTip(): string {
   const { run } = app;
+  const mult = interestMult(run);
   const earn = interestOn(run, run.gold);
+  const lines = earn / mult;
   const cap = interestCap(run);
-  const toNext = earn < cap ? INTEREST_STEP * (earn + 1) - run.gold : 0;
-  const body = `<p>Gold you don't spend stays in the jar. Each line is worth <b>+1 gold</b> tomorrow: fill the jar to the line (every ${INTEREST_STEP} gold), up to <b>${cap}</b>.</p>
-    <p>${toNext ? `Keep <b>${toNext}</b> more for +${earn + 1}.` : 'Every line is filled: the most interest you can earn.'}</p>
-    <p class="dim">Tomorrow: +${INCOME} income +${earn} interest. Fortune Cookie and Caviar add lines.</p>`;
+  const toNext = lines < cap ? INTEREST_STEP * (lines + 1) - run.gold : 0;
+  const body = `<p>Gold you don't spend stays in the jar. Each line is worth <b>+${mult} gold</b> tomorrow${mult > 1 ? ' (Mandarin)' : ''}: fill the jar to the line (every ${INTEREST_STEP} gold), up to <b>${cap}</b> lines.</p>
+    <p>${toNext ? `Keep <b>${toNext}</b> more for +${earn + mult}.` : 'Every line is filled: the most interest you can earn.'}</p>
+    <p class="dim">Tomorrow: +${INCOME} income +${earn} interest.</p>`;
   return tipBox(`${pix('coin')} Tip jar: ${run.gold} gold, +${earn} interest`, body);
 }
 

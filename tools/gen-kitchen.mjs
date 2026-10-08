@@ -305,21 +305,21 @@ prop('bell', () => {
     }
     return null;
   }, P.outline, true, true);
-  // Dome: a half-sphere whose flat bottom sits on the centre line of the base's top face.
-  const rx = 15, ry = 15;
-  blob(cx - rx, baseY - ry, cx + rx, baseY, (x, y) => {
-    const nx = (x - cx) / rx;
-    const ny = (y - baseY) / ry;
-    if (nx * nx + ny * ny > 1) return null;
-    return lit(nx, ny, BRASS);
+  // Dome: a round half-sphere standing on the base. Its foot is a circle seen a little from above, so it curves
+  // down toward you, and the brass collar follows it.
+  const rx = 15, ry = 19, footRy = 3;
+  blob(cx - rx, baseY - ry, cx + rx, baseY + footRy, (x, y) => {
+    const t = (x - cx) / rx;
+    if (Math.abs(t) > 1) return null;
+    const foot = baseY + dip(t, footRy);
+    if (y > foot) return null;
+    const ny = (y - foot) / ry;
+    if (t * t + ny * ny > 1) return null;
+    if (y >= foot - 1) return y === foot ? BRASS[3] : t < -0.5 ? BRASS[1] : BRASS[2]; // the collar
+    return lit(t, ny, BRASS);
   }, P.outline);
-  // Brass collar where the dome meets the base
-  rect(cx - rx, baseY - 1, rx * 2 + 1, 2, BRASS[3]);
-  rect(cx - rx + 1, baseY - 1, 6, 1, BRASS[2]);
-  rect(cx - rx - 1, baseY - 1, 1, 2, P.outline);
-  rect(cx + rx + 1, baseY - 1, 1, 2, P.outline);
   // Plunger: rod running into the top of the dome, capped with a knob
-  const rodTop = baseY - ry - 6;
+  const rodTop = baseY + footRy - ry - 5; // the rod runs into the top of the dome
   rect(cx - 2, rodTop, 4, 8, P.outline);
   rect(cx - 1, rodTop, 2, 8, BRASS[2]);
   rect(cx - 1, rodTop, 1, 8, BRASS[1]);
@@ -335,23 +335,31 @@ prop('tipjar', () => {
   const cx = 332, neckTop = 257, bodyTop = 265, bottom = 310, rx = 15;
   shadow(cx + 3, bottom + 4, 18);
   const GLASS = ['#ffffff', '#eef8f6', '#d4ebe7', '#b4d3cf', '#93b8b4'];
-  blob(cx - rx, neckTop - 3, cx + rx, bottom + 3, (x, y) => {
+  blob(cx - rx, neckTop - 6, cx + rx, bottom + 5, (x, y) => {
     const t = (x - cx) / rx;
     // Opening seen from above
-    if (y <= neckTop + 4 && inEllipse(x, y, cx, neckTop, 12, 4.5)) {
-      return inEllipse(x, y, cx, neckTop + 1, 10, 3) ? '#7da3a1' : GLASS[1];
+    if (y <= neckTop + 6 && inEllipse(x, y, cx, neckTop, 12.5, 6)) {
+      return inEllipse(x, y, cx, neckTop + 1, 10.2, 4.2) ? (y < neckTop ? '#6a908e' : '#7da3a1') : y > neckTop + 2 ? GLASS[2] : GLASS[1];
+    }
+    // Rounded shoulders: the glass swells from the neck to the body over a few pixels
+    const shoulder = [12, 13, 14, 14.6, 15];
+    if (y >= bodyTop && y < bodyTop + shoulder.length) {
+      const w = shoulder[y - bodyTop];
+      if (Math.abs(x - cx) > w) return null;
+      const tt = (x - cx) / w;
+      if (y < bodyTop + 2) return Math.abs(tt) > 0.85 ? GLASS[3] : GLASS[2];
+      return tt < -0.72 ? GLASS[0] : tt > 0.7 ? GLASS[4] : '~#cfe9e5';
     }
     // Threaded neck
     if (y > neckTop && y < bodyTop) {
       if (Math.abs(x - cx) > 12) return null;
       const d = dip((x - cx) / 12, 2);
-      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 12, 4.5)) return null;
+      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 12.5, 6)) return null;
       return y === neckTop + 4 + d || y === neckTop + 7 + d ? GLASS[4] : side((x - cx) / 12, GLASS);
     }
     // Body with a rounded bottom
     const inBody = y <= bottom ? Math.abs(t) <= 1 && y >= bodyTop : inEllipse(x, y, cx, bottom, rx, 5);
     if (!inBody) return null;
-    if (y <= bodyTop + 1 + dip(t, 2)) return Math.abs(t) > 0.85 ? null : GLASS[2]; // shoulder, curving round
     // Label (blank, for the gold count), wrapped round the jar: its edges dip toward you
     const ld = dip((x - cx) / rx, 2);
     if (y >= 273 + ld && y <= 285 + ld && x >= cx - 10 && x <= cx + 10) {
