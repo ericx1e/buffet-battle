@@ -327,12 +327,12 @@ prop('bell', () => {
   rect(cx + 2, rodTop - 1, 1, 1, BRASS[3]);
 });
 
-// Tip jar: glass mason jar with a pile of coins and a blank label for the gold count.
+// Tip jar: an empty glass mason jar with a blank label for the gold count. The game draws the coins behind it (they
+// show through the see-through glass) at a height set by your gold, with interest lines at 5/10/15 gold.
 prop('tipjar', () => {
   const cx = 332, neckTop = 257, bodyTop = 265, bottom = 310, rx = 15;
   shadow(cx + 3, bottom + 4, 18);
   const GLASS = ['#ffffff', '#eef8f6', '#d4ebe7', '#b4d3cf', '#93b8b4'];
-  const coinTop = (x) => 292 + Math.round(5 * ((x - cx) / rx) ** 2);
   blob(cx - rx, neckTop - 3, cx + rx, bottom + 3, (x, y) => {
     const t = (x - cx) / rx;
     // Opening seen from above
@@ -352,19 +352,6 @@ prop('tipjar', () => {
     if (y >= 274 && y <= 286 && x >= cx - 10 && x <= cx + 10) {
       if (y === 274 || y === 286) return '#d9c89f';
       return x >= cx + 8 ? '#eadcb8' : '#fbf2da';
-    }
-    // Coins inside: rows of small flat coins (bright top face, darker rim), staggered row to row
-    if (y >= coinTop(x)) {
-      const row = Math.floor((bottom + 3 - y) / 3);
-      const rowY = bottom + 2 - row * 3; // y of this row's rim
-      const off = row % 2 ? 4 : 0;
-      const k = Math.round((x - (cx - 14) - off) / 7);
-      const ccx = cx - 14 + off + 7 * k;
-      if (Math.abs(x - ccx) <= 3) {
-        if (y === rowY) return x > ccx ? '#a8781f' : '#c8952f'; // rim
-        return x === ccx - 3 ? '#fbe08a' : '#f2c94c'; // face, lit on its left edge like everything else
-      }
-      return '#8d661c'; // gap between coins
     }
     // Glass: the counter shows through, tinted, with highlight streaks and a darker right edge
     if (t > -0.72 && t < -0.55) return GLASS[0];

@@ -49,7 +49,7 @@ import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
-import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
+import { type Sfx, isMuted, setAmbience, sfx, toggleMute, unlockAudio } from './sound';
 
 /** What's selected or being dragged: an offer, an owned food, the special cubby's offer, or a choice from an open pack. */
 type Selection = { kind: 'offer'; src: OfferSource } | { kind: 'unit'; loc: Loc } | { kind: 'special' } | { kind: 'pick'; index: number } | null;
@@ -624,6 +624,7 @@ function render() {
   const oldScreen = lastScreen;
   lastScreen = screen;
   forceWipe = false;
+  setAmbience(screen === 'battle' ? 'battle' : 'kitchen');
   if (app.message !== toast.text) toast = { text: app.message, id: toast.id + 1, at: performance.now() };
 
   document.body.dataset.screen = screen;
@@ -1048,24 +1049,44 @@ function chalkboard(): string {
   return `<div class="chalkboard" style="${box(LAYOUT.chalkboard)}"><div class="chalk-title">flavors 2·4·6·8</div>${lines}</div>`;
 }
 
-/**
- * Interest, over the tip jar: what keeping your gold earns at the start of next turn. Hover for the rule, a coin
- * per gold of interest you could earn (filled for what you would earn now) and how much more to keep for the next.
- */
-function interestWidget(): string {
+// ---------- the tip jar: gold and interest ----------
+// The jar is a measuring jar. Coins fill it to a height set by your gold (drawn behind the jar sprite, so they show
+// through its glass), and a line for each step of interest (5, 10, 15 gold...) is marked +1, +2, +3 on its side,
+// lit once the coins reach it. "Fill it to the line to earn" is the whole rule.
+
+/** Jar interior, in stage pixels: its centre and the bottom and top of the space coins can fill. */
+const JAR = { cx: 333, bottom: 311, top: 268 };
+
+/** Pixels of coins per gold: the top interest line sits a little below the neck. */
+function jarScale(): number {
+  return (JAR.bottom - JAR.top - 3) / (INTEREST_STEP * interestCap(app.run));
+}
+
+function jarCoins(): string {
+  const h = Math.min(JAR.bottom - JAR.top, Math.round(app.run.gold * jarScale()));
+  return h > 0 ? `<div class="jar-coins" style="left:${JAR.cx - 14}px;top:${JAR.bottom - h}px;width:28px;height:${h}px"></div>` : '';
+}
+
+function jarMarks(): string {
+  const { run } = app;
+  const earn = interestOn(run, run.gold);
+  return Array.from({ length: interestCap(run) }, (_, i) => {
+    const y = Math.round(JAR.bottom - INTEREST_STEP * (i + 1) * jarScale());
+    const on = i < earn;
+    return `<div class="jar-mark ${on ? 'on' : ''}" style="left:${JAR.cx + 10}px;top:${y}px" ${interestTip()} data-vk="jm:${i}" data-v="${on ? 1 : 0}" data-va="hop"><i></i><b>+${i + 1}</b></div>`;
+  }).join('');
+}
+
+/** The jar's tooltip: gold, the interest rule, and what tomorrow brings. */
+function interestTip(): string {
   const { run } = app;
   const earn = interestOn(run, run.gold);
   const cap = interestCap(run);
   const toNext = earn < cap ? INTEREST_STEP * (earn + 1) - run.gold : 0;
-  const coins = Array.from({ length: cap }, (_, i) => pix(i < earn ? 'coin' : 'coinOff')).join('');
-  const body = `<p>Gold you don't spend carries over. When the next day starts you also get <b>+1 gold for every ${INTEREST_STEP}</b> you kept, up to <b>${cap}</b>.</p>
-    <p>You have <b>${run.gold}</b> now: <b>+${earn}</b> interest tomorrow${toNext ? `. Keep <b>${toNext}</b> more for +${earn + 1}` : ' (the most you can earn)'}.</p>
-    <p class="interest-coins">${coins}</p>
-    <p class="dim">Tomorrow: +${INCOME} income +${earn} interest. Fortune Cookie and Caviar raise the cap.</p>`;
-  // One sign over the jar: what you'll get tomorrow, and what keeping more gold would do.
-  const next = earn >= cap ? 'max reached' : `next +1 at ${INTEREST_STEP * (earn + 1)}g`;
-  return `<div class="interest ${earn ? '' : 'none'}" style="${box(LAYOUT.interest)}" ${tipBox(`${pix('coin')} Interest`, body)}
-      data-vk="interest" data-v="${earn}" data-va="hop"><b>+${earn}g interest</b><span>${next}</span></div>`;
+  const body = `<p>Gold you don't spend stays in the jar. Each line is worth <b>+1 gold</b> tomorrow: fill the jar to the line (every ${INTEREST_STEP} gold), up to <b>${cap}</b>.</p>
+    <p>${toNext ? `Keep <b>${toNext}</b> more for +${earn + 1}.` : 'Every line is filled: the most interest you can earn.'}</p>
+    <p class="dim">Tomorrow: +${INCOME} income +${earn} interest. Fortune Cookie and Caviar add lines.</p>`;
+  return tipBox(`${pix('coin')} Tip jar: ${run.gold} gold, +${earn} interest`, body);
 }
 
 /** Extra lines about a food beyond its ability text: growth days left, interest, gained sell value and flavors. */
@@ -1118,6 +1139,11 @@ function cookbook(): string {
   } else if (s?.kind === 'unit') {
     const u = getUnit(run, s.loc);
     if (u) unitPages(u.defId, levelOf(u.copies), flavorsOf(u), u.attack + (u.tempAttack ?? 0), u.hp, u);
+  } else if (s?.kind === 'special' && (run.special?.kind === 'bundle' || run.special?.kind === 'mythic')) {
+    // A Pair or a mythic delivery: the food's own pages, so you can read what it does.
+    const sp = run.special;
+    const d = unitDef(sp.defId);
+    unitPages(d.id, 1, flavorsOf({ defId: d.id }), d.attack, d.hp, undefined, sp.kind === 'bundle' ? `x${sp.count} for ${sp.cost}g` : `${sp.cost}g`);
   } else if (s?.kind === 'special' && run.special && run.special.kind !== 'freeItem') {
     const sp = run.special;
     const info = SPECIALS[sp.kind];
@@ -1189,11 +1215,12 @@ function renderKitchen() {
         ${fridgeSlots()}
         ${plateSlots()}
         ${counterTray()}
-        ${interestWidget()}
         <div class="label dark center" style="${box([cx - 6, cy - 3, 60, 9])}">serve!</div>
-        <div class="tip-jar" style="${box(PROPS.tipjar)}" ${tipBox(`Gold: ${run.gold}`, '<p>Unspent gold carries over to tomorrow and earns interest.</p>')} data-vk="jar-gold" data-v="${run.gold}" data-va="hop">${propArt('tipjar')}
+        ${jarCoins()}
+        <div class="tip-jar" style="${box(PROPS.tipjar)}" ${interestTip()} data-vk="jar-gold" data-v="${run.gold}" data-va="hop">${propArt('tipjar')}
           <div class="tip-text" style="${box([LAYOUT.tipLabel[0] - PROPS.tipjar[0], LAYOUT.tipLabel[1] - PROPS.tipjar[1], LAYOUT.tipLabel[2], LAYOUT.tipLabel[3]])}"
             data-vk="gold" data-v="${run.gold}" data-delta>${run.gold}g</div></div>
+        ${jarMarks()}
         <button class="hotspot bell" style="${box(PROPS.bell)}" data-action="serve" ${tipBox('Serve', '<p>Ring the bell to send your plate into battle.</p>')}>${propArt('bell')}</button>
         <div class="hotspot bin ${unitSelected ? 'armed' : ''}" style="${box(PROPS.bin)}" data-drop="sell" data-action="sell" ${tipBox('Scrap bin', '<p>Drop a food here to sell it for half what it cost, plus its sell value (key s).</p>')}
           data-k="bin" data-in="none" data-gulp="hop">${propArt('bin')}</div>

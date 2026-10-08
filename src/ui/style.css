@@ -693,17 +693,20 @@ body[data-screen='battle'] {
 .stage.holding .tray { opacity: 0.85; }
 .tray-label { line-height: 9px; }
 
-/* Interest, over the tip jar: "+2g interest" and a coin per gold of interest, filled for what you would earn. */
-.interest {
-  font: 400 10px/9px var(--pixel); color: #fff; text-align: center; white-space: nowrap;
-  background: #3f7a3a; border: 1px solid #2a1b14; cursor: help;
+/* Tip jar coins: rows of gold coins (bright face, darker rim) behind the jar's glass, rounded at the bottom. */
+.jar-coins {
+  border-radius: 0 0 12px 12px / 0 0 3px 3px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 6px, rgba(110, 66, 8, 0.95) 6px 7px),
+    repeating-linear-gradient(180deg, #f0b418 0 2px, #a86c0c 2px 3px);
+  pointer-events: none;
 }
-.interest.none { background: #7a6a5e; }
-/* Two lines: what you get tomorrow, then what the next step takes. */
-.interest { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.interest b { font-weight: 400; }
-.interest span { color: #cfeec0; }
-.interest.none span { color: #e6d8cc; }
+/* Interest lines on the jar: a tick on its side and "+1" beside it, gold once the coins reach it. */
+.jar-mark { display: flex; align-items: center; gap: 1px; height: 9px; margin-top: -4px; cursor: help; }
+.jar-mark i { width: 5px; height: 1px; background: #3f5f5d; }
+.jar-mark b { font: 400 10px/9px var(--pixel); color: #6e4a30; }
+.jar-mark.on i { background: #ffd23f; height: 2px; }
+.jar-mark.on b { color: #ffd23f; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; }
 .tipbox .interest-coins { display: flex; flex-wrap: wrap; gap: 1px; }
 .refill.free span { color: #2f7a2c; }
 
@@ -865,3 +868,6 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 
 /* Captions: at most two lines; anything longer ends in an ellipsis instead of being cut off mid-line. */
 .caption-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 10px; }
+.tip-jar { z-index: 2; }
+.jar-coins { z-index: 1; }
+.jar-mark { z-index: 3; }
