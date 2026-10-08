@@ -339,8 +339,9 @@ prop('tipjar', () => {
     const t = (x - cx) / rx;
     // Opening seen from above
     // The opening: a round rim seen a little from above, the width of the neck
-    if (y <= neckTop + 4 && inEllipse(x, y, cx, neckTop, 11.5, 4)) {
-      return inEllipse(x, y, cx, neckTop + 0.5, 9.5, 2.6) ? (y < neckTop ? '#6a908e' : '#7da3a1') : y > neckTop + 1 ? GLASS[2] : GLASS[1];
+    if (y <= neckTop + 4 && inEllipse(x, y, cx, neckTop, 12, 4)) {
+      if (inEllipse(x, y, cx, neckTop + 0.5, 10, 2.6)) return y < neckTop ? '#6a908e' : '#7da3a1';
+      return !inEllipse(x, y + 1, cx, neckTop, 12, 4) ? GLASS[4] : y > neckTop + 1 ? GLASS[2] : GLASS[0]; // the lip: a dark front edge
     }
     // Rounded shoulders: the glass swells from the neck to the body over a few pixels
     const shoulder = [12.4, 13.4, 14.2, 14.7, 15];
@@ -354,7 +355,6 @@ prop('tipjar', () => {
     if (y > neckTop && y < bodyTop) {
       if (Math.abs(x - cx) > 12) return null;
       const d = dip((x - cx) / 12, 2);
-      if (y < neckTop + d + 3 && !inEllipse(x, y, cx, neckTop, 11.5, 4)) return null;
       return y === neckTop + 4 + d || y === neckTop + 7 + d ? GLASS[4] : side((x - cx) / 12, GLASS);
     }
     // Body with a rounded bottom

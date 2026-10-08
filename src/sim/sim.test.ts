@@ -138,15 +138,16 @@ describe('flavor synergy in abilities', () => {
     run.plate[1] = unit('potato');
     run.plate[5] = unit('cheese');
     serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 2); // +1, doubled next to Potato
-    expect(run.plate[5]!.hp).toBe(unitDef('cheese').hp + 1); // no Savory neighbour
+    const v = unitDef('cheese').values[0];
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 2 * v); // doubled next to Potato
+    expect(run.plate[5]!.hp).toBe(unitDef('cheese').hp + v); // no Savory neighbour
   });
 
   it('kitchen growth has no cap: it keeps growing every turn', () => {
     const run = newRun(3);
     run.plate[0] = unit('cheese', { copies: 6 }); // +3 HP a turn
     for (let i = 0; i < 5; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 15);
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 5 * unitDef('cheese').values[2]);
   });
 });
 
@@ -339,6 +340,20 @@ describe('run', () => {
     expect(run.plate[0]!.hp).toBe(unitDef('sourdough').hp + 2);
   });
 
+  it('Birthday Cake adds to kitchen HP growth too', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('breadDough');
+    run.plate[1] = unit('cake');
+    serve(run);
+    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + unitDef('breadDough').values[0] + unitDef('cake').values[0]);
+  });
+
+  it('Birthday Cake adds to HP gains in battle', () => {
+    const r = simulateBattle(plate({ 0: unit('cheese', { hp: 40 }), 3: unit('apple', { hp: 40 }), 4: unit('cake', { hp: 40 }) }), plate({ 0: unit('cheese', { attack: 3, hp: 80 }) }), 1);
+    const gain = r.frames.flatMap((f) => f.marks).find((m) => m.side === 0 && m.kind === 'buff' && (m.hp ?? 0) > 0);
+    expect(gain?.hp).toBe(unitDef('apple').values[0] + unitDef('cake').values[0]);
+  });
+
   it('Mandarin multiplies interest by its level number', () => {
     const run = newRun(5);
     run.plate[0] = unit('mandarin');
@@ -369,7 +384,7 @@ describe('run', () => {
     run.plate[0] = unit('pickle');
     serve(run);
     serve(run);
-    expect(run.fridge[0]?.kind === 'unit' && run.fridge[0].unit.attack).toBe(unitDef('pickle').attack + 2);
+    expect(run.fridge[0]?.kind === 'unit' && run.fridge[0].unit.attack).toBe(unitDef('pickle').attack + 2 * unitDef('pickle').values[0]);
     expect(run.plate[0]!.attack).toBe(unitDef('pickle').attack);
   });
 
@@ -378,14 +393,14 @@ describe('run', () => {
     run.plate[0] = unit('egg');
     run.plate[3] = unit('beanSprout');
     for (let i = 0; i < 6; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 6); // +1 HP every day, no limit
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 6 * unitDef('beanSprout').values[0]); // every day, no limit
   });
 
   it('Bread Dough rises: HP only', () => {
     const run = newRun(5);
     run.plate[0] = unit('breadDough');
     for (let i = 0; i < 9; i++) serve(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 9); // +1 every day
+    expect(run.plate[0]!.hp).toBe(unitDef('breadDough').hp + 9 * unitDef('breadDough').values[0]); // every day
     expect(run.plate[0]!.attack).toBe(unitDef('breadDough').attack);
   });
 
@@ -394,7 +409,7 @@ describe('run', () => {
     run.plate[0] = unit('yogurt');
     run.plate[1] = unit('lemon');
     finishBattle(run, 'win'); // start of turn
-    expect(run.plate[0]!.hp).toBe(unitDef('yogurt').hp + 2);
+    expect(run.plate[0]!.hp).toBe(unitDef('yogurt').hp + 2 * unitDef('yogurt').values[0]);
     expect(run.plate[0]!.attack).toBe(unitDef('yogurt').attack);
   });
 

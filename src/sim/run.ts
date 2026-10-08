@@ -237,8 +237,21 @@ function rollMarket(run: RunState, premium = false) {
   const top = Math.min(6, maxTier + 1);
   withRng(run, (rng) => {
     const units = MARKET_UNITS.filter((u) => (premium ? u.tier === top : u.tier <= maxTier));
+    // Each rarity's chance: the newest unlocked rarity is the most likely and each older one less so (weights
+    // 4, 3, 2, 1, 1, 1 from the newest down), then a food at random within it. Many foods per rarity keep copies,
+    // and so level 3, hard to come by.
+    const tierWeight = (t: number) => Math.max(1, 4 - (maxTier - t));
+    const tiers = [...new Set(units.map((u) => u.tier))];
+    const pickTier = () => {
+      let r = rng.next() * tiers.reduce((n, t) => n + tierWeight(t), 0);
+      for (const t of tiers) if ((r -= tierWeight(t)) < 0) return t;
+      return tiers[tiers.length - 1];
+    };
     const market: (Offer | null)[] = [];
-    for (let i = 0; i < unitSlots; i++) market.push({ kind: 'unit', defId: rng.pick(units).id });
+    for (let i = 0; i < unitSlots; i++) {
+      const t = premium ? top : pickTier();
+      market.push({ kind: 'unit', defId: rng.pick(units.filter((u) => u.tier === t)).id });
+    }
     // Level-up bonus: one unit from the tier above the current highest.
     const bonusPool = MARKET_UNITS.filter((u) => u.tier === top);
     for (let i = 0; i < run.bonusUnitsPending; i++) market.push({ kind: 'unit', defId: rng.pick(bonusPool).id, bonus: true });
@@ -562,7 +575,10 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         }
         if (targets.length === 0) return;
         const a = amount * (ab.attack ?? 1);
-        const h = amount * (ab.hp ?? 1);
+        // Birthday Cake: every HP gain on your plate is +1/2/3, in the kitchen too.
+        const cake = run.plate.reduce((n, o) => n + (o && unitDef(o.defId).aura === 'soothe' ? unitDef(o.defId).values[levelOf(o.copies) - 1] : 0), 0);
+        const base = amount * (ab.hp ?? 1);
+        const h = base > 0 ? base + cake : base;
         for (const t of targets) {
           t.attack += a;
           t.hp += h;
