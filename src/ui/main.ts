@@ -1937,9 +1937,8 @@ root.addEventListener('click', (e) => {
   }
 });
 
-// Audio can only start from a tap, click or key press.
-document.addEventListener('pointerdown', unlockAudio, true);
-document.addEventListener('keydown', unlockAudio, true);
+// Audio can only start from a gesture. On touch screens that means the finger lifting (touchend), not landing.
+for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(type, unlockAudio, true);
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'm') {

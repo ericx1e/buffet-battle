@@ -8,6 +8,7 @@ const MUTE_KEY = 'buffetbattle.muted';
 let ctx: AudioContext | null = null;
 let out: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
+let primed = false;
 let muted = (() => {
   try {
     return localStorage.getItem(MUTE_KEY) === '1';
@@ -16,10 +17,14 @@ let muted = (() => {
   }
 })();
 
-/** Starts audio on the first user gesture (call from a pointer or key handler). */
+/**
+ * Starts audio from a user gesture. Call it from tap-release, click and key handlers: iPhone Safari only lets audio
+ * start when a finger lifts (not when it lands), and pauses it again whenever the app goes to the background.
+ */
 export function unlockAudio() {
   if (ctx) {
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    prime();
     return;
   }
   try {
@@ -27,6 +32,8 @@ export function unlockAudio() {
   } catch {
     return; // no Web Audio: the game stays silent
   }
+  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  prime();
   // A gentle compressor keeps a busy battle frame from clipping.
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -18;
@@ -37,6 +44,16 @@ export function unlockAudio() {
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noiseBuf.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+}
+
+/** iPhone: playing one silent sample inside the gesture finishes unlocking audio. */
+function prime() {
+  if (primed || !ctx) return;
+  primed = true;
+  const src = ctx.createBufferSource();
+  src.buffer = ctx.createBuffer(1, 1, 22050);
+  src.connect(ctx.destination);
+  src.start(0);
 }
 
 export const isMuted = () => muted;
