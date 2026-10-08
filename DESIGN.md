@@ -150,7 +150,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
 | HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
-| Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (friends with Crust gain attack), Baguette (attack when its Crust breaks) |
+| Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (+damage to Burning enemies) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
@@ -483,7 +483,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 1 | Coin Chocolate | Sweet | 1/4 | 3 | Piggy bank: end of day, +1/2/3 sell value. | **Gold Truffle Coin**: End of day: +1 gold tomorrow. |
 | 1 | Breadstick | Salty | 2/4 | 3 | Bought: give a random friend +1/+1, +2/+2 or +3/+3. | **Grissini Bundle**: First attack each battle deals +3 damage. |
 | 1 | Bean Sprout | Savory | 1/5 | 3 | End of day: the friend ahead gains +1/2/3 HP. | **Sprout Salad**: End of day: adjacent friends gain +1/+1. |
-| 1 | Edamame | Savory | 2/5 | 3 | Start of battle, from any row: shoots 1/2/3 random enemies for 2. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
+| 1 | Edamame | Savory | 2/5 | 3 | Start of battle, shoots 1/2/3 random enemies for 2. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
 | 2 | Popcorn | Salty | 1/8 | 3 | Hit: summon a 1/2 Kernel. | **Kettle Corn**: Hit: deal 1 damage to the attacker. |
 | 2 | Onion | Sour | 2/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack. | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
 | 2 | Garlic | Spicy | 2/6 | 3 | Start of battle: the enemy across Burns 1/2/3, +1 per other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 1. |
@@ -499,7 +499,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Olive | Salty | 3/6 | 3 | Start of battle, from any row: lobs 1/2/3 pits at the enemy back row in its lane for 3. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
 | 2 | Hot Cocoa | Sweet | 1/7 | 3 | When an adjacent friend gains HP, it gains +1/2/3 attack. | **Cocoa Deluxe**: Every turn: adjacent friends gain +1 HP. |
 | 2 | Jerky | Salty | 2/7 | 3 | End of day: the friend ahead gains +1/2/3 attack. | **Smoked Brisket**: End of day: adjacent friends gain +1 attack. |
-| 2 | Croutons | Salty | 2/6 | 3 | Start of battle: friends with Crust gain +1/2/3 attack. | **Garlic Croutons**: Start of battle: friends with Crust gain 2 more Crust. |
+| 2 | Croutons | Salty | 2/7 | 3 | Every 2 turns: friends with Crust gain +1/2/3 attack. | **Garlic Croutons**: Every 2 turns: friends with Crust gain 2 more Crust. |
 | 3 | Cherries | Sweet | 2/8 | 4 | Friend eaten: lobs a pit at a random back-row enemy for 2/3/4. | **Cherry Pie**: Friend eaten: lobs a second pit for 2. |
 | 3 | Gravy | Savory | 3/12 | 4 | Friend summoned: it gains +3/4/5 attack. | **Giblet Gravy**: Friend summoned: it gains 3 Crust. |
 | 3 | Cheese | Savory | 3/8 | 4 | Ages: end of day, +1/2/3 HP, double next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
@@ -513,7 +513,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Yogurt | Sour | 2/8 | 4 | Cultures: start of day, +1/2/3 HP, double next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
 | 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/2/3 attack, double next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
 | 3 | Maple Syrup | Sweet | 2/8 | 4 | End of day: a random friend gains +1/2/3 attack. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
-| 3 | Peppercorns | Spicy | 2/7 | 4 | Start of battle, from any row: 3/4/5 peppercorns hit random enemies for 2. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
+| 3 | Peppercorns | Spicy | 2/7 | 4 | Start of battle, 3/4/5 peppercorns hit random enemies for 2. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 2/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 3/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Mushroom | Savory | 2/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |

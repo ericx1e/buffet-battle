@@ -307,13 +307,16 @@ describe('run', () => {
     expect(lob!.marks.some((m) => m.side === 1 && m.slot === 3 && m.kind === 'hit')).toBe(true); // the back row
   });
 
-  it('Croutons arm friends with Crust; Baguette gains attack when its Crust breaks', () => {
-    const r = simulateBattle(plate({ 0: unit('baguette'), 1: unit('pretzel'), 3: unit('croutons') }), plate({ 0: unit('cheese', { attack: 4, hp: 60 }) }), 1);
-    const said = (t: string) => r.frames.some((f) => f.text.includes(t));
-    expect(said('Croutons:')).toBe(true);
-    expect(said('Baguette:')).toBe(true);
-    const atk = Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0));
-    expect(atk).toBeGreaterThanOrEqual(unitDef('baguette').attack + 1 + 2);
+  it('Croutons: every 2 turns, friends with Crust gain attack', () => {
+    const r = simulateBattle(plate({ 0: unit('anchovy', { hp: 60 }), 3: unit('croutons') }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }) }), 1);
+    expect(r.frames.some((f) => f.text.includes('Croutons:'))).toBe(true);
+    expect(Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0))).toBeGreaterThan(unitDef('anchovy').attack);
+  });
+
+  it('Baguette gains attack when its Crust breaks', () => {
+    const r = simulateBattle(plate({ 0: unit('baguette'), 1: unit('pretzel') }), plate({ 0: unit('cheese', { attack: 4, hp: 60 }) }), 1);
+    expect(r.frames.some((f) => f.text.startsWith('Baguette:'))).toBe(true);
+    expect(Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0))).toBeGreaterThanOrEqual(unitDef('baguette').attack + 2);
   });
 
   it('Sprinkles give 3 random foods +1/+1', () => {
