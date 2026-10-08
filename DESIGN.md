@@ -214,7 +214,7 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 | `fork` | Hot Pot | Hits both other lanes instead of its own (from a side lane: the middle and the far side), +1/2/3 damage by level |
 | `snipe` | (none yet) | Hits the back row of its lane first |
 | `escalate` | Spaghetti | Grows with each of its own attacks: its first hits one target, its second the whole enemy front row, every one after that every enemy (extra targets take half). Attacking twice (Coffee Bean, its cooked bonus) makes it grow twice as fast |
-| `shot` (opening throw) | Edamame | First turn only, from either row: the enemy in its lane, 1/2/3 times by level, for half each |
+| `shot` (opening throw) | Edamame | First turn only, from either row: 1/2/3 different random enemies by level, 2 each |
 | `lob` (opening throw) | Olive | First turn only, from either row: the enemy back row of its lane first, 1/2/3 pits by level, for half each |
 | `spray` (opening throw) | Peppercorns | First turn only, from either row: 3/4/5 at random enemies by level, half each; Spicy bonuses Burn with every one |
 | `volley` (projectile) | Takoyaki | Every turn, from either row, instead of attacking: every enemy in the front row, for its level number (1/2/3) each |
@@ -290,7 +290,7 @@ There are no automatic pairings. Positioning comes from specific foods' abilitie
 
 - **Brief, standard text.** "When: what." ("End of day: the friend ahead gains +1 attack.") A short growth nickname is fine ("Ages:", "Cultures:", "Rises:"); other flourishes ("grease splatter", "they cry") aren't. Caps and pairings aren't written in the text.
 - **Power by rarity.** Early foods (common, uncommon) do small, flat things: growers give about one stat point a day per level, battle effects are one-off or capped when they repeat (Lemon, Marshmallow, Onion, Hot Cocoa), and single targets rather than rows (Garlic Burns the enemy across; Kimchi, an exotic, hits the whole front row with Rot and Burn). Conditions and team-wide reach start at rare; the multiplying effects (per flavor, echo, soothe, doubling auras) are legendary, exotic and mythic. A higher-rarity food in the same role should beat a lower one (Jerky, uncommon, trains attack; Bean Sprout, common, grows HP).
-- **Throws are flat.** Edamame shoots 2, Olive lobs 3, Peppercorns spray 2 each; levels add throws, not damage. Takoyaki's balls deal 1/2/3. Every projectile in a throw goes to a different enemy (Edamame: the enemy across first, then outward; Olive: the back row first; Peppercorns: random), and each one is its own moment on screen, one after another. Takoyaki's volley is one burst, its balls flying to every front-row enemy at once.
+- **Throws are flat.** Edamame shoots 2, Olive lobs 3, Peppercorns spray 2 each; levels add throws, not damage. Takoyaki's balls deal 1/2/3. Every projectile in a throw goes to a different enemy (Edamame and Peppercorns: random enemies; Olive: the back row first), and each one is its own moment on screen, one after another. Takoyaki's volley is one burst, its balls flying to every front-row enemy at once.
 - **Every level up grows the ability.** A food's numbers rise at level 2 and again at 3 (1/2/3, never 1/1/2), and so do patterns, throws and auras (they read the food's level number). Balance a food with its base stats, not by flattening its levels. A test checks this.
 - An ability always does something stats can't: it reaches other foods, reacts to something, depends on position or flavor, or changes over time. "Start of battle: gain +2 attack" is just a bigger attack stat, so it is never an ability; put it in the stats. Cooked bonuses follow the same rule.
 
@@ -483,7 +483,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 1 | Coin Chocolate | Sweet | 1/4 | 3 | Piggy bank: end of day, +1/2/3 sell value. | **Gold Truffle Coin**: End of day: +1 gold tomorrow. |
 | 1 | Breadstick | Salty | 2/4 | 3 | Bought: give a random friend +1/+1, +2/+2 or +3/+3. | **Grissini Bundle**: First attack each battle deals +3 damage. |
 | 1 | Bean Sprout | Savory | 1/5 | 3 | End of day: the friend ahead gains +1/2/3 HP. | **Sprout Salad**: End of day: adjacent friends gain +1/+1. |
-| 1 | Edamame | Savory | 2/5 | 3 | Start of battle, from any row: shoots the enemy in its lane 1/2/3 times for 2. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
+| 1 | Edamame | Savory | 2/5 | 3 | Start of battle, from any row: shoots 1/2/3 random enemies for 2. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
 | 2 | Popcorn | Salty | 1/8 | 3 | Hit: summon a 1/2 Kernel. | **Kettle Corn**: Hit: deal 1 damage to the attacker. |
 | 2 | Onion | Sour | 2/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack. | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
 | 2 | Garlic | Spicy | 2/6 | 3 | Start of battle: the enemy across Burns 1/2/3, +1 per other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 1. |
@@ -536,7 +536,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Pizza | Savory | 4/13 | 5 | Start of battle: adjacent friends gain +1/2/3 HP per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 per flavor on your plate. |
 | 6 | Hot Pot | Spicy | 4/12 | 5 | Fork attack: hits the other two lanes instead of its own, +1/2/3 damage. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
 | 6 | Birthday Cake | Sweet | 3/18 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
-| 6 | Kimchi | Sour + Spicy | 3/10 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
+| 6 | Kimchi | Sour + Spicy | 3/9 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 4/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 3/16 | 5 | The friend ahead's abilities trigger +1/2/3 times. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
 | 6 | Smoothie | Sweet + Sour | 3/12 | 5 | Adjacent friends gain +1/2/3 attack when their ability fires. *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |

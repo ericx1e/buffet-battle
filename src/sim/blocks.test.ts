@@ -268,7 +268,6 @@ describe('projectiles and patterns', () => {
     expect(shots.length).toBe(3);
     const targets = shots.map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!.slot);
     expect(new Set(targets).size).toBe(3);
-    expect(targets[0]).toBe(0); // the enemy across first
   });
 
   it('after its opening shot, a front-row thrower attacks in melee', () => {

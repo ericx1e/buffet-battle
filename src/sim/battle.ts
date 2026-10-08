@@ -505,9 +505,8 @@ class Battle {
               if (left.length === 0) break;
               const near = (e: BattleUnit) => Math.abs(laneOf(e.slot) - lane);
               let t: BattleUnit;
-              if (pattern === 'spray') t = this.rng.pick(left);
-              else if (pattern === 'lob') t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
-              else t = [...left].sort((x, y) => near(x) - near(y) || rowOf(x.slot) - rowOf(y.slot) || x.slot - y.slot)[0]; // the enemy across first, then outward
+              if (pattern === 'spray' || pattern === 'shot') t = this.rng.pick(left); // random, a different enemy each time
+              else t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
               hit.add(t);
               land(t, flat);
               this.mark(u, 'shoot', 1);

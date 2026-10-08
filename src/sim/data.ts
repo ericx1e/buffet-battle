@@ -52,7 +52,7 @@ export const UNITS: UnitDef[] = [
     abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'friendAhead', attack: 0 }] },
   { id: 'edamame', name: 'Edamame', cookedName: 'Garlic Edamame', emoji: '🫛', tier: 1, flavor: 'savory', attack: 2, hp: 5, values: [1, 2, 3],
     attackPattern: 'shot', throwDamage: 2,
-    text: 'Start of battle, from any row: shoots the enemy in its lane {v} times for 2.',
+    text: 'Start of battle, from any row: shoots {v} random enemies for 2.',
     cooked: { text: 'Shoots twice at the start of battle.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [1, 1, 1] }] },
     abilities: [] },
   // Tier 2 (3 gold)
