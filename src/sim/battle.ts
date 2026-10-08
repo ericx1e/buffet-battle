@@ -96,6 +96,8 @@ export interface Mark {
   slot: number;
   kind: MarkKind;
   amount?: number;
+  /** buff: the HP gained (`amount` is the attack). */
+  hp?: number;
 }
 
 export interface BattleFrame {
@@ -125,6 +127,13 @@ const LANE_NAMES = ['far', 'middle', 'near'];
 
 /** Flavor bonus tier for a count of foods: 2 / 4 / 6 / 8 (8 needs foods that count as two flavors, or Saffron). */
 export const flavorTier = (n: number) => (n >= 8 ? 4 : n >= 6 ? 3 : n >= 4 ? 2 : n >= 2 ? 1 : 0);
+
+/** Caption lines joined with " · ", the same line repeated shown once with a count ("... +1/+1 ×3"). */
+function joinLines(lines: string[]): string {
+  const counts = new Map<string, number>();
+  for (const l of lines) counts.set(l, (counts.get(l) ?? 0) + 1);
+  return [...counts].map(([l, n]) => (n > 1 ? `${l} ×${n}` : l)).join(' · ');
+}
 
 /** Deterministic: the same plates and seed always produce the same result and frames. */
 export function simulateBattle(a: Plate, b: Plate, seed: number): BattleResult {
@@ -529,13 +538,14 @@ class Battle {
         }
       }
       this.snap(`Turn ${this.round} · ${LANE_NAMES[lane]} lane`);
-      if (followUps.length > 0) this.snap(followUps.join(' · '));
+      if (followUps.length > 0) this.snap(joinLines(followUps));
     }
   }
 
+  /** End of each turn: every-turn abilities and flavor bonuses, shown one plate at a time so each line stays short. */
   private endOfRound() {
-    const lines: string[] = [];
     for (const side of [0, 1] as Side[]) {
+      const lines: string[] = [];
       const b = this.bonus[side];
       for (const u of this.units(side)) {
         const line = this.fire(u, 'round', {});
@@ -553,13 +563,14 @@ class Battle {
         for (const f of front) this.giveCrust(f, b.saltyRegen);
         if (front.length > 0) lines.push(`${side === 0 ? 'Your' : 'Enemy'} salt cures the front row: +${b.saltyRegen} Crust`);
       }
+      if (lines.length > 0) this.snap(joinLines(lines));
     }
-    if (lines.length > 0) this.snap(lines.join(' · '));
   }
 
   /** Burn and Rot deal their damage (ignoring Crust; not a hit). Burn then fades by 1 unless Spicy x6 keeps it. */
   private statusTick() {
     const lines: string[] = [];
+    const ticks: string[] = [];
     for (const side of [0, 1] as Side[]) {
       const sticks = this.bonus[(1 - side) as Side].burnSticks;
       for (const u of this.units(side)) {
@@ -569,11 +580,14 @@ class Battle {
         u.hp -= dmg;
         if (u.burn > 0) this.mark(u, 'burn', u.burn);
         if (u.rot > 0) this.mark(u, 'rot', u.rot);
+        ticks.push(`${this.name(u)} ${dmg}`);
         lines.push(`${this.name(u)} ${u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots'} for ${dmg}${doubled ? ' (doubled)' : ''}`);
         if (u.burn > 0 && !sticks) u.burn--;
       }
     }
-    if (lines.length > 0) this.snap(lines.join(' · '));
+    // Several foods ticking at once: one compact line ("Burn & Rot: Popcorn 4, Kimchi 2").
+    if (lines.length > 2) this.snap(`Burn & Rot: ${ticks.join(', ')}`);
+    else if (lines.length > 0) this.snap(joinLines(lines));
   }
 
   /** Wagyu: friends next to it (every friend, once it is cooked) get double from Crust and heals. */
@@ -618,7 +632,7 @@ class Battle {
             if (l2) lines.push(l2);
           }
         }
-        if (lines.length > 0) this.snap(lines.join(' · '));
+        if (lines.length > 0) this.snap(joinLines(lines));
         continue;
       }
 
@@ -678,7 +692,7 @@ class Battle {
           if (neighbours.length > 0) lines.push(`the Rot spreads from ${this.name(u)}`);
         }
       }
-      if (lines.length > 0) this.snap(lines.join(' · '));
+      if (lines.length > 0) this.snap(joinLines(lines));
     }
   }
 
@@ -746,7 +760,8 @@ class Battle {
       const f = ab.forFlavor;
       return f && this.hasFlavor(t, f.flavor) ? amount * (f.mult ?? 1) + (f.add ?? 0) : amount;
     };
-    const names = (list: BattleUnit[]) => list.map((t) => this.name(t)).join(', ');
+    // Three or more targets are counted, not listed, so a line stays short enough to read in the caption.
+    const names = (list: BattleUnit[]) => (list.length > 2 ? `${list.length} ${list[0].side === u.side ? 'friends' : 'enemies'}` : list.map((t) => this.name(t)).join(', '));
 
     switch (ab.effect) {
       case 'summon': {
@@ -804,13 +819,15 @@ class Battle {
       case 'heal': {
         const healed = targets.filter((t) => t.hp < t.maxHp || this.bonus[t.side].overheal);
         for (const t of healed) this.heal(t, amountFor(t));
-        return healed.length > 0 ? `${name} heals ${names(healed)} by ${amountFor(healed[0])}` : undefined;
+        if (healed.length === 0) return undefined;
+        return healed.length === 1 && healed[0] === u ? `${name} heals ${amountFor(u)}` : `${name} heals ${names(healed)} by ${amountFor(healed[0])}`;
       }
       case 'burn':
       case 'rot':
       case 'chill':
         for (const t of targets) this.addStatus(t, ab.effect, amountFor(t));
-        return `${name}: ${names(targets)} ${ab.effect === 'burn' ? 'Burns' : ab.effect === 'rot' ? 'Rots' : 'is Chilled'} ${amountFor(targets[0])}`;
+        const many = targets.length > 1;
+        return `${name}: ${names(targets)} ${ab.effect === 'burn' ? (many ? 'Burn' : 'Burns') : ab.effect === 'rot' ? (many ? 'Rot' : 'Rots') : many ? 'are Chilled' : 'is Chilled'} ${amountFor(targets[0])}`;
       case 'cleanse':
         for (const t of targets) this.cleanse(t, amountFor(t));
         return `${name} cleanses ${names(targets)}`;
@@ -1006,7 +1023,7 @@ class Battle {
     u.attack += attack;
     u.hp += hp;
     u.maxHp += hp;
-    this.mark(u, 'buff');
+    this.mark(u, 'buff', attack, hp);
   }
 
   private debuff(u: BattleUnit, attack: number) {
@@ -1084,8 +1101,8 @@ class Battle {
 
   // ---- frames ----
 
-  private mark(u: BattleUnit, kind: MarkKind, amount?: number) {
-    this.marks.push({ side: u.side, slot: u.slot, kind, amount });
+  private mark(u: BattleUnit, kind: MarkKind, amount?: number, hp?: number) {
+    this.marks.push({ side: u.side, slot: u.slot, kind, amount, ...(hp ? { hp } : {}) });
   }
 
   private snap(text: string) {

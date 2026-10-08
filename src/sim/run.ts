@@ -496,6 +496,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
       if (days !== undefined) unit.gains = { ...unit.gains, [index]: (unit.gains?.[index] ?? 0) + 1 };
     };
     if (ab.ifNoReroll && run.rerolledThisTurn) return;
+    if (ab.ifInterest && run.lastInterest <= 0) return;
     if (ab.ifLevel3 && !run.plate.some((o) => o && levelOf(o.copies) === 3)) return;
     if (ab.ifAdjacentFlavor) {
       const want = ab.ifAdjacentFlavor;

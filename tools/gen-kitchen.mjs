@@ -120,11 +120,11 @@ frame(298, 8, 44, 15, P.paperShade);
 for (let x = 299; x < 341; x += 4) px(x, 22, P.paperShade);
 rect(316, 10, 8, 3, P.steelDark);
 
-// ---------- upper cabinet = market (120..520, 24..112) ----------
-panel(120, 26, 400, 86, P.woodMid, P.woodHi, P.wood);
-panel(116, 24, 408, 7, P.woodLight, P.woodHi, P.wood); // crown molding
+// ---------- upper cabinet = market (80..480, 24..112) ----------
+panel(80, 26, 400, 86, P.woodMid, P.woodHi, P.wood);
+panel(76, 24, 408, 7, P.woodLight, P.woodHi, P.wood); // crown molding
 for (let i = 0; i < 8; i++) {
-  const ox = 126 + 48 * i;
+  const ox = 86 + 48 * i;
   const teal = i >= 6;
   rect(ox, 36, 44, 64, teal ? P.cubbyTeal : P.cubby);
   rect(ox, 36, 44, 6, teal ? P.cubbyTealShade : P.cubbyShade); // shadow under the shelf above
@@ -133,18 +133,18 @@ for (let i = 0; i < 8; i++) {
   panel(ox - 1, 98, 46, 6, P.woodLight, P.woodHi, P.wood); // shelf lip
 }
 // Thicker divider between foods and items
-rect(412, 34, 6, 70, P.woodDark);
-rect(413, 34, 1, 70, P.woodMid);
-panel(120, 104, 400, 8, P.wood, P.woodLight, P.woodDark); // bottom rail
+rect(372, 34, 6, 70, P.woodDark);
+rect(373, 34, 1, 70, P.woodMid);
+panel(80, 104, 400, 8, P.wood, P.woodLight, P.woodDark); // bottom rail
 // Open glass doors folded back at both ends
-for (const x of [114, 520]) {
+for (const x of [74, 480]) {
   panel(x, 32, 6, 76, P.glass, P.glassHi, P.glassDark);
   px(x + 2, 44, P.brass);
   px(x + 2, 92, P.brass);
 }
 
-// ---------- spice rack (520..640, 24..64) ----------
-panel(524, 26, 112, 36, P.wood, P.woodLight, P.woodDark);
+// ---------- spice rack (480..640, 24..64) ----------
+panel(486, 26, 150, 36, P.wood, P.woodLight, P.woodDark);
 // One spice per flavor, coloured like that flavor's icon (src/ui/icons.ts): [fill, top-of-pile shade, speck]
 const jars = [
   ['spicy: chili flakes', '#d23a3a', '#9e2238', '#ff8a6a'],
@@ -154,7 +154,7 @@ const jars = [
   ['savory: bouillon', '#8a5a32', '#6a4224', '#b8763f'],
 ];
 jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
-  const x = 529 + 21 * j;
+  const x = 494 + 29 * j;
   rect(x, 37, 16, 18, P.jar);
   rect(x + 1, 45, 14, 10, c); // ground spice
   rect(x + 1, 45, 14, 1, d);
@@ -163,57 +163,57 @@ jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
   frame(x, 37, 16, 18, P.jarEdge);
   panel(x - 1, 31, 18, 7, '#4a4240', '#6b615d', '#2f2927'); // matching dark lids
 }));
-panel(522, 55, 116, 7, P.woodLight, P.woodHi, P.wood); // shelf
+panel(484, 55, 154, 7, P.woodLight, P.woodHi, P.wood); // shelf
 
-// ---------- chalkboard (520..640, 64..148) ----------
-panel(522, 66, 116, 80, P.woodMid, P.woodHi, P.wood);
-rect(527, 71, 106, 66, P.chalk);
-frame(526, 70, 108, 68, P.outline);
-for (let k = 0; k < 160; k++) px(528 + Math.floor(rand() * 104), 72 + Math.floor(rand() * 64), P.chalkSmudge);
-rect(530, 74, 18, 1, P.chalkSmudge); // old erased line
-panel(524, 138, 112, 6, P.woodLight, P.woodHi, P.wood); // chalk tray
+// ---------- chalkboard (480..640, 64..148) ----------
+panel(484, 66, 154, 80, P.woodMid, P.woodHi, P.wood);
+rect(489, 71, 144, 66, P.chalk);
+frame(488, 70, 146, 68, P.outline);
+for (let k = 0; k < 200; k++) px(490 + Math.floor(rand() * 142), 72 + Math.floor(rand() * 64), P.chalkSmudge);
+rect(492, 74, 18, 1, P.chalkSmudge); // old erased line
+panel(486, 138, 150, 6, P.woodLight, P.woodHi, P.wood); // chalk tray
 rect(600, 136, 9, 2, P.chalkLine);
 
-// ---------- backsplash tiles (120..520, 112..148) ----------
-rect(120, 112, 400, 36, P.grout);
+// ---------- backsplash tiles (80..480, 112..148) ----------
+rect(80, 112, 400, 36, P.grout);
 for (let row = 0; row < 5; row++) {
   const y = 112 + row * 8;
   const off = row % 2 ? 8 : 0;
-  for (let x = 120 - off; x < 520; x += 16) {
-    rect(Math.max(120, x + 1), y + 1, Math.min(15, 520 - x - 1), 7, P.tile);
-    rect(Math.max(120, x + 1), y + 7, Math.min(15, 520 - x - 1), 1, P.tileShade);
+  for (let x = 80 - off; x < 480; x += 16) {
+    rect(Math.max(80, x + 1), y + 1, Math.min(15, 480 - x - 1), 7, P.tile);
+    rect(Math.max(80, x + 1), y + 7, Math.min(15, 480 - x - 1), 1, P.tileShade);
   }
 }
-rect(120, 112, 400, 3, P.tileShade); // shadow under the cabinet
-rect(120, 112, 400, 1, P.grout);
+rect(80, 112, 400, 3, P.tileShade); // shadow under the cabinet
+rect(80, 112, 400, 1, P.grout);
 
 // Refill sign hanging from the cabinet
-for (const x of [446, 506]) rect(x, 104, 1, 12, P.outline);
-panel(436, 115, 80, 24, P.woodLight, P.woodHi, P.wood);
-rect(440, 119, 72, 16, P.red);
-rect(442, 121, 68, 12, P.paper);
-frame(440, 119, 72, 16, P.redDark);
+for (const x of [406, 466]) rect(x, 104, 1, 12, P.outline);
+panel(396, 115, 80, 24, P.woodLight, P.woodHi, P.wood);
+rect(400, 119, 72, 16, P.red);
+rect(402, 121, 68, 12, P.paper);
+frame(400, 119, 72, 16, P.redDark);
 
-// ---------- counter top: butcher block (120..640, 148..324) ----------
-for (let x = 120; x < 640; x += 10) {
+// ---------- counter top: butcher block (80..640, 148..324) ----------
+for (let x = 80; x < 640; x += 10) {
   const c = [P.block1, P.block2, P.block3][Math.floor(x / 10) % 3];
   rect(x, 148, 10, 176, c);
   rect(x, 148, 1, 176, P.blockGrain);
   for (let k = 0; k < 10; k++) rect(x + 2 + Math.floor(rand() * 7), 150 + Math.floor(rand() * 170), 1, 3 + Math.floor(rand() * 8), P.blockGrain);
 }
-rect(120, 148, 520, 3, P.blockShade); // shadow line against the backsplash
-rect(120, 148, 520, 1, P.outline);
+rect(80, 148, 560, 3, P.blockShade); // shadow line against the backsplash
+rect(80, 148, 560, 1, P.outline);
 
-// Platter (your plate): 160..280 x 160..324
-roundRect(164, 165, 120, 160, 10, P.blockShade); // shadow
-roundRect(159, 159, 122, 166, 11, P.plateEdge);
-roundRect(160, 160, 120, 164, 10, P.plateRim);
-roundRect(166, 166, 108, 152, 7, P.plate);
-rect(170, 164, 100, 1, P.plate); // rim highlight
+// Platter (your plate): 120..240 x 160..324
+roundRect(124, 165, 120, 160, 10, P.blockShade); // shadow
+roundRect(119, 159, 122, 166, 11, P.plateEdge);
+roundRect(120, 160, 120, 164, 10, P.plateRim);
+roundRect(126, 166, 108, 152, 7, P.plate);
+rect(130, 164, 100, 1, P.plate); // rim highlight
 for (const [sx, sy] of SLOTS.plate.flat()) ellipse(sx + 20, sy + 40, 13, 2, P.plateRim); // where a food stands
 // "front ->" arrow on the rim
-rect(238, 162, 22, 1, P.plateShade);
-for (let k = 0; k < 3; k++) rect(257 + k, 160 + k, 1, 5 - 2 * k, P.plateShade);
+rect(198, 162, 22, 1, P.plateShade);
+for (let k = 0; k < 3; k++) rect(217 + k, 160 + k, 1, 5 - 2 * k, P.plateShade);
 
 // ---------- counter props (bell, tip jar, scrap bin) ----------
 // Each prop is a shape function returning a colour (or null) per pixel; `blob` adds a 1px outline in the
@@ -287,7 +287,7 @@ const LEAF = ['#c8ef9a', '#93d066', '#62a845', '#447f33', '#2f5d25'];
 
 // Service bell: brass dome seated in the middle of a black lacquered base.
 prop('bell', () => {
-  const cx = 320, baseY = 304; // baseY = centre of the base's top face
+  const cx = 280, baseY = 304; // baseY = centre of the base's top face
   const TOP = ['#7c6f6a', '#6a5e59', '#54484400', '#3d3431', '#2c2422'];
   // Base: oval top face plus a 4px front band, outlined, casting the counter shadow.
   blob(cx - 23, baseY - 6, cx + 23, baseY + 10, (x, y) => {
@@ -329,7 +329,7 @@ prop('bell', () => {
 
 // Tip jar: glass mason jar with a pile of coins and a blank label for the gold count.
 prop('tipjar', () => {
-  const cx = 372, neckTop = 257, bodyTop = 265, bottom = 310, rx = 15;
+  const cx = 332, neckTop = 257, bodyTop = 265, bottom = 310, rx = 15;
   shadow(cx + 3, bottom + 4, 18);
   const GLASS = ['#ffffff', '#eef8f6', '#d4ebe7', '#b4d3cf', '#93b8b4'];
   const coinTop = (x) => 292 + Math.round(5 * ((x - cx) / rx) ** 2);
@@ -375,7 +375,7 @@ prop('tipjar', () => {
 
 // Scrap bin: brushed-steel pedal bin with a domed lid and a compost leaf badge.
 prop('bin', () => {
-  const cx = 432, lidY = 252, bodyTop = 256, bottom = 309, rx = 25;
+  const cx = 392, lidY = 252, bodyTop = 256, bottom = 309, rx = 25;
   shadow(cx + 4, bottom + 5, 30);
   blob(cx - rx - 2, lidY - 9, cx + rx + 2, bottom + 4, (x, y) => {
     const t = (x - cx) / rx;
@@ -398,57 +398,57 @@ prop('bin', () => {
   }, '#363e45', true, true);
 });
 
-// Cookbook on a stand: 472..632 x 156..316
-panel(476, 300, 156, 12, P.woodMid, P.woodHi, P.woodDark); // ledge
-rect(500, 312, 6, 6, P.woodDark);
+// Cookbook on a stand: 432..632 x 156..316
+panel(436, 300, 196, 12, P.woodMid, P.woodHi, P.woodDark); // ledge
+rect(462, 312, 6, 6, P.woodDark);
 rect(602, 312, 6, 6, P.woodDark);
-panel(476, 162, 156, 140, P.red, P.redHi, P.redDark); // cover
-rect(481, 296, 146, 4, P.paperShade); // page stack
-for (let y = 297; y < 300; y += 2) rect(481, y, 146, 1, P.paperLine);
-const page = (x0) => {
-  rect(x0, 168, 70, 128, P.paper);
-  for (let y = 182; y < 292; y += 12) rect(x0 + 6, y, 58, 1, P.paperLine);
+panel(436, 162, 196, 140, P.red, P.redHi, P.redDark); // cover
+rect(441, 296, 186, 4, P.paperShade); // page stack
+for (let y = 297; y < 300; y += 2) rect(441, y, 186, 1, P.paperLine);
+const page = (x0, w) => {
+  rect(x0, 168, w, 128, P.paper);
+  for (let y = 182; y < 292; y += 12) rect(x0 + 6, y, w - 12, 1, P.paperLine);
 };
-page(482);
-page(556);
-rect(482, 167, 70, 1, P.paperShade);
-rect(556, 167, 70, 1, P.paperShade);
-rect(549, 168, 4, 128, P.paperShade); // gutter
-rect(553, 168, 3, 128, P.paperShade);
-rect(552, 168, 1, 128, P.outline);
-rect(560, 166, 3, 140, P.redDark); // ribbon
-rect(560, 306, 3, 6, P.redDark);
+page(442, 90);
+page(536, 90);
+rect(442, 167, 90, 1, P.paperShade);
+rect(536, 167, 90, 1, P.paperShade);
+rect(529, 168, 4, 128, P.paperShade); // gutter
+rect(533, 168, 3, 128, P.paperShade);
+rect(532, 168, 1, 128, P.outline);
+rect(540, 166, 3, 140, P.redDark); // ribbon
+rect(540, 306, 3, 6, P.redDark);
 
-// ---------- counter edge + lower cabinets (120..640, 324..360) ----------
-panel(120, 324, 520, 12, P.woodMid, P.woodHi, P.woodDark);
+// ---------- counter edge + lower cabinets (80..640, 324..360) ----------
+panel(80, 324, 560, 12, P.woodMid, P.woodHi, P.woodDark);
 for (let i = 0; i < 4; i++) {
-  const x = 120 + 130 * i;
-  panel(x, 336, 130, 24, P.sage, P.sageHi, P.sageDark);
-  frame(x + 6, 340, 118, 20, P.sageDark);
-  ellipse(x + 65, 345, 2, 2, P.brass);
-  px(x + 64, 344, P.brassHi);
+  const x = 80 + 140 * i;
+  panel(x, 336, 140, 24, P.sage, P.sageHi, P.sageDark);
+  frame(x + 6, 340, 128, 20, P.sageDark);
+  ellipse(x + 70, 345, 2, 2, P.brass);
+  px(x + 69, 344, P.brassHi);
 }
 
-// ---------- fridge (0..120, 24..360) ----------
-panel(2, 24, 116, 336, P.fridge, P.fridgeHi, P.fridgeShade);
-px(2, 24, P.wall); px(117, 24, P.wall); // round the top corners
-rect(4, 110, 112, 3, P.fridgeDark); // gap between freezer and fridge door
-rect(4, 110, 112, 1, P.outline);
-panel(100, 38, 8, 60, P.steel, P.steelHi, P.steelDark); // freezer handle
+// ---------- fridge (0..80, 24..360) ----------
+panel(2, 24, 76, 336, P.fridge, P.fridgeHi, P.fridgeShade);
+px(2, 24, P.wall); px(77, 24, P.wall); // round the top corners
+rect(4, 110, 72, 3, P.fridgeDark); // gap between freezer and fridge door
+rect(4, 110, 72, 1, P.outline);
+panel(67, 38, 6, 60, P.steel, P.steelHi, P.steelDark); // freezer handle
 // Glass door with the fridge interior behind it
-rect(10, 122, 86, 224, P.interior);
-rect(10, 122, 86, 8, P.glassHi); // interior light
-frame(9, 121, 88, 226, P.fridgeDark);
+rect(9, 122, 54, 224, P.interior);
+rect(9, 122, 54, 8, P.glassHi); // interior light
+frame(8, 121, 56, 226, P.fridgeDark);
 for (const y of [185, 257]) {
-  rect(10, y, 86, 3, P.glassDark);
-  rect(10, y, 86, 1, P.glassHi);
+  rect(9, y, 54, 3, P.glassDark);
+  rect(9, y, 54, 1, P.glassHi);
 }
-panel(16, 276, 74, 60, P.glass, P.glassHi, P.glassDark); // crisper drawer
-rect(40, 280, 26, 3, P.glassDark);
-for (let k = 0; k < 20; k++) px(12 + k, 300 - k, P.glassHi); // reflections
-for (let k = 0; k < 28; k++) px(84 + Math.floor(k / 3), 200 - k, P.glassHi);
-panel(100, 130, 8, 100, P.steel, P.steelHi, P.steelDark); // door handle
-for (let x = 8; x < 112; x += 4) rect(x, 350, 2, 6, P.fridgeDark); // kick grille
+panel(13, 276, 46, 60, P.glass, P.glassHi, P.glassDark); // crisper drawer
+rect(24, 280, 24, 3, P.glassDark);
+for (let k = 0; k < 16; k++) px(10 + k, 300 - k, P.glassHi); // reflections
+for (let k = 0; k < 24; k++) px(54 + Math.floor(k / 3), 200 - k, P.glassHi);
+panel(67, 130, 6, 100, P.steel, P.steelHi, P.steelDark); // door handle
+for (let x = 8; x < 72; x += 4) rect(x, 350, 2, 6, P.fridgeDark); // kick grille
 
 // ---------- optional alignment guide ----------
 if (process.argv.includes('--guide')) {

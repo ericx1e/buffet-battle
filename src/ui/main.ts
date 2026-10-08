@@ -49,7 +49,7 @@ import { pickOpponent, saveGhost } from './ghosts';
 import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
-import { type DropFx, EMPTY, WIPE_MS, animate, beam, burst, capture, fling, floater, play, stagePos, wipe } from './motion';
+import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
 import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
 
 /** What's selected or being dragged: an offer, an owned food, the special cubby's offer, or a choice from an open pack. */
@@ -249,7 +249,7 @@ function playGrowth(delay = 0): number {
     const t = delay + i * 280;
     const at = stagePos(root, el);
     const src = g.from !== undefined ? root.querySelector<HTMLElement>(`[data-k="u:${g.from}"]`) : null;
-    if (src) beam(stage, stagePos(root, src), at, 'k-buff', { delay: t });
+    if (src) orb(stage, stagePos(root, src), at, 'k-buff', { delay: t, ms: 260 });
     burst(stage, [at[0], at[1] - 8], g.attack || g.hp ? 'star' : 'coin-spark', { delay: t + 160, count: 4, spread: 12 });
     sfx('grow', t + 160);
     setTimeout(() => {
@@ -1087,8 +1087,6 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
       notes.push(left > 0 ? `Growing: ${left} of ${days} days left.` : `Fully grown (${days} days). Level up for more days.`);
     });
   }
-  if (d.interestCap) notes.push(`Interest cap +${d.interestCap[level - 1]} on the plate.`);
-  if (u) notes.push(`Sells for ${sellPrice(u)}g${u.sellBonus ? ` (+${u.sellBonus} saved up)` : ''}.`);
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
   return notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
@@ -1107,6 +1105,7 @@ function cookbook(): string {
       <p>${shown}</p>
       <p>${rarityTag(d.id)} · T${d.tier}${price ? ` · ${price}` : ''}</p>
       <p class="stat-line">${statBadge('atk', atk)} attack ${statBadge('hp', hp)} HP</p>
+      ${u ? `<p class="dim">sells for ${sellPrice(u)}g${u.sellBonus ? ` (+${u.sellBonus})` : ''}</p>` : ''}
       ${cookedChip(defId, level)}`;
     // Only foods with a number that grows by level show the ladder.
     const days = d.text.includes('{d}') ? ` · days ${[1, 2, 3].map((l) => (l === level ? `<b>${daysOf(d, l as 1 | 2 | 3)}</b>` : daysOf(d, l as 1 | 2 | 3))).join('/')}` : '';
@@ -1246,6 +1245,15 @@ const ICONS = {
   crust: { cells: ['#####', '#####', '.###.', '..#..'], fill: '#f0c04a' },
 };
 
+/** "+2 ⚔ +2 ♥" rising over a food that was buffed this moment, "-1 ⚔" for an attack loss: exactly what changed. */
+function gainPop(marks: Mark[], fresh: boolean): string {
+  if (!fresh) return '';
+  const sum = (kind: string, key: 'amount' | 'hp') => marks.filter((m) => m.kind === kind).reduce((a, m) => a + (m[key] ?? 0), 0);
+  const atk = sum('buff', 'amount'), hp = sum('buff', 'hp'), lost = sum('debuff', 'amount');
+  const parts = [atk ? `<i>+${atk}</i>${pix('medal')}` : '', hp ? `<i>+${hp}</i>${pix('heart')}` : ''].join('');
+  return (parts ? `<span class="pop gain">${parts}</span>` : '') + (lost ? `<span class="pop loss"><i>-${lost}</i>${pix('medal')}</span>` : '');
+}
+
 function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o: FighterOpts): string {
   const [ax, ay] = BATTLE.anchors[side][slot];
   const z = laneOf(slot) * 10 + (rowOf(slot) === 0 ? 2 : 1);
@@ -1266,8 +1274,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     status('rot'),
     status('chill'),
     kinds.has('cleanse') ? '<span class="pop heal">clean!</span>' : '',
-    icon('buff', 4),
-    icon('debuff', 4),
+    gainPop(marks, o.fresh),
     icon('crust', 48),
   ].join('');
   const cls = [...kinds].map((k) => `fx-${k}`).join(' ') + (hit >= BIG_HIT ? ' big-hit' : '') + (o.role ? ` ${o.role}` : '');
@@ -1279,6 +1286,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     <div class="fighter side-${side} ${cls} ${u.token ? 'token' : ''} ${o.cheer ? 'cheer' : ''}" data-inspect="${side}:${slot}"
       style="left:${ax - 32}px;top:${ay - 60}px;z-index:${z};--bob:${Math.round(bob)}ms" data-k="f:${id}" data-in="${o.opening ? 'drop' : 'pop'}" data-out="eaten">
       <div class="f-art">${unitArt(u.defId, u.level === 3)}</div>
+      ${u.level > 1 && !u.token ? `<div class="f-lvl ${u.level === 3 ? 'cooked' : ''}" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${u.level === 3 ? pix('starSmall', 2) : '2'}</div>` : ''}
       ${popups}
     </div>
     <div class="f-tags" style="left:${ax - 45}px;top:${ay - 8}px;z-index:${40 + z}" data-k="ft:${id}" data-in="fade" data-out="fade-out">
@@ -1323,7 +1331,7 @@ function attackPairs(f: BattleFrame): { a: Mark; t: Mark; mutual: boolean }[] {
   }));
 }
 /** Seconds (at 1x) until the action lands: attackers reach their targets, or a spark arrives. */
-const contactDelay = (f: BattleFrame) => (f.marks.some((m) => m.kind === 'shoot') ? 0.3 : attackPairs(f).length ? 0.26 : sourceOf(f) ? 0.18 : 0);
+const contactDelay = (f: BattleFrame) => (f.marks.some((m) => m.kind === 'shoot') ? 0.3 : attackPairs(f).length ? 0.26 : sourceOf(f) ? 0.27 : 0);
 const currentFrame = (b: PendingBattle) => b.result.frames[Math.min(app.frame, b.result.frames.length - 1)];
 
 const SPARK_KINDS = new Set(['hit', 'heal', 'buff', 'debuff', 'crust', 'blocked', 'summon', 'burn', 'rot', 'chill', 'cleanse', 'cooked']);
@@ -1465,7 +1473,7 @@ function battleEffects(b: PendingBattle, delay: number) {
   }
   if (src && !pairs.length) {
     // Friends get a dotted line from the food that reached them; ability effects on enemies are lobbed as a spark.
-    for (const m of linkedTargets(f, src)) beam(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay });
+    for (const m of linkedTargets(f, src)) orb(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay, ms: 280 });
     const seen = new Set<string>();
     for (const m of f.marks) {
       const key = `${m.side}:${m.slot}`;

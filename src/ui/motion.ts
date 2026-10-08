@@ -201,6 +201,17 @@ export function beam(stage: HTMLElement, from: [number, number], to: [number, nu
   }
 }
 
+/**
+ * A sparkle that flies from one food to another trailing two smaller ones, bursting where it lands. Used for good
+ * things passing between friends (buffs, heals, Crust, growth). `cls` picks the colour (k-buff, k-heal...).
+ */
+export function orb(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, opts: { speed?: number; delay?: number; ms?: number } = {}) {
+  if (reduced) return;
+  const { speed = 1, delay = 0, ms = 280 } = opts;
+  for (let i = 0; i < 3; i++) fling(stage, from, to, `orb orb${i} ${cls}`, { speed, delay: delay + (i * 40) / speed, ms, arc: 18 });
+  burst(stage, to, `spark ${cls}`, { speed, delay: delay + (ms * 0.9) / speed, count: 8, spread: 14 });
+}
+
 /** Bits bursting out from a point (crumbs when a food is eaten, a puff when one is summoned). */
 export function burst(stage: HTMLElement, at: [number, number], cls: string, opts: { speed?: number; delay?: number; count?: number; spread?: number } = {}) {
   const { speed = 1, delay = 0, count = 8, spread = 16 } = opts;

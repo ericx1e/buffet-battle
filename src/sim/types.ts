@@ -138,6 +138,8 @@ export interface AbilityDef {
   ifLevel3?: boolean;
   /** Kitchen startTurn: amount x the interest you earned this turn. */
   perInterest?: boolean;
+  /** Kitchen startTurn: only if you earned interest this turn. */
+  ifInterest?: boolean;
   /** +1 to the amount for each level 3 friend (Golden Truffle). */
   perLevel3?: boolean;
   /** Kitchen: fires on at most this many days over the run, by level (Cheese ages for 4/6/10 days). */
