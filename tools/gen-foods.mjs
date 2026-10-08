@@ -39,6 +39,15 @@ function cylinder(s, cx, top, bottom, rxTop, rxBot, ry, side, topFill) {
     s.fill(cx - rxTop, top - ry, cx + rxTop, top + ry, (x, y) => (((x - cx) / rxTop) ** 2 + ((y - top) / ry) ** 2 <= 1 ? topFill(x, y) : null));
   }
 }
+/**
+ * A box seen from the front and a little above, like everything else: its front face (x0..x1, top..bottom) shaded
+ * light on the left and dark on the right, and a thin top face `depth` tall that narrows toward the back.
+ */
+function box(s, x0, x1, top, bottom, depth, front, topFill) {
+  s.poly([[x0, top], [x1, top], [x1, bottom], [x0, bottom]], (x) => (x < x0 + 2 ? front[1] : x > x1 - 2 ? front[3] : front[2]));
+  s.poly([[x0 + 2, top - depth], [x1 - 2, top - depth], [x1, top], [x0, top]], topFill);
+  s.rect(x0, top, x1 - x0 + 1, 1, front[0]); // the near edge catches the light
+}
 /** The usual side shading for a cylinder: lit on the left, a shade band and dark core on the right. */
 const cyl = (r, t) => (t < -0.62 ? r[1] : t > 0.78 ? r[4] : t > 0.45 ? r[3] : r[2]);
 
@@ -195,14 +204,17 @@ const foods = {
     s.px(7, 15, '#ffffff');
   },
   mushroom(s) {
-    s.shadow(17, 29, 9, 2);
-    s.fill(12, 16, 20, 28, (x, y) => {
-      const t = (x - 16) / 4;
-      if (Math.abs(t) > 1.05 || (y > 26 && ((x - 16) / 4) ** 2 + ((y - 26) / 2) ** 2 > 1)) return null;
-      return t < -0.5 ? C.cream[1] : t > 0.5 ? C.cream[3] : C.cream[2];
-    });
-    s.ball(16, 16, 12, 10, C.capRed, { clip: (x, y) => y <= 17 });
-    for (const [x, y, r] of [[11, 11, 2], [18, 9, 2], [22, 13, 1.5], [14, 15, 1.5], [7, 15, 1]]) s.ball(x, y, r, r, C.white);
+    s.shadow(17, 29, 10, 2);
+    // A toadstool from the side and a little above: a stout cream stem (a cylinder, wider at the foot), the cap's
+    // thick lip curving round in front, then the domed red cap with its spots squashed toward the edges.
+    cylinder(s, 16, 18, 27, 3.6, 4.8, 1.5, (t) => cyl(C.cream, t));
+    s.rect(13, 18, 7, 1, C.cream[4]); // shade under the cap
+    cylinder(s, 16, 14, 16, 12.5, 12.5, 2.4, (t) => C.capRed[t > 0.45 ? 4 : t < -0.6 ? 3 : 3]);
+    s.ball(16, 14, 12.5, 9.5, C.capRed, { clip: (x, y) => y <= 15 + 2.4 * Math.sqrt(Math.max(0, 1 - ((x - 16) / 12.5) ** 2)) - 1.2, bias: 0.15 });
+    for (const [x, y, r] of [[16, 8, 2.2], [10, 11, 1.8], [22, 10, 1.8], [7, 14, 1.2], [25, 14, 1.2], [13, 14, 1.4], [19, 13.5, 1.4]]) {
+      const squash = 1 - (0.55 * Math.abs(x - 16)) / 12;
+      s.ball(x, y, Math.max(0.8, r * squash), r * 0.75, C.white);
+    }
   },
   coffee(s) {
     s.shadow(17, 29, 9, 2);
@@ -358,25 +370,23 @@ const foods = {
   },
   dumplings(s) {
     s.shadow(17, 29, 13, 2);
-    // A round bamboo steamer seen from the front and a little above, three pleated dumplings sitting inside.
+    // A round bamboo steamer from the side and a little above: its rim is an ellipse (the dark inside showing behind
+    // the dumplings), three pleated half-moon dumplings sit in it, then the front wall (a short wide cylinder) curves
+    // down over their bottoms.
     const bamboo = R('#d9b26a');
-    s.ball(16, 21, 13, 7, bamboo, { clip: (x, y) => y >= 20 });
-    s.ball(16, 19, 12, 4, R('#7a5a2e'));
-    for (const x of [8, 13, 19, 24]) for (let y = 22; y <= 26; y++) if (y < 21 + Math.sqrt(Math.max(0, 1 - ((x - 16) / 13) ** 2)) * 7) s.px(x, y, bamboo[3]);
-    s.rect(4, 23, 25, 1, bamboo[1]); // the woven band
-    const dough = R('#f1dfbf');
-    // Back one first, then the two in front overlapping it. Each is a half-moon: a flat bottom, a domed top, and a
-    // pleated crest of little folds pinched along its ridge; a tan rim keeps each one separate from the next.
-    for (const [x, y] of [[16, 15], [10, 19], [22, 19]]) {
-      s.ball(x, y, 7, 6, R('#b98c58'), { clip: (_, py) => py <= y + 3 });
-      s.ball(x, y, 6, 5, dough, { bias: 0.25, clip: (_, py) => py <= y + 2 });
-      s.rect(x - 5, y + 2, 11, 1, dough[3]); // the flat underside in shadow
-      for (let i = -4; i <= 4; i++) {
+    const rim = (x, y, rx, ry) => ((x - 16) / rx) ** 2 + ((y - 19) / ry) ** 2;
+    s.fill(2, 14, 30, 24, (x, y) => (rim(x, y, 13.5, 4.5) <= 1 ? (rim(x, y, 12, 3.4) <= 1 ? '#5e3f1f' : bamboo[1]) : null));
+    const dough = R('#f1dfbf'), pleat = '#b98c58';
+    for (const [x, y] of [[16, 15], [10, 18], [22, 18]]) {
+      s.ball(x, y, 6.5, 5.5, R(pleat), { clip: (_, py) => py <= y + 3 });
+      s.ball(x, y, 5.5, 4.5, dough, { bias: 0.25, clip: (_, py) => py <= y + 2 });
+      for (let i = -4; i <= 4; i += 2) {
         const top = y - 4 + Math.round((i * i) / 8);
-        s.px(x + i, top, i % 2 === 0 ? dough[3] : dough[1]); // the crest
-        if (i % 2 === 0 && Math.abs(i) < 4) s.px(x + i, top + 1, dough[2]); // a fold running down from it
+        s.px(x + i, top, pleat); // the pinched crest
+        if (Math.abs(i) < 4) s.px(x + i, top + 1, dough[3]); // a fold running down from it
       }
     }
+    cylinder(s, 16, 19, 26, 13.5, 12.5, 4.5, (t, v) => (v < 1 ? bamboo[0] : v === 3 ? bamboo[4] : cyl(bamboo, t)));
   },
   // Flavor overhaul foods
   tofu(s) {
@@ -877,30 +887,40 @@ const items = {
   },
   microwave(s) {
     s.shadow(17, 28, 13, 2);
-    s.poly([[4, 9], [28, 9], [28, 26], [4, 26]], (x, y) => (y === 9 ? I.oven[1] : x > 26 ? I.oven[3] : I.oven[2]));
-    s.rect(6, 11, 15, 13, '#2c3438'); // window
-    s.rect(7, 12, 13, 1, '#5a6a72');
-    s.rect(7, 13, 1, 10, '#43525a');
-    for (let y = 12; y <= 22; y += 3) { s.rect(23, y, 3, 2, I.oven[3]); s.px(23, y, I.oven[1]); }
+    // A microwave from the front and a little above: its top face, the dark window and the button panel.
+    box(s, 4, 28, 12, 26, 4, I.oven, (x, y) => (y <= 9 ? I.oven[1] : I.oven[0]));
+    s.rect(6, 14, 15, 11, '#2c3438'); // window
+    s.rect(7, 15, 13, 1, '#5a6a72');
+    s.rect(7, 16, 1, 8, '#43525a');
+    for (let y = 15; y <= 23; y += 3) { s.rect(23, y, 3, 2, I.oven[3]); s.px(23, y, I.oven[1]); }
     s.rect(4, 26, 2, 2, I.oven[4]); s.rect(26, 26, 2, 2, I.oven[4]);
   },
   lunchbox(s) {
     s.shadow(17, 29, 13, 2);
-    s.tube([[11, 10], [11, 6], [21, 6], [21, 10]], 1.3, I.chrome); // handle
-    s.poly([[4, 11], [28, 11], [28, 27], [4, 27]], (x, y) => (y <= 12 ? I.lunch[1] : x > 26 ? I.lunch[3] : x < 6 ? I.lunch[1] : I.lunch[2]));
-    s.rect(4, 17, 25, 1, I.lunch[4]); // lid seam
-    s.rect(14, 16, 4, 4, I.latch[2]);
-    s.rect(14, 16, 4, 1, I.latch[1]);
-    s.rect(8, 21, 16, 4, I.lunch[1]); // decal panel
+    // A tin lunchbox from the front and a little above: its front with the lid seam and latch, the top face, and
+    // the handle standing up from it.
+    box(s, 4, 28, 13, 27, 4, I.lunch, (x, y) => (y <= 10 ? I.lunch[1] : I.lunch[0]));
+    s.tube([[11, 11], [11, 6], [21, 6], [21, 11]], 1.3, I.chrome); // handle
+    s.rect(4, 18, 25, 1, I.lunch[4]); // lid seam
+    s.rect(14, 17, 4, 4, I.latch[2]);
+    s.rect(14, 17, 4, 1, I.latch[1]);
+    s.rect(8, 22, 16, 4, I.lunch[1]); // decal panel
   },
   flavorPacket(s) {
     s.shadow(17, 29, 11, 2);
-    // A paper sachet with a torn top, printed with a dot of every flavor.
-    s.poly([[7, 7], [25, 7], [25, 27], [7, 27]], (x) => (x < 9 ? I.paper[1] : x > 23 ? I.paper[3] : I.paper[2]));
-    for (let x = 7; x <= 25; x += 2) s.px(x, 6, I.paper[2]);
-    s.rect(7, 10, 19, 2, '#d8394f');
+    // A puffy paper sachet, its crimped top edge and the slight top of the pillow showing, printed with a dot of
+    // every flavor. It bulges in the middle, so it's lit on the left and shaded on the right.
+    s.fill(7, 8, 25, 28, (x, y) => {
+      const t = (x - 16) / 9;
+      return t < -0.7 ? I.paper[1] : t > 0.7 ? I.paper[4] : t > 0.35 ? I.paper[3] : I.paper[2];
+    });
+    s.poly([[9, 6], [23, 6], [25, 8], [7, 8]], I.paper[1]); // the top of the pillow
+    for (let x = 7; x <= 25; x += 2) s.px(x, 5 + (x % 4 === 1 ? 0 : 1), I.paper[2]); // crimp
+    for (let x = 7; x <= 25; x += 2) s.px(x, 28, I.paper[3]);
+    s.rect(7, 11, 19, 2, '#d8394f');
+    s.rect(7, 11, 19, 1, '#ec5a6e');
     const dots = ['#e4502a', '#e86fa8', '#d9b21f', '#5f8eb0', '#9a5d33'];
-    dots.forEach((c, i) => s.ball(10 + (i % 3) * 6, 16 + Math.floor(i / 3) * 6, 2, 2, R(c)));
+    dots.forEach((c, i) => s.ball(10 + (i % 3) * 6, 17 + Math.floor(i / 3) * 6, 2, 2, R(c)));
   },
   oliveOil(s) {
     s.shadow(17, 29, 7, 2);
@@ -938,13 +958,16 @@ const items = {
 const specials = {
   spicePack(s) {
     s.shadow(17, 29, 12, 2);
-    // A kraft-paper pouch tied with twine and a red flavor tag.
+    // A kraft-paper pouch from the side and a little above: its gathered neck tied with twine, the open top showing
+    // its dark inside, and a red flavor tag on the front. It bulges, so it is shaded like a cylinder.
     const kraft = R('#c9925a');
-    s.poly([[8, 12], [24, 12], [27, 28], [5, 28]], (x) => (x < 9 ? kraft[1] : x > 23 ? kraft[3] : kraft[2]));
-    s.poly([[10, 5], [22, 5], [24, 12], [8, 12]], (x, y) => (y % 2 ? kraft[1] : kraft[2]));
-    s.rect(7, 11, 19, 2, '#efe0c3');
-    s.poly([[17, 15], [25, 15], [25, 22], [17, 22]], '#d8394f');
-    s.ball(21, 18, 2, 2, R('#ffd23f'));
+    cylinder(s, 16, 13, 27, 8.5, 11, 2, (t) => cyl(kraft, t));
+    cylinder(s, 16, 6, 12, 6.5, 5, 1.6, (t, v) => (v % 2 ? kraft[1] : cyl(kraft, t)), () => R('#5a3a1e')[2]);
+    s.rect(9, 11, 15, 2, '#efe0c3'); // twine
+    s.rect(9, 12, 15, 1, '#cbb894');
+    s.poly([[17, 16], [25, 15], [25, 22], [17, 23]], '#d8394f');
+    s.rect(17, 16, 1, 7, '#ec5a6e');
+    s.ball(21, 19, 1.8, 1.8, R('#ffd23f'));
   },
   farmPack(s) {
     s.shadow(17, 29, 14, 2);
@@ -959,15 +982,20 @@ const specials = {
   },
   premium(s) {
     s.shadow(17, 29, 13, 2);
-    // A gilded gift box with a red ribbon and a star on the bow.
+    // A gilded gift box from the front and a little above: its front, the lid's top face narrowing to the back with
+    // the ribbon crossing it, and a red bow sitting on top.
     const gold = R('#e5b93c'), ribbon = R('#d23a2c');
-    s.poly([[5, 14], [27, 14], [27, 28], [5, 28]], (x) => (x < 8 ? gold[1] : x > 24 ? gold[3] : gold[2]));
-    s.poly([[3, 10], [29, 10], [29, 15], [3, 15]], (x, y) => (y === 10 ? gold[0] : gold[1]));
-    s.rect(14, 10, 4, 18, ribbon[2]);
-    s.rect(14, 10, 1, 18, ribbon[1]);
-    s.ball(11, 7, 4, 3, ribbon);
-    s.ball(21, 7, 4, 3, ribbon);
-    s.ball(16, 8, 2, 2, R('#ffe27a'));
+    box(s, 6, 26, 16, 28, 0, gold, () => gold[1]);
+    box(s, 4, 28, 13, 16, 5, gold, (x, y) => (y <= 9 ? gold[1] : gold[0]));
+    s.rect(14, 13, 4, 16, ribbon[2]); // down the front
+    s.rect(14, 13, 1, 16, ribbon[1]);
+    s.rect(17, 13, 1, 16, ribbon[3]);
+    s.poly([[15, 8], [17, 8], [18, 13], [14, 13]], ribbon[2]); // across the lid, front to back
+    s.poly([[6, 10], [26, 10], [27, 11.5], [5, 11.5]], ribbon[2]); // and side to side
+    s.ball(12, 7, 4, 2.6, ribbon, { bias: 0.2 });
+    s.ball(20, 7, 4, 2.6, ribbon, { bias: 0.2 });
+    s.ball(16, 8, 2, 1.6, ribbon);
+    s.px(16, 7, R('#ffe27a')[1]);
   },
 };
 
