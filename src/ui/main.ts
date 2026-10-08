@@ -709,11 +709,15 @@ interface UnitData {
   flavors?: Flavor[];
 }
 
-/** A dot per flavor for foods that count as more than one (Kimchi, Tofu that soaked up flavor, Saffron...). */
+/**
+ * Every food's flavor, on the right edge of its tile: its flavor icon (two for a two-flavor food). A food with three
+ * or more (Tofu that soaked up flavor, Saffron) shows a small dot per flavor instead, so the tile stays clear.
+ */
 function flavorDots(u: UnitData): string {
-  const all = unitDef(u.defId).allFlavors ? [...FLAVORS] : (u.flavors ?? []);
-  if (all.length < 2) return '';
-  return `<div class="u-flavors" ${tip(`Counts as ${all.map((f) => flavorTag(f)).join(' ')}`)}>${all.map((f) => `<i class="fd-${f}"></i>`).join('')}</div>`;
+  const all = unitDef(u.defId).allFlavors ? [...FLAVORS] : (u.flavors?.length ? u.flavors : [u.flavor]);
+  const tipText = tip(`Counts as ${all.map((f) => flavorTag(f)).join(' ')}`);
+  if (all.length <= 2) return `<div class="u-flavors icons" ${tipText}>${all.map((f) => pix(f)).join('')}</div>`;
+  return `<div class="u-flavors" ${tipText}>${all.map((f) => `<i class="fd-${f}"></i>`).join('')}</div>`;
 }
 
 /**

@@ -658,6 +658,9 @@ body[data-screen='battle'] {
 /* Foods that count as several flavors carry a dot per flavor down their right edge. */
 .u-flavors { position: absolute; right: 1px; top: 10px; display: flex; flex-direction: column; gap: 1px; }
 .u-flavors i { width: 3px; height: 3px; border: 1px solid #2a1b14; box-sizing: content-box; }
+/* One or two flavor icons, small and stacked down the tile's right edge. */
+.u-flavors.icons { right: 0; top: 9px; gap: 0; align-items: flex-end; }
+.u-flavors.icons .pix { transform: scale(0.78); transform-origin: right top; margin-bottom: -2px; }
 .fd-spicy { background: var(--spicy); }
 .fd-sweet { background: var(--sweet); }
 .fd-sour { background: var(--sour); }
