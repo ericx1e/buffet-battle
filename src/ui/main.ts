@@ -80,11 +80,6 @@ const SAVE_KEY = 'buffetbattle.run';
 /** Pixel icon for each held item, shown in the corner of the food holding it. */
 const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware' } as const;
 
-/** Attack pattern names, called out in battle when the food attacks (see the pattern maps in icons.ts). */
-const PATTERN_NAME: Record<AttackPattern, string> = {
-  single: 'Hit', pierce: 'Pierce', splash: 'Splash', fork: 'Fork', snipe: 'Snipe', escalate: 'Escalate',
-  shot: 'Shoot', lob: 'Lob', spray: 'Spray', volley: 'Volley',
-};
 /** A food's attack pattern, if it isn't a plain single-target attack. */
 const patternOf = (defId: string): AttackPattern | null => {
   const p = unitDef(defId).attackPattern;
@@ -1305,7 +1300,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     <div class="fighter side-${side} ${cls} ${u.token ? 'token' : ''} ${o.cheer ? 'cheer' : ''}" data-inspect="${side}:${slot}"
       style="left:${ax - 32}px;top:${ay - 60}px;z-index:${z};--bob:${Math.round(bob)}ms" data-k="f:${id}" data-in="${o.opening ? 'drop' : 'pop'}" data-out="eaten">
       <div class="f-art">${unitArt(u.defId, u.level === 3)}</div>
-      ${u.level > 1 && !u.token ? `<div class="f-lvl" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${pix(u.level === 3 ? 'rank3' : 'rank2', 2)}</div>` : ''}
+      ${u.level > 1 && !u.token ? `<div class="f-lvl ${u.level === 3 ? 'cooked' : ''}" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${u.level}</div>` : ''}
     </div>
     ${popups ? `<div class="f-pops" style="left:${ax - 32}px;top:${ay - 60}px;z-index:${90 + z}">${popups}</div>` : ''}
     <div class="f-tags" style="left:${ax - 45}px;top:${ay - 8}px;z-index:${40 + z}" data-k="ft:${id}" data-in="fade" data-out="fade-out">
@@ -1408,7 +1403,7 @@ function battleSounds(f: BattleFrame, delay: number, after: number, speed: numbe
 }
 
 /**
- * A thrown attack: the thrower recoils and names its pattern, and a projectile (bean, pit, peppercorn, ball) arcs to
+ * A thrown attack: the thrower recoils, and a projectile (bean, pit, peppercorn, ball) arcs to
  * every food it hits, landing as the hit shows (contactDelay).
  */
 function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: number) {
@@ -1420,7 +1415,6 @@ function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: 
   const el = root.querySelector<HTMLElement>(`.fighter[data-inspect="${shooter.side}:${shooter.slot}"] .f-art`);
   const back = shooter.side === 0 ? -4 : 4;
   el?.animate([{ translate: '0 0' }, { translate: `${back}px 1px`, scale: '0.9 1.1', offset: 0.3 }, { translate: '0 0' }], { duration: 260 / speed, delay, easing: 'ease-out' });
-  floater(stage, from[0], from[1] - 44, `${PATTERN_NAME[pattern]}!`, 'callout', speed, delay);
   const arc = pattern === 'lob' ? 46 : pattern === 'volley' ? 22 : pattern === 'spray' ? 14 : 6;
   const hits = f.marks.filter((m) => m.side !== shooter.side && (m.kind === 'hit' || m.kind === 'blocked' || (m.kind === 'crust' && (m.amount ?? 0) < 0)));
   const seen = new Map<string, number>();
@@ -1472,12 +1466,10 @@ function battleEffects(b: PendingBattle, delay: number) {
         { duration: 600 / speed, delay },
       ).finished.then(() => (el.style.zIndex = z), () => (el.style.zIndex = z));
     }
-    // A patterned attack names itself over the attacker, and sparks carry on from the main target to every other
-    // food it hits (the one behind for pierce, the neighbouring lanes for splash and fork...).
+    // In a patterned attack, sparks carry on from the main target to every other food it hits (the one behind for pierce, the neighbouring lanes for splash and fork...).
     const attackerDef = f.plates[a.side][a.slot]?.defId;
     const pattern = attackerDef ? patternOf(attackerDef) : null;
     if (pattern) {
-      floater(stage, x0, y0 - 44, `${PATTERN_NAME[pattern]}!`, 'callout', speed, delay);
       const extra = f.marks.filter((m) => m.side === t.side && m.slot !== t.slot && (m.kind === 'hit' || m.kind === 'blocked'));
       for (const m of new Map(extra.map((m) => [m.slot, m])).values()) {
         fling(stage, fighterPoint(t.side, t.slot), fighterPoint(m.side, m.slot), 'spark k-hit', { speed, delay: delay + 260 / speed, ms: 200, arc: 8 });
