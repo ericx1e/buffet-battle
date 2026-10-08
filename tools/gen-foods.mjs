@@ -388,6 +388,41 @@ const foods = {
     }
     cylinder(s, 16, 19, 26, 13.5, 12.5, 4.5, (t, v) => (v < 1 ? bamboo[0] : v === 3 ? bamboo[4] : cyl(bamboo, t)));
   },
+  jerky(s) {
+    s.shadow(17, 29, 13, 2);
+    // Three flat strips of dried beef piled on each other, seen a little from above: each a ragged ribbon with its
+    // lit top face, a dark cut edge underneath showing its thickness, and grain running along it.
+    const beef = R('#8a3a26');
+    const strip = (x0, y0, x1, y1, w) => {
+      const len = Math.hypot(x1 - x0, y1 - y0), ux = (x1 - x0) / len, uy = (y1 - y0) / len;
+      s.fill(0, 0, 31, 31, (x, y) => {
+        const along = (x - x0) * ux + (y - y0) * uy, across = -(x - x0) * uy + (y - y0) * ux;
+        if (along < 0 || along > len) return null;
+        const ragged = w + ((Math.round(along) * 7) % 3 === 0 ? -0.6 : 0);
+        if (across < -ragged || across > ragged + 1.2) return null;
+        if (across > ragged) return beef[4]; // the cut edge underneath
+        if (across < -ragged + 0.9) return beef[1]; // the lit far edge
+        return Math.round(along + across * 2) % 5 === 0 ? beef[3] : beef[2]; // grain
+      });
+    };
+    strip(4, 22, 27, 16, 2.6);
+    strip(6, 16, 26, 9, 2.4);
+    strip(8, 26, 28, 23, 2.4);
+    for (const [x, y] of [[10, 13], [17, 11], [22, 10], [12, 19], [20, 18], [14, 24], [23, 24]]) s.px(x, y, '#3a1a12');
+  },
+  gravy(s) {
+    s.shadow(17, 29, 13, 2);
+    // A gravy boat from the side and a little above: the white boat (a stretched bowl with a spout on the right and
+    // a handle on the left), brown gravy showing in its open top, a drip down the spout.
+    const china = R('#f1ece4'), gravy = R('#8a5428');
+    s.tube([[5, 15], [3, 19], [6, 22]], 1.1, china); // handle
+    s.ball(16, 18, 11, 8, china, { clip: (x, y) => y >= 17 });
+    s.poly([[22, 14], [29, 11], [27, 17], [22, 19]], (x) => (x > 26 ? china[3] : china[2])); // spout
+    s.ball(15, 17, 9, 2.6, gravy, { bias: 0.3 });
+    s.px(28, 12, gravy[1]); s.px(28, 13, gravy[2]);
+    s.rect(9, 27, 14, 1, china[3]); // foot
+    s.rect(11, 28, 10, 1, china[4]);
+  },
   // Flavor overhaul foods
   tofu(s) {
     s.shadow(17, 29, 12, 2);

@@ -135,7 +135,9 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 
 **Growth budget:** early foods show up early and grow for the rest of the run, so they grow slowly: a tier 1-3 grower gives about 1-2 stat points a day at level 1 (Bean Sprout +1/+1 to the friend ahead, Maple Syrup +1 HP to 2 friends, Bread Dough +2 HP, Cheese +1 HP or +2 next to a Savory friend), a tier 4 grower about 2 (Peanut Butter +1 HP to each neighbour), and the late Roast Turkey about 3 (+1 HP to 3 friends).
 
-**Scaling foods:** Bean Sprout (grows the friend ahead), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every restock), and Mochi (HP each time it is hit in battle).
+**Attack growth** matters as much as HP growth, so not every grower gives HP: Jerky trains the friend ahead (+1 attack a day), Maple Syrup gives a random friend attack every day, Chili Oil grows its own attack, Hot Cocoa turns HP gains into attack, and Gravy arms summons.
+
+**Scaling foods:** Bean Sprout (grows the friend ahead), Jerky and Maple Syrup (attack), Bread Dough (HP every day), Potato and Cheese (grow themselves), Yogurt and Chili Oil (twice as fast next to a friend of their flavor), Maple Syrup and Peanut Butter (grow friends), Roast Turkey (feeds 3 friends), Coin Chocolate (sell value), Fortune Cookie (interest), Pickle (in the freezer), Soy Sauce (every restock), and Mochi (HP each time it is hit in battle).
 
 **Team-building pairs:** engines that want a partner, so a plate is built, not just bought. Each food's cookbook page names its partners ("Pairs well with Caviar"), from the `PAIRS` table in data.ts:
 
@@ -144,8 +146,8 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Interest | Caviar (raises the cap) | Fortune Cookie (+1 HP per gold of interest) |
 | Free restocks | Dumplings (first 1/2/3 restocks free) | Soy Sauce (a random friend +1/+1 per restock) |
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
-| Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Pepperoni (summon: Burn) |
-| HP gains | Apple, Mochi, Maple Syrup, Peanut Butter, Honey | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
+| Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
+| HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
 | Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (+damage to Burning enemies) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies) |
@@ -488,6 +490,8 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Bread Dough | Salty | 1/7 | 3 | Rises: end of day, gain +2/2/3 HP. | **Country Loaf**: End of day: adjacent friends gain +2 HP,. |
 | 2 | Olive | Salty | 3/6 | 3 | Start of battle: lobs its pit at the enemy back row in its lane (the front if the back is empty) for half its attack, from either row. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
 | 2 | Hot Cocoa | Sweet | 1/7 | 3 | Whenever an adjacent friend gains HP, it also gains +1/1/2 attack. | **Cocoa Deluxe**: Every turn: adjacent friends gain +1 HP. |
+| 2 | Jerky | Salty | 2/7 | 3 | Trains the front: end of day, the friend ahead gains +1/1/2 attack. | **Smoked Brisket**: End of day: adjacent friends gain +1 attack. |
+| 3 | Gravy | Savory | 3/10 | 4 | Friend summoned: it gains +3/4/5 attack. | **Giblet Gravy**: Friend summoned: it gains 3 Crust. |
 | 3 | Cheese | Savory | 3/8 | 4 | Ages: end of day, +1/2/2 HP, twice as much next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
 | 3 | Wasabi | Spicy | 3/8 | 4 | First attack each battle deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
 | 3 | Honey | Sweet | 2/10 | 4 | Start of battle: adjacent friends gain +1/+1, +2/+2 or +3/+3, double for Spicy neighbours. | **Honeycomb**: Every 2 turns: adjacent friends gain +1/+1. |
@@ -498,10 +502,10 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Nachos | Salty | 3/11 | 4 | Splash attack: also hits the front foods in both neighbouring lanes, for 1. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
 | 3 | Yogurt | Sour | 2/8 | 4 | Live cultures: start of day, +1/2/3 HP, twice as much next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
 | 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/1/2 attack, twice as much next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
-| 3 | Maple Syrup | Sweet | 2/8 | 4 | End of day: 2 random friends gain +1/1/2 HP. | **Maple Taffy**: Start of battle: your friends gain +3 HP. |
+| 3 | Maple Syrup | Sweet | 2/8 | 4 | Glazes: end of day, a random friend gains +1/2/2 attack. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
 | 3 | Peppercorns | Spicy | 2/7 | 4 | Start of battle: sprays 3 peppercorns at random enemies, each for half its attack, from either row (Spicy bonuses Burn with each one). *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 2/11 | 4 | Crackles: whenever Crust blocks a hit on it or an adjacent friend, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
-| 3 | Pepperoni | Spicy | 2/8 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
+| 3 | Pepperoni | Spicy | 3/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Mushroom | Savory | 2/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore into an empty slot. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 3/8 | 4 | Start of battle: the friend ahead (or this, if in front) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 2/16 | 4 | Every 2nd time hit: drop a 2/2, 3/3 or 4/4 Slice into an empty slot. | **Fruit Salad**: Eaten: summon three 4/4 Slices. |
@@ -521,7 +525,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Pizza | Savory | 4/15 | 5 | Start of battle: adjacent friends gain +1/2/3 HP for each different flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1/+1 for each different flavor on your plate. |
 | 6 | Hot Pot | Spicy | 4/14 | 5 | Fork attack: hits both other lanes instead of its own. *(fork attack)* | **Mala Hot Pot**: Start of battle: all enemies Burn 4. Every turn: 2 more. |
 | 6 | Birthday Cake | Sweet | 3/20 | 5 | Every HP gain on your plate is +1. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
-| 6 | Kimchi | Sour + Spicy | 4/15 | 5 | Start of battle: the enemy front row Rots 1/1/2 and Burns 1/1/2. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
+| 6 | Kimchi | Sour + Spicy | 4/13 | 5 | Start of battle: the enemy front row Rots 1/1/2 and Burns 1/1/2. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 4/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust (double for Savory friends). | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 3/16 | 5 | The friend ahead's abilities trigger twice. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
 | 6 | Smoothie | Sweet + Sour | 3/16 | 5 | A friend next to it gains +1 attack whenever its ability fires (up to +3). *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
