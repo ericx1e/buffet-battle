@@ -49,7 +49,7 @@ import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
-import { type Sfx, isMuted, setAmbience, sfx, toggleMute, unlockAudio } from './sound';
+import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
 
 /** What's selected or being dragged: an offer, an owned food, the special cubby's offer, or a choice from an open pack. */
 type Selection = { kind: 'offer'; src: OfferSource } | { kind: 'unit'; loc: Loc } | { kind: 'special' } | { kind: 'pick'; index: number } | null;
@@ -347,7 +347,7 @@ function sameSrc(a: OfferSource, b: OfferSource) {
 function onOffer(src: OfferSource) {
   const same = app.selected?.kind === 'offer' && sameSrc(app.selected.src, src);
   app.selected = same ? null : { kind: 'offer', src };
-  if (!same) sfx('select');
+  if (!same) sfx('page'); // the cookbook turns to it
   const offer = getOffer(app.run, src);
   app.message = same || !offer ? '' : offer.kind === 'unit'
     ? 'Drag it onto the platter to buy it, onto a copy to merge, or into the fridge to save it.'
@@ -377,7 +377,7 @@ function onClickSlot(loc: Loc) {
   const sel = app.selected;
   const same = sel?.kind === 'unit' && sel.loc.area === loc.area && sel.loc.index === loc.index;
   if (getUnit(run, loc) && !same) {
-    sfx('select');
+    sfx('page');
     app.selected = { kind: 'unit', loc };
     app.message = 'Drag it to move, swap or merge, or into the scrap bin to sell.';
   } else if (loc.area === 'fridge' && run.fridge[loc.index]?.kind === 'offer') {
@@ -624,7 +624,6 @@ function render() {
   const oldScreen = lastScreen;
   lastScreen = screen;
   forceWipe = false;
-  setAmbience(screen === 'battle' ? 'battle' : 'kitchen');
   if (app.message !== toast.text) toast = { text: app.message, id: toast.id + 1, at: performance.now() };
 
   document.body.dataset.screen = screen;
