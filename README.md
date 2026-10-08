@@ -24,7 +24,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 
 ## How to play
 
-- **Click** anything to read it in the cookbook. **Drag** a dish from the cabinet onto your plate to buy it (3-5 gold by tier), onto a copy to merge, or into the fridge to save it. Drag plate units to move, swap or merge, and into the scrap bin to sell. Clicking only selects; every action is a drag.
+- **Click** anything to read it in the cookbook. **Drag** a dish from the cabinet onto your plate to buy it (3-5 gold by tier), onto a copy to merge, or into the fridge to buy it and keep it for later. Drag plate units to move, swap or merge, and into the scrap bin to sell. Clicking only selects; every action is a drag.
 - **Plate:** 3 lanes, back column on the left, front column on the right. Front foods attack the enemy in their lane (or the nearest lane with food); a food at 0 HP is eaten and the one behind steps up. Last plate with food wins.
 - **Gold:** unspent gold carries over and earns interest (+1 per 5 held, up to 3; the coins over the tip jar show what you would earn, hover them for details). Each restock in a day costs 1 more. Selling returns half of what a food cost.
 - **Special cubby:** once a day, a Spice Pack, Farm Box, Pair (2 copies for about 1.5x the price), Premium Restock or (late) a mythic. Drag it onto the counter tray to buy it; whatever lands on the tray must be placed, merged or sold before you serve.

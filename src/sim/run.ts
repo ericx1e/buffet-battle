@@ -433,16 +433,6 @@ export function buyUnit(run: RunState, src: OfferSource, to: Loc): ActionResult 
   return result;
 }
 
-/** Stores a market offer in an empty fridge slot (keeps it between turns). */
-export function freezeOffer(run: RunState, marketIndex: number, fridgeIndex: number): ActionResult {
-  const offer = run.market[marketIndex];
-  if (!offer) return fail('Nothing to freeze.');
-  if (run.fridge[fridgeIndex]) return fail('That fridge slot is in use.');
-  run.fridge[fridgeIndex] = { kind: 'offer', offer };
-  run.market[marketIndex] = null;
-  return ok();
-}
-
 /** Moves a unit between plate, fridge and overflow slots: into empty slots, merging into copies, or swapping. */
 export function moveUnit(run: RunState, from: Loc, to: Loc): ActionResult {
   if (from.area === to.area && from.index === to.index) return ok();

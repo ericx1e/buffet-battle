@@ -76,7 +76,7 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 | Buy an item | 2 to 7 gold (see Items) |
 | Restock the market | 1 gold, +1 for each restock already today (Dumplings make the first 1/2/3 each day free) |
 | Sell a food | Half the gold its copies cost, rounded down (at least 1), plus any sell value it gained |
-| Put a market offer in the fridge | Free |
+| Put a food in the fridge | Its price: you buy it into the fridge (the fridge only holds foods you own) |
 
 Selling never refunds a merge in full: a level 2 tier 1 food (3 copies) sells for 4, not 9. Coin Chocolate and Olive Oil add sell value on top, which survives merges.
 
@@ -84,7 +84,7 @@ Selling never refunds a merge in full: a level 2 tier 1 food (3 copies) sells fo
 
 - Offers 3 to 5 foods (by day, see Tier unlocks) and 1 item.
 - Foods are drawn from all unlocked tiers with equal weight per food.
-- Restocking replaces everything except offers stored in the fridge and the special cubby.
+- Restocking replaces everything except the special cubby.
 - **Level-up bonus:** when a food reaches level 2 or 3, a food from one tier above the current highest unlocked tier (capped at 6) drops into an empty food cubby right away, marked as a bonus. If all 6 food cubbies are full, it joins the next market instead.
 
 ### Special cubby
@@ -105,12 +105,12 @@ Pairs, Farm Box picks and mythic deliveries arrive on a 3-slot counter tray next
 
 ### Fridge
 
-The fridge replaces Super Auto Pets' freeze button and also works as a bench.
+The fridge is a bench for foods you own. Unlike Super Auto Pets' freeze, it doesn't hold shop offers: to put a food in it, you buy it (drag it from the buffet into the fridge).
 
 - 2 slots.
-- Holds either a market offer (keeps it for tomorrow, buy it later at normal price) or one of your own foods (kept off the plate, not used in battle).
+- Holds your own foods, kept off the plate and not used in battle. Dropping a shop food in buys it at its price; the hint and the empty slots' tooltip say so.
 - Foods in the fridge still count for merging.
-- **Freezer growth:** some foods grow only while they wait in the fridge (Ice Cream and Pickle, +1/+1 each time you serve). Trading a plate slot now for a stronger food later is the fridge's strategy.
+- **Freezer growth:** some foods grow only while they wait in the fridge (Pickle, +1/+1 each time you serve). Trading a plate slot now for a stronger food later is the fridge's strategy.
 
 ### Placement
 

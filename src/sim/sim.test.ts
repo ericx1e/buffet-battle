@@ -8,7 +8,6 @@ import {
   buySpecial,
   buyUnit,
   finishBattle,
-  freezeOffer,
   interestCap,
   moveUnit,
   newRun,
@@ -220,14 +219,15 @@ describe('run', () => {
     expect(run.bonusUnitsPending).toBe(1);
   });
 
-  it('buys, freezes and sells', () => {
+  it('buys onto the plate or into the fridge (the fridge holds foods you own), and sells', () => {
     const run = newRun(7);
     expect(buyUnit(run, { area: 'market', index: 0 }, { area: 'plate', index: 0 }).ok).toBe(true);
     expect(run.gold).toBe(7);
-    expect(freezeOffer(run, 1, 0).ok).toBe(true);
-    expect(run.fridge[0]?.kind).toBe('offer');
+    expect(buyUnit(run, { area: 'market', index: 1 }, { area: 'fridge', index: 0 }).ok).toBe(true);
+    expect(run.fridge[0]?.kind).toBe('unit');
+    expect(run.gold).toBe(4);
     expect(sellUnit(run, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.gold).toBe(8);
+    expect(run.gold).toBe(5);
   });
 
   it('two level 2 foods merge into level 3', () => {

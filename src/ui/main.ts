@@ -17,7 +17,6 @@ import {
   clonePlate,
   endDay,
   finishBattle,
-  freezeOffer,
   getOffer,
   getUnit,
   interestCap,
@@ -345,7 +344,7 @@ function onOffer(src: OfferSource) {
   if (!same) sfx('page'); // the cookbook turns to it
   const offer = getOffer(app.run, src);
   app.message = same || !offer ? '' : offer.kind === 'unit'
-    ? 'Drag it onto the platter to buy it, onto a copy to merge, or into the fridge to save it.'
+    ? 'Drag it onto the platter or into the fridge to buy it, or onto a copy to merge.'
     : offer.itemId === 'lunchbox' ? 'Drag the Lunchbox onto any food on your plate.' : 'Drag it onto one of your foods.';
   render();
 }
@@ -392,9 +391,13 @@ function onDropSlot(loc: Loc) {
     const offer = getOffer(run, sel.src);
     if (!offer) return;
     if (offer.kind === 'unit') {
-      const fridgeFree = loc.area === 'fridge' && !run.fridge[loc.index];
-      if (fridgeFree && sel.src.area === 'market') return report(freezeOffer(run, sel.src.index, loc.index), 'freeze');
       const into = getUnit(run, loc);
+      // Into the fridge: you buy it, and it waits there (the fridge only holds foods you own).
+      if (loc.area === 'fridge' && !into) {
+        const result = buyUnit(run, sel.src, loc);
+        if (result.ok) sfx('freeze', 120);
+        return report(result, 'buy');
+      }
       return report(buyUnit(run, sel.src, loc), into?.defId === offer.defId ? 'merge' : 'buy');
     }
     if (offer.itemId === 'seasoning') {
@@ -968,7 +971,7 @@ function fridgeSlots(): string {
         const attrs = `data-drag="offer:fridge:${index}" data-k="fo:${index}:${offerId(entry.offer)}"`;
         content = `${offerTile(entry.offer, attrs, isSelectedSrc({ area: 'fridge', index }))}<div class="frost" data-k="frost:${index}" data-in="fade"></div>`;
       }
-      return `<div class="slot drop ${entry ? '' : 'empty'}" style="${at(pos)}" data-slot="fridge:${index}" data-drop="fridge:${index}">${content}</div>`;
+      return `<div class="slot drop ${entry ? '' : 'empty'}" style="${at(pos)}" data-slot="fridge:${index}" data-drop="fridge:${index}" ${entry ? '' : tipBox('Fridge', '<p>Buy a food into it to keep it for later: drag it here from the buffet (it costs its price).</p><p class="dim">Foods in the fridge still merge, and some grow there.</p>')}>${content}</div>`;
     })
     .join('');
 }
@@ -1211,7 +1214,7 @@ function renderKitchen() {
         ${spiceJars()}
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
-          ${tipBox('Refill the buffet', `<p>Restock every food and item cubby (key r). This one costs <b>${cost ? `${cost} gold` : 'nothing'}</b>; each restock in a day costs 1 more.</p><p class="dim">The special cubby and the fridge keep their offers.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
+          ${tipBox('Refill the buffet', `<p>Restock every food and item cubby (key r). This one costs <b>${cost ? `${cost} gold` : 'nothing'}</b>; each restock in a day costs 1 more.</p><p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
         ${marketSlots()}
         ${specialSlot()}
         ${fridgeSlots()}
