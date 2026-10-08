@@ -1582,7 +1582,7 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
   const place = ay > 200 ? `bottom:${LAYOUT.size[1] - (ay - 62)}px` : `top:${ay + 26}px`;
   return `
     <div class="inspect-card" style="left:${left}px;${place};width:${w}px" data-k="inspect:${side}:${slot}" data-in="pop">
-      <div class="pg-title">${side === 1 ? 'Enemy ' : ''}${u.level === 3 ? d.cookedName : d.name}${u.token ? '' : ` · level ${u.level}`}</div>
+      <div class="pg-title">${u.level === 3 ? d.cookedName : d.name}${u.token ? '' : ` · level ${u.level}`}</div>
       <p class="dim">${flavors}${u.token ? ' · summoned' : ` · ${rarityTag(d.id)}`}</p>
       <p class="stat-line">${stats}</p>
       ${held}
@@ -1610,7 +1610,7 @@ function flavorSide(side: 0 | 1, tally: Partial<Record<Flavor, number>> | undefi
   }).join('');
   const x = side === 0 ? 10 : LAYOUT.size[0] - 10 - 132;
   return `<div class="flavor-side chalkboard" style="left:${x}px;top:44px;width:132px">
-    <div class="chalk-title">${side === 0 ? 'Your' : 'Their'} flavors</div>${lines}</div>`;
+    <div class="chalk-title">Flavors</div>${lines}</div>`;
 }
 
 /** Draws the current battle frame. Returns true the first time a frame is shown (its effects should play). */
