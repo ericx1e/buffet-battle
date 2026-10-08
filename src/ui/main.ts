@@ -57,6 +57,10 @@ type Selection = { kind: 'offer'; src: OfferSource } | { kind: 'unit'; loc: Loc 
 interface PendingBattle {
   result: BattleResult;
   opponent: string;
+  /** The opponent's run so far, shown on its plaque (older saved battles lack it). */
+  foe?: { wins: number; lives: number };
+  /** Yours when the battle started. */
+  me?: { wins: number; lives: number };
   /** Tells battles apart in animation keys (uids restart every battle). */
   id?: number;
 }
@@ -567,10 +571,10 @@ function startBattle() {
   const { run } = app;
   if (app.battle || run.plate.every((u) => !u)) return;
   const mine = clonePlate(run.plate); // the day was already ended when the bell rang
-  saveGhost(app.runId, run.turn, mine);
-  const opponent = pickOpponent(app.runId, run.turn, nextSeed(run));
+  saveGhost(app.runId, run.turn, mine, run.courses, run.lives);
+  const opponent = pickOpponent(app.runId, run.turn, nextSeed(run), run.courses, run.lives);
   const result = simulateBattle(mine, opponent.plate, nextSeed(run));
-  app.battle = { result, opponent: opponent.label, id: Date.now() % 1e9 };
+  app.battle = { result, opponent: opponent.label, foe: { wins: opponent.wins, lives: opponent.lives }, me: { wins: run.courses, lives: run.lives }, id: Date.now() % 1e9 };
   shownFrame = -1;
   app.selected = null;
   app.frame = 0;
@@ -1326,15 +1330,17 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
 }
 
 /** Team plaque: the plate's name and one pip per food still on it. */
-function teamPlaque(side: 0 | 1, f: BattleFrame, label: string, bid: number, fresh: boolean): string {
-  const alive = f.plates[side].filter((u) => u).length;
-  const eaten = fresh && f.marks.some((m) => m.side === side && m.kind === 'faint');
-  const pips = Array.from({ length: Math.max(alive, 1) }, (_, i) => `<i class="${i < alive ? 'on' : ''}" data-k="pip:${bid}:${side}:${i}"></i>`).join('');
+/** A side's name plaque: its name, and its run so far (wins, the day, lives). */
+function teamPlaque(side: 0 | 1, label: string, rec: { wins: number; lives: number } | undefined): string {
+  const day = app.run.turn;
+  const record = rec
+    ? `<span class="plaque-stat" ${tip(`<p>${rec.wins} of ${COURSES_TO_WIN} courses won.</p>`)}>${pix('trophy')}<b>${rec.wins}</b></span>
+       <span class="plaque-stat" ${tip(`<p>${rec.lives} lives left.</p>`)}>${pix('life')}<b>${rec.lives}</b></span>`
+    : '';
   return `
-    <div class="plaque side-${side} ${eaten ? 'shake' : ''}" style="${box(BATTLE.plaques[side])}">
+    <div class="plaque side-${side}" style="${box(BATTLE.plaques[side])}">
       <div class="plaque-label">${label}</div>
-      <div class="plaque-pips">${alive ? pips : ''}</div>
-      <div class="plaque-num" data-vk="left:${bid}:${side}" data-v="${alive}">${alive}<span> left</span></div>
+      <div class="plaque-record">${record}<span class="plaque-day">day ${day}</span></div>
     </div>`;
 }
 
@@ -1661,8 +1667,8 @@ function renderBattle(battle: PendingBattle): boolean {
     <div class="stage-wrap" style="--s:${stageScale()}">
       <main class="stage battle-stage" style="--spd:${app.speed};--fxd:${fxDelay}s">
         <img class="scene-bg" src="${battleUrl}" alt="" draggable="false">
-        ${teamPlaque(0, f, 'Your plate', bid, fresh)}
-        ${teamPlaque(1, f, battle.opponent, bid, fresh)}
+        ${teamPlaque(0, 'Your plate', battle.me ?? { wins: app.run.courses, lives: app.run.lives })}
+        ${teamPlaque(1, battle.opponent, battle.foe)}
         ${flavorSide(0, battle.result.flavors?.[0])}${flavorSide(1, battle.result.flavors?.[1])}
         <div class="round-text" style="${box([rx + 3, ry + 3, rw - 6, rh - 6])}" data-vk="round:${bid}" data-v="${f.round}">${f.round > 0 ? `turn ${f.round}` : 'serve!'}</div>
         ${fighters}

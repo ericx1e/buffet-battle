@@ -187,7 +187,7 @@ class Battle {
   private marks: Mark[] = [];
   private queue: { unit: BattleUnit; source?: BattleUnit }[] = [];
   /** Reactions waiting for their own moment: each fires in its own frame after the one that caused it. */
-  private later: { unit: BattleUnit; trigger: Trigger; ctx: FireContext; echo?: number }[] = [];
+  private later: { unit: BattleUnit; trigger?: Trigger; ctx?: FireContext; echo?: number; bonus?: { from: BattleUnit; hp?: number; crust?: number } }[] = [];
   private bonus: [SideBonus, SideBonus] = [{ ...NO_BONUS }, { ...NO_BONUS }];
   private nextUid = 1;
   private triggerBudget = TRIGGER_BUDGET;
@@ -638,8 +638,10 @@ class Battle {
   }
 
   /** Wagyu: friends next to it (every friend, once it is cooked) get double from Crust and heals. */
-  private basted(u: BattleUnit): boolean {
-    return this.units(u.side).some((w) => w !== u && unitDef(w.defId).aura === 'baste' && (w.level === 3 || isAdjacent(w.slot, u.slot)));
+
+  /** The Wagyu basting this food, if any. */
+  private bastedBy(u: BattleUnit): BattleUnit | undefined {
+    return this.units(u.side).find((w) => w !== u && unitDef(w.defId).aura === 'baste' && (w.level === 3 || isAdjacent(w.slot, u.slot)));
   }
 
   /** Black Garlic on the other side: this food's lane (every lane, once cooked) takes double Burn and Rot damage. */
@@ -684,9 +686,35 @@ class Battle {
       }
       // Reactions, one food at a time, each its own frame (Steak feeding a summon, Pork Crackling biting back...).
       if (this.later.length > 0) {
+        const next = this.later[0];
+        if (next.bonus) {
+          // A modifier's buffs: every one waiting from the same food lands together, in one frame from it.
+          const from = next.bonus.from;
+          const batch = this.later.filter((l) => l.bonus?.from === from);
+          this.later = this.later.filter((l) => l.bonus?.from !== from);
+          if (!this.onPlate(from)) continue;
+          const got: string[] = [];
+          for (const { unit, bonus } of batch) {
+            if (!this.onPlate(unit) || !bonus) continue;
+            if (bonus.hp) {
+              unit.hp += bonus.hp;
+              this.mark(unit, 'buff', 0, bonus.hp);
+              got.push(`${this.name(unit)} +${bonus.hp} HP`);
+            }
+            if (bonus.crust) {
+              unit.crust += bonus.crust;
+              this.mark(unit, 'crust', bonus.crust);
+              got.push(`${this.name(unit)} +${bonus.crust} Crust`);
+            }
+          }
+          if (got.length === 0) continue;
+          this.mark(from, 'ability');
+          this.snap(`${this.name(from)}: ${joinLines(got)}`);
+          continue;
+        }
         const { unit, trigger, ctx, echo } = this.later.shift()!;
-        if (!this.onPlate(unit)) continue;
-        const line = this.fire(unit, trigger, ctx, undefined, echo);
+        if (!this.onPlate(unit) || !trigger) continue;
+        const line = this.fire(unit, trigger, ctx ?? {}, undefined, echo);
         if (line) this.snap(echo !== undefined ? `Echo! ${line}` : line);
         continue;
       }
@@ -802,10 +830,6 @@ class Battle {
     return unitDef(u.defId).values[u.level - 1] + u.abilityBonus;
   }
 
-  /** The sum of the level numbers of every food on a side with this aura (Birthday Cake's +1/+2/+3). */
-  private auraTotal(side: Side, aura: string): number {
-    return this.units(side).filter((f) => unitDef(f.defId).aura === aura).reduce((n, f) => n + this.levelValue(f), 0);
-  }
 
   /** The ability's number: level value + bonuses, + per-friend flavor bonus, x distinct flavors, + level 3 friends. */
   private amountOf(u: BattleUnit, ab: AbilityDef, index = -1): number {
@@ -1041,10 +1065,17 @@ class Battle {
    */
   private gainHp(u: BattleUnit, amount: number): number {
     if (amount <= 0) return 0;
-    amount += this.auraTotal(u.side, 'soothe');
-    if (this.basted(u)) amount *= 2;
     if (u.rot > 0) amount = Math.floor(amount / 2);
     u.hp += amount;
+    if (amount > 0) {
+      // Modifiers come after, each a buff of its own from the food that gives it (see resolve).
+      for (const cake of this.units(u.side).filter((f) => unitDef(f.defId).aura === 'soothe')) {
+        const extra = u.rot > 0 ? Math.floor(this.levelValue(cake) / 2) : this.levelValue(cake);
+        if (extra > 0) this.later.push({ unit: u, bonus: { from: cake, hp: extra } });
+      }
+      const wagyu = this.bastedBy(u);
+      if (wagyu) this.later.push({ unit: u, bonus: { from: wagyu, hp: amount } });
+    }
     return amount;
   }
 
@@ -1098,9 +1129,10 @@ class Battle {
 
   /** Adds Crust (doubled next to a basting Wagyu). */
   private giveCrust(u: BattleUnit, amount: number) {
-    if (this.basted(u)) amount *= 2;
     u.crust += amount;
     this.mark(u, 'crust', amount);
+    const wagyu = this.bastedBy(u);
+    if (wagyu && amount > 0) this.later.push({ unit: u, bonus: { from: wagyu, crust: amount } });
   }
 
   // ---- queries ----

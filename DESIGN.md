@@ -78,7 +78,7 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 | Interest | +1 gold per 5 gold held when the day starts, up to 3 (Caviar raises the cap by 1/2/3; Mandarin multiplies what each line pays by 2/3/4) |
 | Buy a food | 3 gold (tiers 1-2), 4 (tiers 3-4), 5 (tiers 5-6), 7 (mythic) |
 | Buy an item | 2 to 7 gold (see Items) |
-| Refill the market | 1 gold, +1 for each refill already today (Dumplings make the first 1/2/3 each day free) |
+| Refill the buffet | 1 gold, +1 for each paid refill already today (Dumplings make the first 1/2/3 each day free, and free ones don't raise the price) |
 | Sell a food | Half the gold its copies cost, rounded down (at least 1), plus any sell value it gained |
 | Put a food in the fridge | Its price: you buy it into the fridge (the fridge only holds foods you own) |
 
@@ -499,7 +499,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Mochi | Sweet | 1/7 | 3 | Chewy: when hit, gain +1/2/3 HP. | **Daifuku**: Eaten: adjacent friends gain +4 HP. |
 | 2 | Bread Dough | Salty | 1/6 | 3 | Rises: end of day, gain +3/4/5 HP. | **Country Loaf**: End of day: adjacent friends gain +2 HP. |
 | 2 | Olive | Salty | 3/6 | 3 | Start of battle, from any row: lobs 1/2/3 pits at the enemy back row in its lane for 3. *(lob attack)* | **Tapenade**: Start of battle: your friends gain 2 Crust. |
-| 2 | Hot Cocoa | Sweet | 1/7 | 3 | When an adjacent friend gains HP, it gains +1/2/3 attack. | **Cocoa Deluxe**: Every turn: adjacent friends gain +1 HP. |
+| 2 | Hot Cocoa | Sweet | 1/7 | 3 | When an adjacent friend gains HP (in battle or the kitchen), it gains +1/2/3 attack. | **Cocoa Deluxe**: Every turn: adjacent friends gain +1 HP. |
 | 2 | Jerky | Salty | 2/7 | 3 | End of day: the friend ahead gains +1/2/3 attack. | **Smoked Brisket**: End of day: adjacent friends gain +1 attack. |
 | 2 | Croutons | Salty | 2/7 | 3 | Every 2 turns: friends with Crust gain +1/2/3 attack. | **Garlic Croutons**: Every 2 turns: friends with Crust gain 2 more Crust. |
 | 3 | Cherries | Sweet | 2/8 | 4 | Friend eaten: lobs a pit at a random back-row enemy for 2/3/4. | **Cherry Pie**: Friend eaten: lobs a second pit for 2. |
@@ -514,7 +514,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Nachos | Salty | 3/11 | 4 | Splash attack: also hits the enemies beside its target for 1/2/3. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
 | 3 | Yogurt | Sour | 1/7 | 4 | Cultures: start of day, +2/3/4 HP, double next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
 | 3 | Chili Oil | Spicy | 2/7 | 4 | Infuses: start of day, +1/2/3 attack, double next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
-| 3 | Maple Syrup | Sweet | 1/6 | 4 | End of day: 2 random friends gain +1/2/3 attack. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
+| 3 | Maple Syrup | Sweet | 2/7 | 4 | End of day: 2 random friends gain +2/3/4 HP. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
 | 3 | Peppercorns | Spicy | 2/7 | 4 | Start of battle, 3/4/5 peppercorns hit random enemies for 2. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 2/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 3/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
@@ -588,6 +588,8 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 - **Levels in battle:** the level as a chunky gold number on a dark tab at the food's top-left (orange 3 when cooked). Level 1 has none.
 - **Flavor icons:** every food tile wears its flavor icon small on its right edge (two for a two-flavor food); a food with three or more flavors (soaked-up Tofu, Saffron) shows them smaller, two to a row, so tiles stay clear.
 - **Flavor boards:** each side's active flavor bonuses sit on a little chalkboard under its name plaque (titled "Flavors", one each side): the flavor icon, its count and what it does; hover a line for the full tiers.
+- **Modifiers show themselves.** Birthday Cake's extra HP and Wagyu's doubled HP and Crust aren't added silently: the gain lands first, then the Cake (or Wagyu) sends its extra as a buff of its own, in its own frame (every extra from the same food together). In the kitchen the Cake's extra is its own gift in the end-of-day growth too.
+- **Name plaques:** each side's name with its run so far: wins (trophy), lives (heart) and the day. Opponents are matched to your run: a past run's ghost from the same day with the nearest wins and lives, or a bot given a record next to yours.
 - **Repeats get their own moment.** A second attack (Coffee Bean, attack-twice) comes after the lane's first swings, as its own frame ("Kebab attacks again"), picking its targets again. An echoed ability (Bento Box) goes off again in its own frame after the original, captioned "Echo!".
 - **Reactions get their own moment.** A friend summoned (Steak, Gravy, Pepperoni), Crust blocking a hit (Pork Crackling) and a neighbour gaining HP (Hot Cocoa) don't go off inside the frame that caused them: they wait for it, then fire one food at a time, each in its own frame, marked on the food that reacts.
 - **Battle layers:** food sprites at the bottom (nearer lanes over farther ones), then each food's stat row above every sprite (attack, HP, and a small column of chips for Crust, Burn, Rot and Chill, so statuses never cover a food's face and rows in a lane don't collide), then every pop-up (damage, heals, gains, status ticks) above everything.

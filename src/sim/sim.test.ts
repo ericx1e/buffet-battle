@@ -350,8 +350,11 @@ describe('run', () => {
 
   it('Birthday Cake adds to HP gains in battle', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { hp: 40 }), 3: unit('apple', { hp: 40 }), 4: unit('cake', { hp: 40 }) }), plate({ 0: unit('cheese', { attack: 3, hp: 80 }) }), 1);
-    const gain = r.frames.flatMap((f) => f.marks).find((m) => m.side === 0 && m.kind === 'buff' && (m.hp ?? 0) > 0);
-    expect(gain?.hp).toBe(unitDef('apple').values[0] + unitDef('cake').values[0]);
+    // the Apple's gain first, then the Cake's extra as its own buff, from the Cake
+    const cakeFrame = r.frames.find((f) => f.text.startsWith('Birthday Cake:'));
+    expect(cakeFrame).toBeTruthy();
+    expect(cakeFrame!.marks.some((m) => m.side === 0 && m.kind === 'ability')).toBe(true); // from the Cake, wherever it stands
+    expect(cakeFrame!.marks.find((m) => m.kind === 'buff')?.hp).toBe(unitDef('cake').values[0]);
   });
 
   it('Mandarin multiplies interest by its level number', () => {
@@ -373,6 +376,8 @@ describe('run', () => {
     expect(reroll(run).ok).toBe(true);
     expect(reroll(run).ok).toBe(true);
     expect(reroll(run).ok).toBe(false); // out of free ones, and broke
+    run.gold = 10;
+    expect(rerollCost(run)).toBe(1); // the free ones didn't raise the price
     const grown = run.plate.reduce((n, u) => n + (u ? u.attack : 0), 0);
     const base = unitDef('dumplings').attack + unitDef('soySauce').attack + unitDef('egg').attack;
     expect(grown).toBe(base + 2);

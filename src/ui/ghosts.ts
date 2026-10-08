@@ -12,6 +12,17 @@ interface Ghost {
   runId: string;
   turn: number;
   plate: Plate;
+  /** The run's courses won and lives left when it was saved (older ghosts lack them). */
+  wins?: number;
+  lives?: number;
+}
+
+/** An opponent: its plate, name, and its run so far (wins and lives), matched to yours. */
+export interface Opponent {
+  plate: Plate;
+  label: string;
+  wins: number;
+  lives: number;
 }
 
 function load(): Ghost[] {
@@ -23,22 +34,30 @@ function load(): Ghost[] {
   }
 }
 
-export function saveGhost(runId: string, turn: number, plate: Plate) {
+export function saveGhost(runId: string, turn: number, plate: Plate, wins: number, lives: number) {
   if (plate.every((u) => !u)) return;
   try {
     const ghosts = load();
-    ghosts.push({ runId, turn, plate });
+    ghosts.push({ runId, turn, plate, wins, lives });
     localStorage.setItem(KEY, JSON.stringify(ghosts.slice(-MAX_GHOSTS)));
   } catch {
     // Storage unavailable: the game still works against bots.
   }
 }
 
-export function pickOpponent(runId: string, turn: number, seed: number): { plate: Plate; label: string } {
+/**
+ * An opponent for this day, as close to your run as possible: a past run's ghost from the same day with the
+ * nearest wins and lives, or a bot given a record next to yours.
+ */
+export function pickOpponent(runId: string, turn: number, seed: number, wins: number, lives: number): Opponent {
   const rng = new Rng(seed);
   const past = load().filter((g) => g.turn === turn && g.runId !== runId);
   if (past.length > 0 && rng.next() < 0.5) {
-    return { plate: rng.pick(past).plate, label: `Ghost of one of your past runs (day ${turn})` };
+    const gap = (g: Ghost) => Math.abs((g.wins ?? wins) - wins) + Math.abs((g.lives ?? lives) - lives);
+    const best = Math.min(...past.map(gap));
+    const g = rng.pick(past.filter((p) => gap(p) === best));
+    return { plate: g.plate, label: 'Ghost of a past run', wins: g.wins ?? wins, lives: g.lives ?? lives };
   }
-  return { plate: generateGhost(turn, seed), label: `Bot Chef #${seed % 1000}` };
+  const near = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n + rng.int(3) - 1));
+  return { plate: generateGhost(turn, seed), label: `Bot Chef #${seed % 1000}`, wins: near(wins, 0, turn - 1), lives: near(lives, 1, 5) };
 }

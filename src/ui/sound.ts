@@ -232,9 +232,10 @@ const SOUNDS = {
     play('thump', s, { v: 0.4, rate: 0.9 });
   },
   nom: (s: number) => {
-    play('chop', s, { v: 0.35 });
-    poof(s + 0.04);
-    tune('mar', [[72, 0], [65, 1]], s + 0.05, 0.3, 0.1);
+    // eaten: a soft bubbly pop going down, and a little puff
+    play('bloop_0', s, { v: 0.4, rate: 0.75 });
+    play('plop', s + 0.05, { v: 0.3, rate: 0.85 });
+    poof(s + 0.04, 0.5);
   },
   heal: (s: number) => note('glock', 96 + ladder(s), s, 0.22),
   buff: (s: number) => note('mar', 72 + ladder(s), s, 0.45),

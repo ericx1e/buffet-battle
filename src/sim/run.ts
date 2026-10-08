@@ -85,6 +85,8 @@ export interface RunState {
   rerolls: number;
   /** Free restocks left this turn (Soy Sauce). */
   freeRerolls: number;
+  /** Kitchen reactions used today (Hot Cocoa's 3 a day), by "uid:ability". */
+  dayFires?: Record<string, number>;
   /** A mythic has been offered this run (only ever one). */
   mythicOffered?: boolean;
   /** Foods bought for the rest of this turn get +n/+n. */
@@ -221,6 +223,7 @@ function startTurn(run: RunState) {
   run.rerolledThisTurn = false;
   run.rerolls = 0;
   run.freeRerolls = 0;
+  run.dayFires = {};
   run.buyBonus = 0;
   run.pack = null;
   run.growth = run.growth.slice(-60); // the UI clears it as it plays; bots never do
@@ -295,8 +298,9 @@ export function reroll(run: RunState): ActionResult {
   const cost = rerollCost(run);
   if (run.gold < cost) return fail('Not enough gold to refill.');
   run.gold -= cost;
+  // A free refill doesn't count toward the price of the next one.
   if (run.freeRerolls > 0) run.freeRerolls--;
-  run.rerolls++;
+  else run.rerolls++;
   run.rerolledThisTurn = true;
   rollMarket(run);
   const notes = run.plate.map((u, slot) => (u ? fireShop(run, u, slot, 'reroll') : '')).filter(Boolean);
@@ -490,6 +494,33 @@ function gainFlavor(run: RunState, u: UnitInstance): Flavor | null {
 }
 
 /**
+ * A food on the plate gained HP in the kitchen: neighbours that react to a friend gaining HP (Hot Cocoa) go off,
+ * a few times a day each (their `max`, or 3), just as they would in battle.
+ */
+function kitchenHpGain(run: RunState, t: UnitInstance, parts: string[]) {
+  const at = run.plate.indexOf(t);
+  if (at < 0) return;
+  run.plate.forEach((o, i) => {
+    if (!o || o === t || !isAdjacent(i, at)) return;
+    const odef = unitDef(o.defId);
+    abilitiesOf(odef, levelOf(o.copies)).forEach((ab, index) => {
+      if (ab.trigger !== 'friendHealed' || ab.effect !== 'buff') return;
+      const key = `${o.uid}:${index}`;
+      const used = run.dayFires?.[key] ?? 0;
+      if (used >= (ab.max ?? 3)) return;
+      run.dayFires = { ...run.dayFires, [key]: used + 1 };
+      const v = (ab.values ?? odef.values)[levelOf(o.copies) - 1];
+      const a = v * (ab.attack ?? 1);
+      const h = v * (ab.hp ?? 1);
+      t.attack += a;
+      t.hp += h;
+      run.growth.push({ uid: t.uid, attack: a, hp: h, from: o.uid, source: odef.name });
+      parts.push(`${odef.name}: ${unitDef(t.defId).name} +${a} attack`);
+    });
+  });
+}
+
+/**
  * Runs a food's kitchen-phase abilities for one trigger. Effects: buff, gold, sellValue, freeReroll, gainFlavor,
  * buyBonus. Buff targets: self, randomFriends, level3Friends, adjacentFriends, friendAhead. Conditions: ifNoReroll,
  * ifAdjacentFlavor, ifLevel3; amounts: perFriend, perInterest, perLevel3; `max` caps the total over the run.
@@ -575,14 +606,21 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         }
         if (targets.length === 0) return;
         const a = amount * (ab.attack ?? 1);
-        // Birthday Cake: every HP gain on your plate is +1/2/3, in the kitchen too.
-        const cake = run.plate.reduce((n, o) => n + (o && unitDef(o.defId).aura === 'soothe' ? unitDef(o.defId).values[levelOf(o.copies) - 1] : 0), 0);
-        const base = amount * (ab.hp ?? 1);
-        const h = base > 0 ? base + cake : base;
+        const h = amount * (ab.hp ?? 1);
+        // Birthday Cake: every HP gain on your plate is +1/2/3, in the kitchen too, as a gift of its own from the cake.
+        const cakes = run.plate.filter((o): o is UnitInstance => !!o && unitDef(o.defId).aura === 'soothe');
         for (const t of targets) {
           t.attack += a;
           t.hp += h;
           run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name });
+          if (h > 0) {
+            for (const cake of cakes) {
+              const extra = unitDef(cake.defId).values[levelOf(cake.copies) - 1];
+              t.hp += extra;
+              run.growth.push({ uid: t.uid, attack: 0, hp: extra, from: cake.uid, source: unitDef(cake.defId).name });
+            }
+            kitchenHpGain(run, t, parts);
+          }
         }
         grew();
         const who = targets.length > 1 ? `${targets.length} friends` : targets[0] === unit ? def.name : unitDef(targets[0].defId).name;
