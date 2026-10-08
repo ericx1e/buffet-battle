@@ -3,17 +3,16 @@
 Every sound effect here is released under Creative Commons Zero (CC0): free to use, attribution appreciated but not
 required.
 
-- Kenney (www.kenney.nl):
-  - Impact Sounds: plates, glass, wood, soft food thumps, the heavy punch, the bell
-  - RPG Audio: coins, the knife chop, the metal pot, the fridge door, book page flips, cloth
-  - Interface Sounds: tick, drop, glass dings
-  - Music Jingles: the steel-drum and pizzicato jingles (jCook, jWin, jTrophy, jLose, jLife, jDraw)
-- From OpenGameArt.org:
-  - "Pop sounds" by cogitollc: the rising bloops (bloop_0 to bloop_3)
+- Versilian Community Sample Library (VCSL, github.com/sgossner/VCSL) by Versilian Studios:
+  - marimba notes (mar_65 to mar_96, named by MIDI note) and glockenspiel notes (glock_96 to glock_108)
+  - woodblock (wood), bongos (bongoH, bongoL), log drum (logHi, logLo), shaker (shake), slapstick (slap), triangle
+    (tri) and a hand clap (clap)
+- OpenGameArt.org:
+  - "Pop sounds" by cogitollc: the bloops (bloop_0 to bloop_3)
   - "Pop sounds" by EZduzziteh: the plops (plop_0, plop_1)
-  - "Silly Sound Effects" by EZduzziteh: the falling boop (boop) and the "blah" (blah)
-  - "Children's Xylophone": the level-up run (xylo)
-  - "80 CC0 creature SFX" by rubberduck: the little voices (yay, hi)
+- Kenney (www.kenney.nl):
+  - Impact Sounds: soft food thumps, the bell
+  - RPG Audio: coins, the knife chop, the metal pot, the fridge door, book page flips
 
-They were converted to WAVs (full quality, normalized to the same peak) with `tools/import-sfx.mjs`. Burn's sizzle is
-synthesized in `src/ui/sound.ts`.
+They were converted to WAVs (full quality, normalized to the same peak, instrument notes tuned exactly) with
+`tools/import-sfx.mjs`. Burn's sizzle and the poof of an eaten food are synthesized in `src/ui/sound.ts`.

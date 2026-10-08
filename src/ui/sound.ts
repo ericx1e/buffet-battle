@@ -1,10 +1,12 @@
-// Sound: short recorded effects (CC0: Kenney's packs and cartoon packs from OpenGameArt; credits in ./sfx), converted
-// to WAVs at full quality, all normalized to the same peak. Cartoon first, kitchen second: bubbly bloops and plops for
-// picking up, placing and buffing, a falling boop to sell, a cartoon "blah" when you can't, a toy xylophone run on a
-// level up, a little voice when a food appears or merges, bonks for hits, plus plates, coins, the knife, the fridge and
-// warm steel-drum jingles. Good things rise in pitch, bad things fall, and a run of buffs or heals climbs a scale.
-// Only Burn's sizzle is synthesized.
-// Effects with several takes (plate_0, plate_1...) pick one at random, and every sound varies its pitch a little, so
+// Sound, in the spirit of Super Auto Pets: soft real instruments and bubbly pops, everything in one key (C major) so
+// it all agrees. A marimba plays the meaningful moments as little tunes (two notes up to buy, down to sell, a run on a
+// level up, a fanfare to win, a sinking line to lose), a glockenspiel sparkles on heals, coins, freezing and cooking,
+// a woodblock ticks for taps, bongos bonk for hits, a log drum says "nuh-uh", and pops and plops for picking up,
+// placing and things appearing. A run of buffs, heals or coins climbs a pentatonic scale. A few kitchen sounds stay
+// (coins, the knife, the fridge, the pot lid, the service bell); Burn's sizzle and the poof of an eaten food are
+// synthesized. Samples are CC0 (Versilian Community Sample Library, OpenGameArt, Kenney; credits in ./sfx), converted to
+// WAVs at full quality, normalized to the same peak, and the instrument notes tuned exactly.
+// Effects with several takes (wood_0, wood_1...) pick one at random, and untuned sounds vary their pitch a little, so
 // repeats don't drone. Audio starts on the first tap or click (browsers require it) and can be muted; the choice is
 // remembered.
 
@@ -104,14 +106,47 @@ function play(name: string, at: number, opts: { v?: number; rate?: number; exact
   src.start(at);
 }
 
-/** A run of buffs, heals or coins climbs a scale, like a xylophone run: each one within half a second of the last plays a step higher. */
+/** Instrument notes on disk, by MIDI number (mar_72 is the marimba's C5). */
+const NOTES = { mar: [65, 72, 79, 83, 89, 96], glock: [96, 103, 108] } as const;
+
+/** Plays one note (MIDI number) on an instrument, from its nearest recorded note. */
+function note(inst: keyof typeof NOTES, midi: number, at: number, v = 0.5) {
+  const from = NOTES[inst].reduce<number>((a, b) => (Math.abs(b - midi) < Math.abs(a - midi) ? b : a), NOTES[inst][0]);
+  play(`${inst}_${from}`, at, { v, rate: 2 ** ((midi - from) / 12), exact: true });
+}
+
+/** A little tune: [MIDI note, beat] pairs, a beat being `beat` seconds. */
+function tune(inst: keyof typeof NOTES, notes: [number, number][], at: number, v = 0.5, beat = 0.09) {
+  for (const [m, b] of notes) note(inst, m, at + b * beat, v);
+}
+
+/** A run of buffs, heals or coins climbs a scale: each one within 0.35 s of the last plays a step higher (C major pentatonic). */
 const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
 let lastStep = -1;
 let step = 0;
 function ladder(at: number) {
-  step = Math.abs(at - lastStep) < 0.5 ? Math.min(step + 1, SCALE.length - 1) : 0;
+  step = Math.abs(at - lastStep) < 0.35 ? Math.min(step + 1, SCALE.length - 1) : 0;
   lastStep = at;
-  return 2 ** (SCALE[step] / 12);
+  return SCALE[step];
+}
+
+/** A soft puff of air, falling: the poof of a food that's been eaten. */
+function poof(at: number, v = 1) {
+  if (!ctx || !out || !noiseBuf) return;
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuf;
+  const f = ctx.createBiquadFilter();
+  f.type = 'lowpass';
+  f.Q.value = 2;
+  f.frequency.setValueAtTime(2400, at);
+  f.frequency.exponentialRampToValueAtTime(260, at + 0.28);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(0.35 * v, at + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + 0.32);
+  src.connect(f).connect(g).connect(out);
+  src.start(at, Math.random() * 0.5);
+  src.stop(at + 0.35);
 }
 
 /** Fat in a hot pan, synthesized: crackles over a soft hiss. */
@@ -138,81 +173,111 @@ function sizzle(at: number, d = 0.35, v = 1) {
 /** Each sound, given its start time. Every file peaks at the same level, so these volumes set the mix: taps and UI soft, impacts up front, jingles between. */
 const SOUNDS = {
   // kitchen
-  select: (s: number) => play('bloop_3', s, { v: 0.25, rate: 1.4 }),
-  page: (s: number) => play('page', s, { v: 0.35, rate: 1.1 }),
-  pick: (s: number) => play('bloop', s, { v: 0.4, rate: 1.15 }),
+  select: (s: number) => play('wood', s, { v: 0.3, rate: 1.1 }),
+  page: (s: number) => play('page', s, { v: 0.3, rate: 1.1 }),
+  pick: (s: number) => play('bloop', s, { v: 0.45, rate: 1.1 }),
   place: (s: number) => {
-    play('plop', s, { v: 0.6 });
-    play('plate', s, { v: 0.3 });
+    play('plop', s, { v: 0.5 });
+    play('bongoL', s, { v: 0.3, rate: 1.2 });
   },
   buy: (s: number) => {
-    play('coins', s, { v: 0.45 });
-    play('bloop', s + 0.06, { v: 0.5, rate: 1.1 });
+    play('coins', s, { v: 0.3 });
+    tune('mar', [[72, 0], [79, 0.8]], s, 0.45);
   },
-  coin: (s: number) => play('glass_0', s, { v: 0.35, rate: 1.3 * ladder(s), exact: true }),
+  coin: (s: number) => note('glock', 96 + ladder(s), s, 0.25),
   sell: (s: number) => {
-    play('boop', s, { v: 0.55 });
-    play('coins2', s + 0.08, { v: 0.4 });
+    tune('mar', [[79, 0], [72, 0.8]], s, 0.4);
+    play('coins2', s + 0.08, { v: 0.3 });
   },
   merge: (s: number) => {
-    play('bloop_0', s, { v: 0.5, exact: true });
-    play('bloop_0', s + 0.07, { v: 0.5, rate: 1.335, exact: true });
-    play('yay', s + 0.1, { v: 0.35 });
+    play('bloop', s, { v: 0.4 });
+    tune('mar', [[72, 0], [76, 0.7], [79, 1.4]], s, 0.45);
   },
-  levelUp: (s: number) => play('xylo', s, { v: 0.5 }),
+  levelUp: (s: number) => {
+    tune('mar', [[72, 0], [76, 1], [79, 2], [84, 3]], s, 0.5);
+    note('glock', 96, s + 0.27, 0.3);
+  },
   cook: (s: number) => {
     sizzle(s, 0.4, 0.8);
-    play('jCook', s + 0.05, { v: 0.55 });
+    tune('mar', [[72, 0], [79, 1], [84, 2]], s, 0.45);
+    tune('glock', [[96, 3], [100, 4], [103, 5], [108, 6]], s, 0.25, 0.07);
   },
-  freeze: (s: number) => play('fridge', s, { v: 0.6 }),
-  item: (s: number) => play('drop', s, { v: 0.55 }),
+  freeze: (s: number) => {
+    play('tri', s, { v: 0.3 });
+    tune('glock', [[108, 0], [103, 1]], s, 0.22, 0.06);
+    play('fridge', s, { v: 0.25 });
+  },
+  item: (s: number) => {
+    play('plop', s, { v: 0.4 });
+    note('mar', 84, s + 0.04, 0.35);
+  },
   reroll: (s: number) => {
-    play('clatter', s, { v: 0.35 });
-    play('bloop', s + 0.05, { v: 0.3, rate: 0.9 });
+    play('shake', s, { v: 0.35 });
+    [0, 1, 2, 3, 4].forEach((i) => play('bloop_0', s + 0.06 + i * 0.045, { v: 0.22, rate: 0.9 + i * 0.07 })); // the new stock popping in
   },
-  bell: (s: number) => play('bell', s, { v: 0.45, rate: 1.5 }),
-  deny: (s: number) => play('blah', s, { v: 0.5 }),
-  grow: (s: number) => play('bloop_0', s, { v: 0.35, rate: 1.3 * ladder(s), exact: true }),
+  bell: (s: number) => play('bell', s, { v: 0.4, rate: 1.5 }),
+  deny: (s: number) => {
+    play('logHi', s, { v: 0.5 }); // nuh-uh
+    play('logLo', s + 0.12, { v: 0.5 });
+  },
+  grow: (s: number) => note('mar', 84 + ladder(s), s, 0.3),
   // battle
   hit: (s: number) => {
-    play('thump', s, { v: 0.7, rate: 1.1 });
-    play('plop', s, { v: 0.3, rate: 0.8 }); // the bonk
+    play('bongoH', s, { v: 0.55 });
+    play('thump', s, { v: 0.3, rate: 1.1 });
   },
   bigHit: (s: number) => {
-    play('punchBig', s, { v: 0.5 });
-    play('thump', s, { v: 0.5, rate: 0.9 });
-    play('plop', s, { v: 0.35, rate: 0.6 });
+    play('slap', s, { v: 0.35 });
+    play('bongoL', s, { v: 0.6 });
+    play('thump', s, { v: 0.4, rate: 0.9 });
   },
   nom: (s: number) => {
-    play('chop', s, { v: 0.5 });
-    play('boop', s + 0.06, { v: 0.5 });
+    play('chop', s, { v: 0.35 });
+    poof(s + 0.04);
+    tune('mar', [[72, 0], [65, 1]], s + 0.05, 0.3, 0.1);
   },
-  heal: (s: number) => play('ding', s, { v: 0.3, rate: 1.1 * ladder(s), exact: true }),
-  buff: (s: number) => play('bloop_0', s, { v: 0.5, rate: ladder(s), exact: true }),
-  debuff: (s: number) => play('knock', s, { v: 0.4, rate: 0.8 }),
-  crust: (s: number) => play('knock', s, { v: 0.4, rate: 1.2 }),
+  heal: (s: number) => note('glock', 96 + ladder(s), s, 0.22),
+  buff: (s: number) => note('mar', 72 + ladder(s), s, 0.45),
+  debuff: (s: number) => tune('mar', [[68, 0], [65, 1]], s, 0.3, 0.08),
+  crust: (s: number) => play('wood', s, { v: 0.45, rate: 0.75 }),
   burn: (s: number) => sizzle(s),
-  rot: (s: number) => play('squish', s, { v: 0.5, rate: 0.75 }),
-  chill: (s: number) => play('glass', s, { v: 0.35, rate: 1.5 }),
-  block: (s: number) => play('pot', s, { v: 0.35, rate: 1.2 }),
-  summon: (s: number) => {
-    play('hi', s, { v: 0.45 });
-    play('plop', s, { v: 0.3 });
+  rot: (s: number) => play('squish', s, { v: 0.45, rate: 0.75 }),
+  chill: (s: number) => {
+    note('glock', 108, s, 0.2);
+    play('tri', s, { v: 0.15 });
   },
-  ability: (s: number) => play('tick', s, { v: 0.3 }),
+  block: (s: number) => {
+    play('pot', s, { v: 0.3, rate: 1.2 });
+    play('wood', s, { v: 0.3 });
+  },
+  summon: (s: number) => {
+    play('bloop', s, { v: 0.45 });
+    note('mar', 84, s + 0.05, 0.3);
+  },
+  ability: (s: number) => play('wood', s, { v: 0.2, rate: 1.3 }),
   pew: (s: number) => {
-    play('bloop', s, { v: 0.35, rate: 1.6 });
-    play('swish', s, { v: 0.25, rate: 1.3 });
+    play('bloop', s, { v: 0.35, rate: 1.5 });
+    play('shake', s, { v: 0.15, rate: 1.3 });
   },
   cooked: (s: number) => {
     sizzle(s, 0.2, 0.6);
-    play('ding', s, { v: 0.35, rate: 1.3 });
+    tune('glock', [[96, 0], [103, 1]], s, 0.25, 0.07);
   },
-  win: (s: number) => play('jWin', s, { v: 0.55 }),
-  lose: (s: number) => play('jLose', s, { v: 0.5 }),
-  draw: (s: number) => play('jDraw', s, { v: 0.45 }),
-  lifeLost: (s: number) => play('jLife', s, { v: 0.5 }),
-  trophy: (s: number) => play('jTrophy', s, { v: 0.5 }),
+  win: (s: number) => {
+    tune('mar', [[72, 0], [76, 1], [79, 2], [84, 3.5], [79, 5], [84, 6], [88, 6]], s, 0.5);
+    tune('glock', [[96, 3.5], [100, 6], [103, 6]], s, 0.2);
+    play('clap', s + 0.54, { v: 0.25 });
+  },
+  lose: (s: number) => tune('mar', [[79, 0], [76, 1.5], [72, 3], [67, 5]], s, 0.42, 0.12),
+  draw: (s: number) => tune('mar', [[76, 0], [72, 1], [76, 2]], s, 0.4, 0.11),
+  lifeLost: (s: number) => {
+    play('logLo', s, { v: 0.45 });
+    tune('mar', [[67, 1], [60, 3]], s, 0.38, 0.11);
+  },
+  trophy: (s: number) => {
+    tune('mar', [[72, 0], [79, 0], [84, 0]], s, 0.35);
+    tune('glock', [[96, 0], [100, 1], [103, 2], [108, 3]], s, 0.25, 0.07);
+  },
 };
 
 export type Sfx = keyof typeof SOUNDS;
