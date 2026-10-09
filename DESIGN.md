@@ -363,6 +363,8 @@ Mythics are rare: a Mythic Delivery can show up from day 8, on 7% of days, and f
 | Saffron | All | Counts as every flavor; adjacent friends count twice toward flavor bonuses | Back middle touches three foods; ring it with your main flavor to reach 4 and 6 | Every friend counts twice |
 | Wagyu | Salty + Sweet | Your friends get double from Crust and HP gains; start of battle, they gain 2/3/4 Crust (4/6/8 after doubling) | Anywhere: it reaches the whole plate | Start of battle: your friends gain +3 HP (6, doubled) |
 | Black Garlic | Sour + Spicy | Enemies in its lane and the lanes beside it take double damage from Burn and Rot; start of battle, the front enemy in each of those lanes Rots 1/2/3 | The middle lane reaches every lane; a side lane reaches two | Every enemy, triple |
+| Sweet Potato | Sweet + Savory | Adjacent friends grow x2/x3/x3 from their kitchen abilities (the kitchen's only mythic) | Next to your growers, early enough that the days add up | Every friend, x3 |
+| Chicken Tender Tower | Savory + Salty | The friend in its lane comes back once when eaten, with 50/75/100% of its starting HP | The back row, behind your best front-liner (in front it guards the empty slot behind) | Every friend comes back once |
 
 Black Garlic and Wagyu mirror each other: one doubles the offensive statuses (Spicy and Sour), the other the defensive ones (Salty and Sweet). The rules use words the game already teaches (cooked, flavor counts, Crust, heals, Burn, Rot, lanes), and the kitchen shows reach with the same link arrows as other positional foods.
 
@@ -488,7 +490,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 
 ## Unit roster
 
-62 foods in the market across 6 tiers, plus 4 mythics that arrive through the special cubby or, rarely, the buffet. Numbers are a first pass for the simulator to test (`npm run balance`). Generated from `src/sim/data.ts`.
+62 foods in the market across 6 tiers, plus 6 mythics that arrive through the special cubby or, rarely, the buffet. Numbers are a first pass for the simulator to test (`npm run balance`). Generated from `src/sim/data.ts`.
 
 | Tier | Food | Flavor | Stats | Cost | Ability (level 1/2/3) | Cooked (level 3) and its bonus |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -572,6 +574,8 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | Mythic | Saffron | All | 4/10 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
 | Mythic | Wagyu | Salty + Sweet | 4/12 | 10 | Your friends get double Crust and HP. Start of battle: they gain 2/3/4 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Start of battle: your friends gain +3 HP. |
 | Mythic | Black Garlic | Sour + Spicy | 6/15 | 10 | Enemies in its lane and the lanes beside it take double Burn and Rot. Start of battle: the front enemy in each of those lanes Rots 1/2/3. *(aura: ferment)* | **Black Garlic Ramen**: Every enemy takes triple damage from Burn and Rot. |
+| Mythic | Sweet Potato | Sweet + Savory | 7/17 | 10 | Adjacent friends grow x2/3/3 from their kitchen abilities. *(aura: roast)* | **Candied Yams**: Every friend grows x3 from its kitchen abilities. |
+| Mythic | Chicken Tender Tower | Savory + Salty | 7/18 | 10 | The friend in its lane comes back once when eaten, with 50/75/100% of its HP. *(aura: tower)* | **Tender Skyscraper**: Every friend comes back once when eaten. |
 
 Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summoner's flavor but don't count toward synergies.
 

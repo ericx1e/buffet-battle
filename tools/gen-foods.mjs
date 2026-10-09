@@ -878,6 +878,36 @@ const foods = {
       return d <= 1 && d > 0.78 && ny < 0.1 ? C.fat[1] : null;
     });
   },
+  sweetPotato(s) {
+    s.shadow(16, 28, 13, 2);
+    // A long, knobbly sweet potato lying on its side, dusky purple-red skin, its near end cut to show the bright
+    // orange flesh (an oval face, lit, with a paler ring of skin around it).
+    const skin = R('#a3473f');
+    s.ball(14, 21, 12, 6, skin, { tone: (nx, ny, x, y) => ((x * 5 + y * 7) % 11 === 0 ? 1 : 0) });
+    s.ball(4, 22, 3, 3, skin);
+    s.ball(24, 20, 5, 6, skin);
+    s.ball(27, 20, 3, 5.5, R('#f0b37a'));
+    s.ball(27, 20, 2.3, 4.6, R('#f2862a'), { bias: 0.35 });
+    for (const [x, y] of [[9, 18], [15, 17], [19, 24], [11, 24]]) s.px(x, y, '#6e2a26');
+    s.px(25, 17, '#ffd09a');
+  },
+  chickenTenderTower(s) {
+    s.shadow(16, 29, 11, 2);
+    // A Jenga tower of breaded chicken tenders: four layers stacked crosswise, crumbly golden coating, a cocktail
+    // pick with a red flag through the top.
+    const tender = R('#dc9a3c');
+    s.tube([[6, 26], [26, 26]], 2.8, tender);
+    // Crosswise layers point at you: two round tender ends side by side.
+    s.ball(11, 21, 3.6, 3, tender);
+    s.ball(21, 21, 3.6, 3, tender);
+    s.tube([[7, 16], [25, 15]], 2.7, tender);
+    s.ball(12, 11, 3.4, 2.8, tender);
+    s.ball(20, 11, 3.4, 2.8, tender);
+    // Crumbs: darker flecks over the coating.
+    for (const [x, y] of [[9, 25], [13, 27], [19, 25], [23, 26], [10, 21], [22, 20], [9, 15], [14, 16], [20, 14], [24, 16], [12, 10], [20, 12]]) s.px(x, y, '#a8642a');
+    s.line(16, 10, 16, 2, '#e6d3b0');
+    s.poly([[17, 2], [22, 3], [17, 5]], () => '#d23a33');
+  },
   // Scaling foods
   beanSprout(s) {
     s.shadow(17, 29, 9, 2);

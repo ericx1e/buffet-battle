@@ -372,6 +372,17 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Every enemy takes triple damage from Burn and Rot.', abilities: [] },
     abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyLaneAndAdjacent' }] },
 
+  { id: 'sweetPotato', name: 'Sweet Potato', cookedName: 'Candied Yams', emoji: '🍠', tier: 6, flavor: 'sweet', flavor2: 'savory', attack: 7, hp: 17, values: [2, 3, 3],
+    rarity: 'mythic', aura: 'roast',
+    text: 'Adjacent friends grow x{v} from their kitchen abilities.',
+    cooked: { text: 'Every friend grows x3 from its kitchen abilities.', abilities: [] },
+    abilities: [] },
+  { id: 'chickenTenderTower', name: 'Chicken Tender Tower', cookedName: 'Tender Skyscraper', emoji: '🍗', tier: 6, flavor: 'savory', flavor2: 'salty', attack: 7, hp: 18, values: [50, 75, 100],
+    rarity: 'mythic', aura: 'tower',
+    text: 'The friend in its lane comes back once when eaten, with {v}% of its HP.',
+    cooked: { text: 'Every friend comes back once when eaten.', abilities: [] },
+    abilities: [] },
+
   // Summoned tokens (stats are set by the summoner)
   { id: 'yolk', name: 'Yolk', cookedName: 'Yolk', emoji: '🍳', tier: 1, flavor: 'savory', attack: 1, hp: 1,
     values: [0, 0, 0], abilities: [], text: 'Summoned by Egg.', token: true },
@@ -554,6 +565,7 @@ export function linkedSlots(def: UnitDef, slot: number, level: Level = 1): numbe
   }
   if (back && def.aura === 'echo') out.add(ahead);
   if (def.aura === 'infuse') adjacent.forEach((o) => out.add(o));
-  if (def.aura === 'cook') out.add(back ? ahead : behind);
+  if (def.aura === 'cook' || def.aura === 'tower') out.add(back ? ahead : behind);
+  if (def.aura === 'roast') adjacent.forEach((o) => out.add(o));
   return [...out];
 }

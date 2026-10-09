@@ -68,6 +68,8 @@ interface BattleUnit {
   rallied: number;
   /** Sweet x8 already saved it once this battle. */
   rushed: boolean;
+  /** A Chicken Tender Tower already brought it back once this battle. */
+  towered: boolean;
 }
 
 export interface UnitView {
@@ -241,7 +243,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false,
+      burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false, towered: false,
     };
   }
 
@@ -784,10 +786,25 @@ class Battle {
         this.mark(u, 'heal', 1);
       }
       if (rushed.length > 0) this.snap(`Sugar rush! ${rushed.map((u) => this.name(u)).join(', ')} ${rushed.length > 1 ? 'hang' : 'hangs'} on at 1 HP`);
+      // Chicken Tender Tower: the friend in its lane (every friend, once cooked) is back once, with part of its HP.
+      const towered: BattleUnit[] = [];
+      for (const u of dead) {
+        if (u.hp > 0 || u.lives > 0 || u.token || u.towered) continue;
+        const tower = this.units(u.side).find((g) => g !== u && g.hp > 0 && unitDef(g.defId).aura === 'tower' && (g.level === 3 || laneOf(g.slot) === laneOf(u.slot)));
+        if (!tower) continue;
+        u.towered = true;
+        u.hp = Math.max(1, Math.floor((u.startHp * this.levelValue(tower)) / 100));
+        u.burn = 0;
+        u.rot = 0;
+        this.mark(u, 'heal', u.hp);
+        this.mark(tower, 'ability');
+        towered.push(u);
+      }
+      if (towered.length > 0) this.snap(`The Tender Tower stacks ${towered.map((u) => this.name(u)).join(', ')} back up!`);
       dead = dead.filter((u) => u.lives === 0 && u.hp <= 0);
       if (dead.length === 0) {
         this.waiting = []; // nobody was eaten after all, so no room was made
-        if (revived.length > 0) continue;
+        if (revived.length > 0 || towered.length > 0) continue;
         return;
       }
       for (const u of dead) {

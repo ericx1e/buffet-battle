@@ -50,7 +50,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 - **Interest:** the tip jar is a measuring jar: coins fill it to your gold, and the lines on its side (+1 at 5, +2 at 10, +3 at 15) light up as you reach them. That is your interest tomorrow. Mandarin adds lines; Fortune Cookie and Caviar turn interest into stats.
 - **Sound:** marimba, glockenspiel, woodblock, bongo and bubbly-pop effects in the style of Super Auto Pets (CC0; see `src/ui/sfx/CREDITS.md`). Music is sequenced live from the same instruments (`src/ui/music.ts`): Prep Time in the kitchen, Boss Plate in battles. The gear button (top bar, and next to the battle speed) opens settings: music and effects volumes, each with an on/off switch, and mute all. `m` mutes everything; iPhones also follow the silent switch.
 - **Hover** anything for a tooltip; keywords like Burn, Rot and Crust are explained at the bottom.
-- **Mythics:** rarely (the special cubby from day 8 on 7% of days, a 0.5% chance per buffet slot from day 6, for 10 gold) one of four mythics turns up. Each copy is a whole level, so 3 cook one. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and HP gains for every friend, Black Garlic doubles Burn and Rot in its lane and the lanes beside it.
+- **Mythics:** rarely (the special cubby from day 8 on 7% of days, a 0.5% chance per buffet slot from day 6, for 10 gold) one of six mythics turns up. Each copy is a whole level, so 3 cook one. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and HP gains for every friend, Black Garlic doubles Burn and Rot in its lane and the lanes beside it, Sweet Potato doubles its neighbours' kitchen growth, and Chicken Tender Tower brings the friend in its lane back once.
 - **Cooking:** 6 copies cook a food (level 3): new name and art, and its cooked bonus switches on. The bonus is small on common foods and plate-wide on exotics and mythics; the chip in the cookbook shows it.
 - **Rarity:** every food and item has one, shown as a gem: common, uncommon, rare, epic, legendary and exotic unlock in the buffet day by day; mythics come through the special cubby, or very rarely the buffet.
 - **Phones:** play in landscape. Drag with a finger, tap for tooltips, hold a food in battle to read it.
@@ -63,7 +63,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 | --- | --- |
 | `src/sim/battle.ts` | Deterministic last-food-standing lane battle; outputs frames for playback |
 | `src/sim/run.ts` | Run state: market, economy (income, interest, prices), merging/cooking, fridge, special cubby and counter tray, items, kitchen triggers, serve |
-| `src/sim/data.ts` | 78 foods (4 mythic), 6 tokens, 16 items. **Design foods here**: stats and abilities as data (guide: "Designing foods" in DESIGN.md) |
+| `src/sim/data.ts` | 80 foods (6 mythic), 6 tokens, 16 items. **Design foods here**: stats and abilities as data (guide: "Designing foods" in DESIGN.md) |
 | `src/sim/bot.ts` | Heuristic bot player and ghost generator |
 | `src/sim/actions.ts` | The day's action log: every kitchen change as an action, replayable from the morning's state |
 | `server/` | The API: Cloudflare Worker, D1 schema in `migrations/` |

@@ -678,9 +678,10 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         const a = amount * (ab.attack ?? 1);
         const h = amount * (ab.hp ?? 1);
         for (const t of targets) {
-          t.attack += a;
-          t.hp += h;
-          run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name });
+          const m = roastedBy(run, t);
+          t.attack += a * m;
+          t.hp += h * m;
+          run.growth.push({ uid: t.uid, attack: a * m, hp: h * m, from: t === unit ? undefined : unit.uid, source: def.name });
           if (h > 0) afterHpGain(run, t, parts);
         }
         grew();
@@ -699,6 +700,19 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
     });
   }
   return parts.join(', ');
+}
+
+/** Sweet Potato: how many times over a food on the plate grows from kitchen abilities (1 when none reaches it). */
+function roastedBy(run: RunState, t: UnitInstance): number {
+  const at = run.plate.indexOf(t);
+  if (at < 0) return 1;
+  let m = 1;
+  run.plate.forEach((sp, i) => {
+    if (!sp || sp === t || unitDef(sp.defId).aura !== 'roast') return;
+    const level = levelOf(sp.copies);
+    if (level === 3 || isAdjacent(i, at)) m = Math.max(m, unitDef(sp.defId).values[level - 1]);
+  });
+  return m;
 }
 
 /** How many extra times a food's abilities go off: a Bento Box behind a front-row food echoes it (its level number). */

@@ -680,6 +680,27 @@ describe('round 5 rules', () => {
     expect(lost('toothpick')).toBe((lost() ?? 0) + 1);
   });
 
+  it('Sweet Potato: neighbours grow x2 from kitchen abilities (others as usual); cooked, every friend x3', () => {
+    const grow = (potatoSlot: number, copies = 1) => {
+      const run = newRun(3);
+      run.plate[0] = unit('breadDough'); // +3 HP a day
+      run.plate[potatoSlot] = unit('sweetPotato', { copies });
+      endDay(run);
+      return run.plate[0]!.hp - unitDef('breadDough').hp;
+    };
+    expect(grow(1)).toBe(6); // adjacent
+    expect(grow(2)).toBe(3); // not adjacent
+    expect(grow(2, 6)).toBe(9); // cooked reaches every friend, x3
+  });
+
+  it('Chicken Tender Tower: the friend in its lane comes back once with half its HP (level 1)', () => {
+    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 10 }), 3: unit('chickenTenderTower', { hp: 99 }) }), plate({ 0: unit('cheese', { attack: 30, hp: 200 }) }), 1);
+    const back = r.frames.findIndex((f) => f.text.includes('Tender Tower stacks Cheese back up'));
+    expect(back).toBeGreaterThan(0);
+    expect(r.frames[back].plates[0][0]?.hp).toBe(5);
+    expect(r.frames.filter((f) => f.text.includes('stacks Cheese back up')).length).toBe(1); // only once
+  });
+
   it('Bento Box does nothing for a friend ahead that only attacks (a pattern, no abilities)', () => {
     const dealt = (behind: string) => {
       const r = simulateBattle(plate({ 0: unit('kebab', { hp: 99 }), 3: unit(behind) }), plate({ 0: unit('cheese', { hp: 200, attack: 1 }) }), 1);
