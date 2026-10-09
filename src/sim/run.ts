@@ -770,7 +770,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       break;
     case 'oliveOil':
       unit!.hp += 1;
-      unit!.sellBonus = (unit!.sellBonus ?? 0) + 3;
+      unit!.sellBonus = (unit!.sellBonus ?? 0) + 2;
       run.growth.push({ uid: unit!.uid, attack: 0, hp: 1, sell: 3, source: def.name });
       afterHpGain(run, unit!);
       break;

@@ -331,7 +331,7 @@ Merging copies levels a food up, and reaching level 3 cooks it: the food gets a 
 - Each merge gives the merged food +1/+1 permanently and keeps the higher attack and higher HP of the two. Gained flavors, sell value and growth caps carry over.
 - Level-ups (2 and 3) drop one bonus food from the next tier into the market (see Market) and fire `levelUp` abilities (Tofu).
 - A cooked food can't merge further. Extra copies can only be sold.
-- **Cooked bonus:** every food has one (`cooked` in data.ts), a second ability that switches on only at level 3. It gets much stronger with tier: a small extra at tier 1 (Chili: hit, the attacker Burns 2), something for the neighbours at tier 3-4, the whole plate at tier 6 and for mythics (Bento: your friends +3/+3; Hot Pot: all enemies Burn 4). Its numbers are fixed. `npx tsx tools/cooked-check.ts` measures each one: late-game plates with the food cooked, with and without its bonus. On average the bonus adds about 3 points of win rate at tier 1, 7 at tier 2, 10 at tiers 3-4, 20 at tier 5 and 27 at tier 6 (kitchen bonuses like gold read 0 there).
+- **Cooked bonus:** every food has one (`cooked` in data.ts), a second ability that switches on only at level 3. It gets much stronger with tier: a small extra at tier 1 (Chili: hit, the attacker Burns 2), something for the neighbours at tier 3-4, the whole plate at tier 6 and for mythics (Bento: your friends +3/+3; Hot Pot: all enemies Burn 4). Its numbers are fixed. **A cooked bonus feeds the food's own build** (Steak, a summon payoff, gives each summoned friend 5 Crust; Gravy makes it attack twice at once; Croutons give Crusted friends more Crust): only a few should be a generic "friends gain stats" or "enemies get a status". `npx tsx tools/cooked-check.ts` measures each one: late-game plates with the food cooked, with and without its bonus. On average the bonus adds about 3 points of win rate at tier 1, 7 at tier 2, 10 at tiers 3-4, 20 at tier 5 and 27 at tier 6 (kitchen bonuses like gold read 0 there).
 - The cookbook shows the bonus as a chip under the stats (lit once cooked; its tooltip has the text). The battle hold card lists it for cooked foods, and in battle it names itself ("Cooked!" in orange, with embers) when it goes off.
 - **Level 3 payoffs** reward rolling for copies: Golden Truffle cooks the friend in its lane for each battle.
 
@@ -522,7 +522,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Jerky | Salty | 3/7 | 3 | End of day: the friend ahead gains +1/2/3 attack. | **Smoked Brisket**: End of day: adjacent friends gain +1 attack. |
 | 2 | Croutons | Salty | 3/7 | 3 | Every 2 turns: friends with Crust gain +1/2/3 attack. | **Garlic Croutons**: Every 2 turns: friends with Crust gain 2 more Crust. |
 | 3 | Cherries | Sweet | 4/8 | 4 | Friend eaten: lobs a pit at a random back-row enemy for 2/3/4. | **Cherry Pie**: Friend eaten: lobs a second pit for 2. |
-| 3 | Gravy | Savory | 5/12 | 4 | Friend summoned: it gains +3/4/5 attack. | **Giblet Gravy**: Friend summoned: it gains 3 Crust. |
+| 3 | Gravy | Savory | 5/12 | 4 | Friend summoned: it gains +3/4/5 attack. | **Giblet Gravy**: Friend summoned: it attacks twice on its first attack. |
 | 3 | Cheese | Savory | 2/4 | 4 | Ages: end of day, +1/2/3 HP, +1 more next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
 | 3 | Wasabi | Spicy | 5/9 | 4 | First attack deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
 | 3 | Honey | Sweet | 4/9 | 4 | Start of battle: adjacent friends gain +1/+1, +2/+2 or +3/+3, double if Spicy. | **Honeycomb**: Every 2 turns: adjacent friends gain +1/+1. |
@@ -555,14 +555,14 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 4 | Lime | Sour | 5/9 | 4 | Rich: counts as 2/3/4 Sour foods for flavors. | **Key Lime Pie**: Start of battle: the enemy across Rots 2. |
 | 4 | Rice Ball | Salty | 4/11 | 4 | Rich: counts as 2/3/4 Salty foods for flavors. | **Yaki Onigiri**: Start of battle: adjacent friends gain 3 Crust. |
 | 4 | Miso | Savory | 4/11 | 4 | Rich: counts as 2/3/4 Savory foods for flavors. | **Miso Soup**: Start of battle: adjacent friends gain +1/+2. |
-| 5 | Steak | Savory | 7/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Start of battle: adjacent friends gain +3/+3. |
+| 5 | Steak | Savory | 7/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Friend summoned: it gains 5 Crust. |
 | 5 | Ghost Pepper | Spicy | 6/12 | 5 | Attacks: the target Burns 2/3/4, then its Burn doubles. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 6/10 | 5 | Hit: your friends gain +1/+1, +2/+2 or +3/+3. | **Pina Colada**: Every turn: your friends gain +1/+1. |
 | 5 | Durian | Sour | 5/10 | 5 | Hit: the enemy front row Rots 1/2/3. | **Durian Crepe**: Start of battle: all enemies Rot 1. |
 | 5 | Caviar | Salty | 5/10 | 5 | Interest cap +1. Start of day: a random friend per gold of interest earned gains +1/+1, +2/+2 or +3/+3. | **Blini Platter**: End of day: +3 gold tomorrow. |
-| 5 | Spaghetti | Savory | 6/12 | 5 | Escalating attack: its 1st attack hits one enemy, its 2nd the front row, then every enemy. Extra targets take 50/75/100%. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
-| 5 | Takoyaki | Savory | 5/14 | 5 | Every turn, from any row, instead of attacking: throws 1/2/3 balls at random enemies for its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
-| 6 | Pizza | Savory | 5/11 | 5 | Start of battle: your friends gain +1/2/3 HP per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1 attack per flavor on your plate. |
+| 5 | Spaghetti | Savory | 5/12 | 5 | Escalating attack: its 1st attack hits one enemy, its 2nd the front row, then every enemy. Extra targets take 50/75/100%. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
+| 5 | Takoyaki | Savory | 5/12 | 5 | Every turn, from any row, instead of attacking: throws 1/2/3 balls at random enemies for its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
+| 6 | Pizza | Savory | 5/11 | 5 | Start of battle: your friends gain +1/1, 2/2 or 3/3 per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1 attack per flavor on your plate. |
 | 6 | Hot Pot | Spicy | 5/10 | 5 | Simmers: every turn, all enemies Burn 1/2/3. | **Mala Hot Pot**: Start of battle: all enemies Burn 4. |
 | 6 | Birthday Cake | Sweet | 5/12 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
 | 6 | Kimchi | Sour + Spicy | 4/8 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
