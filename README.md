@@ -50,9 +50,9 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 - **Interest:** the tip jar is a measuring jar: coins fill it to your gold, and the lines on its side (+1 at 5, +2 at 10, +3 at 15) light up as you reach them. That is your interest tomorrow. Mandarin adds lines; Fortune Cookie and Caviar turn interest into stats.
 - **Sound:** marimba, glockenspiel, woodblock, bongo and bubbly-pop effects in the style of Super Auto Pets (CC0; see `src/ui/sfx/CREDITS.md`). The speaker button (top bar, and next to the battle speed) or `m` mutes them; iPhones also follow the silent switch.
 - **Hover** anything for a tooltip; keywords like Burn, Rot and Crust are explained at the bottom.
-- **Mythics:** rarely (from day 10, at most once a run, for 10 gold) the special cubby delivers one of four mythics. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and HP gains for every friend, Black Garlic doubles Burn and Rot in its lane.
+- **Mythics:** rarely (the special cubby from day 8, a 1% chance per buffet slot from day 6, for 10 gold) one of four mythics turns up. Each copy is a whole level, so 3 cook one. Each bends a rule, and where you put it matters: Golden Truffle cooks its lane partner, Saffron doubles its neighbours' flavor counts, Wagyu doubles Crust and HP gains for every friend, Black Garlic doubles Burn and Rot in its lane.
 - **Cooking:** 6 copies cook a food (level 3): new name and art, and its cooked bonus switches on. The bonus is small on common foods and plate-wide on exotics and mythics; the chip in the cookbook shows it.
-- **Rarity:** every food and item has one, shown as a gem: common, uncommon, rare, epic, legendary and exotic unlock in the buffet day by day; mythics only come through the special cubby.
+- **Rarity:** every food and item has one, shown as a gem: common, uncommon, rare, epic, legendary and exotic unlock in the buffet day by day; mythics come through the special cubby, or very rarely the buffet.
 - **Phones:** play in landscape. Drag with a finger, tap for tooltips, hold a food in battle to read it.
 - **Lives:** you start with 5; from day 3 every lost battle costs one.
 - **Pixel art:** drop 32x32 PNGs into `art/` to replace a generated sprite (see [art/README.md](art/README.md)).

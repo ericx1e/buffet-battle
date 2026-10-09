@@ -9,12 +9,12 @@
 import { STAGES, battleLift, stageOf } from '../src/analysis/lift';
 import { simulateBattle } from '../src/sim/battle';
 import { botPrep, generateGhost } from '../src/sim/bot';
-import { MARKET_UNITS, unitDef } from '../src/sim/data';
+import { MARKET_UNITS, MYTHIC_UNITS, unitDef } from '../src/sim/data';
 import { finishBattle, isOver, newRun, nextSeed, serve } from '../src/sim/run';
 
 const runs = Number(process.argv[2] ?? 300);
 /** Per food, per stage: battles and the summed lift. */
-const lift = new Map<string, { n: number[]; sum: number[] }>(MARKET_UNITS.map((u) => [u.id, { n: [0, 0, 0], sum: [0, 0, 0] }]));
+const lift = new Map<string, { n: number[]; sum: number[] }>([...MARKET_UNITS, ...MYTHIC_UNITS].map((u) => [u.id, { n: [0, 0, 0], sum: [0, 0, 0] }]));
 
 for (let i = 0; i < runs; i++) {
   const run = newRun(1000 + i);

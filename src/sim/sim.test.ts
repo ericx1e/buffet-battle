@@ -23,7 +23,7 @@ import {
   serveBlocker,
   useItem,
 } from './run';
-import type { Plate, UnitInstance } from './types';
+import { type Plate, type UnitInstance, levelOf } from './types';
 
 let uid = 1;
 function unit(defId: string, overrides: Partial<UnitInstance> = {}): UnitInstance {
@@ -634,6 +634,40 @@ describe('round 5 rules', () => {
     const r = simulateBattle(plate({ 3: unit('hotPot', { hp: 90 }), 0: unit('cheese', { attack: 1, hp: 90 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }), 1: unit('cheese', { attack: 1, hp: 90 }) }), 1);
     const burns = r.frames.filter((f) => f.text.startsWith('Hot Pot:'));
     expect(burns.length).toBeGreaterThan(2);
+  });
+
+  it('a mythic copy is a whole level: two make level 2, three are cooked; it sells by mythics in it', () => {
+    const run = newRun(5);
+    run.gold = 100;
+    run.plate[0] = unit('wagyu');
+    const buyCopy = () => {
+      run.market[0] = { kind: 'unit', defId: 'wagyu' };
+      return buyUnit(run, { area: 'market', index: 0 }, { area: 'plate', index: 0 });
+    };
+    expect(buyCopy().ok).toBe(true);
+    expect(levelOf(run.plate[0]!.copies)).toBe(2);
+    expect(sellPrice(run.plate[0]!)).toBe(10); // two mythics at 10, half back
+    expect(buyCopy().ok).toBe(true);
+    expect(run.plate[0]!.copies).toBe(6);
+    expect(levelOf(run.plate[0]!.copies)).toBe(3);
+    expect(sellPrice(run.plate[0]!)).toBe(15);
+  });
+
+  it('mythics now and then show up on the buffet from day 6, never before', () => {
+    let early = 0;
+    let late = 0;
+    for (let seed = 0; seed < 400; seed++) {
+      const run = newRun(seed);
+      for (let day = 1; day <= 9; day++) {
+        const mythics = run.market.filter((o) => o?.kind === 'unit' && rarityOf(unitDef(o.defId)) === 'mythic').length;
+        if (day < 6) early += mythics;
+        else late += mythics;
+        finishBattle(run, 'win');
+      }
+    }
+    expect(early).toBe(0);
+    expect(late).toBeGreaterThan(0);
+    expect(late).toBeLessThan(400 * 4 * 6 * 0.03); // about 1% of slots
   });
 
   it('a mythic in the special cubby is bought straight onto the plate', () => {

@@ -1483,7 +1483,7 @@ function cookedChip(defId: string, level: 1 | 2 | 3): string {
   const d = unitDef(defId);
   if (!d.cooked) return '';
   const on = level === 3;
-  const body = `<p>${foodText(d.cooked.text, 0)}</p><p class="dim">${on ? `On: ${d.name} is cooked into ${d.cookedName}.` : 'Switches on at level 3, when 6 copies cook it.'}</p>`;
+  const body = `<p>${foodText(d.cooked.text, 0)}</p><p class="dim">${on ? `On: ${d.name} is cooked into ${d.cookedName}.` : (rarityOf(d) === 'mythic' ? 'Switches on at level 3. A mythic is rarer: each copy is a whole level, so 3 copies cook it.' : 'Switches on at level 3, when 6 copies cook it.')}</p>`;
   return `<p class="cook-chip ${on ? 'on' : ''}" ${tipBox(`${pix('flame')} Cooked bonus`, body)}>${pix(on ? 'flame' : 'flameOff')}<span>${on ? 'cooked bonus' : 'cooked bonus'}</span></p>`;
 }
 

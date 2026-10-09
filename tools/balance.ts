@@ -1,12 +1,12 @@
 // Bot-vs-bot balance report. Usage: npm run balance -- [runs]
 import { simulateBattle } from '../src/sim/battle';
 import { botPrep, generateGhost } from '../src/sim/bot';
-import { MARKET_UNITS, flavorsOf, unitDef } from '../src/sim/data';
+import { MARKET_UNITS, MYTHIC_UNITS, flavorsOf, unitDef } from '../src/sim/data';
 import { COURSES_TO_WIN, finishBattle, isOver, newRun, nextSeed, serve } from '../src/sim/run';
 import { FLAVORS, type Flavor } from '../src/sim/types';
 
 const runs = Number(process.argv[2] ?? 300);
-const unitStats = new Map<string, { battles: number; wins: number }>(MARKET_UNITS.map((u) => [u.id, { battles: 0, wins: 0 }]));
+const unitStats = new Map<string, { battles: number; wins: number }>([...MARKET_UNITS, ...MYTHIC_UNITS].map((u) => [u.id, { battles: 0, wins: 0 }]));
 const flavorWins = new Map<Flavor, number>(FLAVORS.map((f) => [f, 0]));
 let battles = 0;
 let draws = 0;

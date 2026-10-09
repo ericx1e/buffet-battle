@@ -105,7 +105,7 @@ The last teal cubby holds one special offer each day. Refilling doesn't change i
 An open Spice Pack or Farm Box can be skipped (the button under it) when nothing in it is worth keeping or there is no room for it; the gold is spent.
 | Pair | Any day | About 1.5x one food's price (3→5, 4→6, 5→8) | 2 copies of one unlocked food, delivered to the counter tray |
 | Premium Refill | Day 3+ | 3 | Refills the market with only next-tier foods (drag onto the refill sign or the tray) |
-| Mythic Delivery | Day 10+, 10% of days, at most once a run | 10 | One mythic food, dragged straight onto the plate |
+| Mythic Delivery | Day 8+, 10% of days | 10 | One mythic food, dragged straight onto the plate (half the time one you already own, if any) |
 
 ### Counter tray (overflow)
 
@@ -355,7 +355,7 @@ Every food is one entry in `UNITS` in `src/sim/data.ts`. Its abilities are built
 - Art: drop `art/units/<id>.png` (32x32), or add a drawing to `tools/gen-foods.mjs`. Without art a covered dish is shown. The `emoji` field is only a label for the data file and is never shown in the game.
 ### Mythics
 
-Mythics are rare: a Mythic Delivery can show up from day 10, on 10% of days, and only once in a run, for 10 gold. Most runs never see one. Each bends one rule of the game, and where it sits decides who it reaches, so placing it is the decision. Together they cover every flavor tree. None has numbers to track beyond one opening effect, and cooking one (rare: 6 copies) makes its rule reach further.
+Mythics are rare: a Mythic Delivery can show up from day 8, on 10% of days, and from day 6 each buffet slot has a 1% chance of holding one, for 10 gold. Half the time an offer is a mythic you already own, so it can level up. Each bends one rule of the game, and where it sits decides who it reaches, so placing it is the decision. Together they cover every flavor tree. None has numbers to track beyond one opening effect, and cooking one makes its rule reach further. A mythic copy is a whole level: two make level 2 and three cook it (a Microwave still adds one copy), and it sells for half the mythics merged into it.
 
 | Mythic | Flavor | The rule | Where it wants to be | Cooked |
 | --- | --- | --- | --- | --- |
@@ -488,7 +488,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 
 ## Unit roster
 
-62 foods in the market across 6 tiers, plus 4 mythics that only arrive through the special cubby. Numbers are a first pass for the simulator to test (`npm run balance`). Generated from `src/sim/data.ts`.
+62 foods in the market across 6 tiers, plus 4 mythics that arrive through the special cubby or, rarely, the buffet. Numbers are a first pass for the simulator to test (`npm run balance`). Generated from `src/sim/data.ts`.
 
 | Tier | Food | Flavor | Stats | Cost | Ability (level 1/2/3) | Cooked (level 3) and its bonus |
 | --- | --- | --- | --- | --- | --- | --- |

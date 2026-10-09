@@ -1,5 +1,5 @@
 import type { Outcome } from './battle';
-import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorsOf, itemDef, unitCost, unitDef } from './data';
+import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
 import { Rng } from './rng';
 import {
   FLAVORS,
@@ -87,7 +87,7 @@ export interface RunState {
   freeRerolls: number;
   /** Kitchen reactions used today (Hot Cocoa's 3 a day), by "uid:ability". */
   dayFires?: Record<string, number>;
-  /** A mythic has been offered this run (only ever one). */
+  /** No longer used (mythics were once offered at most once a run); kept so old saves still load. */
   mythicOffered?: boolean;
   /** Foods bought for the rest of this turn get +n/+n. */
   buyBonus: number;
@@ -261,6 +261,11 @@ function rollMarket(run: RunState, premium = false) {
     };
     const market: (Offer | null)[] = [];
     for (let i = 0; i < unitSlots; i++) {
+      // Now and then a mythic wanders onto the buffet (see MYTHIC_MARKET_CHANCE).
+      if (run.turn >= MYTHIC_MARKET_DAY && rng.next() < MYTHIC_MARKET_CHANCE) {
+        market.push({ kind: 'unit', defId: pickMythic(run, rng) });
+        continue;
+      }
       const t = premium ? top : pickTier();
       market.push({ kind: 'unit', defId: rng.pick(units.filter((u) => u.tier === t)).id });
     }
@@ -274,14 +279,33 @@ function rollMarket(run: RunState, premium = false) {
   });
 }
 
+/** From this day, each buffet slot has a small chance of holding a mythic. */
+export const MYTHIC_MARKET_DAY = 6;
+export const MYTHIC_MARKET_CHANCE = 0.01;
+/** From this day, the special cubby offers a mythic on this share of days. */
+export const MYTHIC_SPECIAL_DAY = 8;
+export const MYTHIC_SPECIAL_CHANCE = 0.1;
+
+/** Mythics you own (plate, fridge, tray), so another copy of one can be offered: a mythic cooks at 3 copies. */
+function ownedMythics(run: RunState): string[] {
+  const units = [...run.plate, ...run.overflow, ...run.fridge.map((e) => (e?.kind === 'unit' ? e.unit : null))];
+  return [...new Set(units.flatMap((u) => (u && rarityOf(unitDef(u.defId)) === 'mythic' ? [u.defId] : [])))];
+}
+
+/** A mythic to offer: half the time one you already own (if any), so it can level up; otherwise any. */
+function pickMythic(run: RunState, rng: Rng): string {
+  const owned = ownedMythics(run);
+  if (owned.length > 0 && rng.next() < 0.5) return rng.pick(owned);
+  return rng.pick(MYTHIC_UNITS).id;
+}
+
 /** Rolls the special cubby's offer for this turn. */
 function rollSpecial(run: RunState) {
   const { maxTier } = turnConfig(run.turn);
   run.special = withRng(run, (rng): SpecialOffer => {
-    // Mythics are rare: from day 10, a 10% chance a day, and only one is ever offered in a run.
-    if (run.turn >= 10 && !run.mythicOffered && rng.next() < 0.1) {
-      run.mythicOffered = true;
-      const def = rng.pick(MYTHIC_UNITS);
+    // Mythics are rare: from day 8, on 1 day in 10.
+    if (run.turn >= MYTHIC_SPECIAL_DAY && rng.next() < MYTHIC_SPECIAL_CHANCE) {
+      const def = unitDef(pickMythic(run, rng));
       return { kind: 'mythic', defId: def.id, cost: unitCost(def) };
     }
     const kinds: SpecialOffer['kind'][] = ['spicePack', 'bundle'];
@@ -398,15 +422,22 @@ function addBonusUnit(run: RunState): number | null {
   return at;
 }
 
+/** Copies that make each level: 1, 3 (level 2) and 6 (cooked). */
+const LEVEL_COPIES = [1, 3, 6];
+
 /**
  * Merges `incoming` into `target`: copies add up (two level 2s make a level 3), stats take the higher of each plus
- * 1/1, and gained flavors, sell value and growth carry over.
+ * 1/1, and gained flavors, sell value and growth carry over. Mythics are scarcer, so each mythic copy is a whole
+ * level: two make level 2 and three are cooked. (A Microwave still adds a single copy: `oneCopy`.)
  */
-function merge(run: RunState, target: UnitInstance, incoming: UnitInstance): ActionResult {
+function merge(run: RunState, target: UnitInstance, incoming: UnitInstance, oneCopy = false): ActionResult {
   if (target.defId !== incoming.defId) return fail('Only copies of the same food can merge.');
   if (target.copies >= 6) return fail('Already cooked: it cannot merge further.');
   const before = levelOf(target.copies);
-  target.copies = Math.min(6, target.copies + incoming.copies);
+  if (!oneCopy && rarityOf(unitDef(target.defId)) === 'mythic') {
+    const level = Math.min(3, before + levelOf(incoming.copies));
+    target.copies = Math.max(LEVEL_COPIES[level - 1], Math.min(6, target.copies + incoming.copies));
+  } else target.copies = Math.min(6, target.copies + incoming.copies);
   target.attack = Math.max(target.attack, incoming.attack) + 1;
   target.hp = Math.max(target.hp, incoming.hp) + 1;
   afterHpGain(run, target);
@@ -654,7 +685,9 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
 
 /** Gold for selling a food: half what its copies cost (rounded down, at least 1), plus sell value it gained. */
 export function sellPrice(u: UnitInstance): number {
-  return Math.max(1, Math.floor((unitCost(unitDef(u.defId)) * u.copies) / 2)) + (u.sellBonus ?? 0);
+  // A mythic's copies count by level (each mythic copy is a whole level), so it sells for half the mythics in it.
+  const copies = rarityOf(unitDef(u.defId)) === 'mythic' ? levelOf(u.copies) : u.copies;
+  return Math.max(1, Math.floor((unitCost(unitDef(u.defId)) * copies) / 2)) + (u.sellBonus ?? 0);
 }
 
 export function sellUnit(run: RunState, loc: Loc): ActionResult {
@@ -735,7 +768,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       takeOffer(run, src);
       taken = true;
       const copy: UnitInstance = { ...unit!, copies: 1, sellBonus: undefined, extraFlavors: undefined, gains: undefined };
-      result = merge(run, unit!, copy);
+      result = merge(run, unit!, copy, true);
       break;
     }
     case 'sprinkles':
