@@ -776,7 +776,7 @@ Bot opponents are labelled as bots in battle, so a loss to one doesn't read as a
 | `POST /runs/:id/abandon` | The New run button |
 | `GET /runs/:id/battles` | The run's battle history: opponent, seed, outcome |
 
-Limits: requests over 64 KB or with more than 500 actions in a day are refused; there are 60 requests a minute per player and 10 new players an hour per IP. Every body is checked against its expected shape before use. The size limit is built; the rate limits come with the deploy step (Cloudflare's rate limiting binding).
+Limits: requests over 64 KB or with more than 500 actions in a day are refused; there are 60 requests a minute per player and 10 new players an hour per IP. Every body is checked against its expected shape before use. All built. Cloudflare's rate limiter counts per minute, so new players are limited to 3 a minute per address.
 
 ### Offline and local play
 
@@ -792,7 +792,8 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
   - a second job applies the D1 migrations and deploys the Worker with `wrangler deploy`.
 - **Setup by the owner, once:** a Cloudflare account, a D1 database, and an API token saved as the `CLOUDFLARE_API_TOKEN` repository secret.
   - Done October 2026: the account, the workers.dev subdomain `ericxie6` (the API will be `buffet-battle-api.ericxie6.workers.dev`) and the D1 database `buffet-battle` (id `178d21f5-dced-4968-a7a3-966b73eefc3f`).
-  - Still to do at deploy: the API token and the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets.
+  - The API token (Edit Cloudflare Workers template plus D1 Edit) is saved as the `CLOUDFLARE_API_TOKEN` repository secret, with `CLOUDFLARE_ACCOUNT_ID`.
+  - The workflow (`.github/workflows/pages.yml`) deploys the API first, applies migrations, and checks the API reports this commit's version before the game is built against it.
   - Deploys go through GitHub Actions rather than Cloudflare's own Git connection, so a push only deploys after the tests pass.
 - CORS allows only the Pages origin and localhost.
 
@@ -805,7 +806,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
    - tests with the Workers Vitest pool.
 3. **Serve, done:** replay, ghost save, matchmaking, battle, state update, tests (including a tampered log being rejected).
 4. **Client, done:** an API client (`src/ui/api.ts`), the chef-name prompt, Serve through the API, resync, local fallback.
-5. **Deploy:** Actions job, Cloudflare setup, `VITE_API_URL`.
+5. **Deploy, done (October 2026):** Actions job, Cloudflare setup, `VITE_API_URL`. Live at https://buffet-battle-api.ericxie6.workers.dev.
 6. **Later:**
    - a leaderboard (runs won, best streak);
    - a real-play balance report (win rate and lift by food and day from `battles`);
