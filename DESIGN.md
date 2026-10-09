@@ -631,49 +631,183 @@ Items are cheap (1 to 5 gold) and each one is a real swing: a Butter is a level'
 - **Growth:** permanent gains play out in the kitchen at the moment they happen, as a small visual only: the food glows and hops, its stat badges pop, a few sparkles fly, and a dotted line runs from the food that caused it. End of day growth plays when the bell rings, before the plate goes out; start of day growth plays on returning to the kitchen. The toast lists what grew.
 - **Tooltips:** hovering anything explained (flavor lines and jars, interest, lives, held items, rarity gems, props) opens a pixel text box. Cards and tooltips end with short notes on any keyword they mention (Burn, Rot, Chill, Crust, pierce, interest...), and keywords in the cookbook can be hovered on their own.
 
-## Async multiplayer
+## Async multiplayer and the backend
 
-Players never fight live: every battle is against a ghost, a saved snapshot of another player's plate from the same day. This removes waiting, lets runs pause between days, and needs only a simple server.
+Players never fight live: every battle is against a ghost, a saved snapshot of another player's plate from the same day. This removes waiting, lets runs pause between days, and needs only a small server.
 
-### Ghost snapshots
+Today the prototype keeps ghosts in the browser's `localStorage`. The plan below moves runs, ghosts and battles to a server, decided October 2026: **Cloudflare Workers + D1**, **anonymous players first**, and **each day replayed on the server**.
 
-On Serve, the client sends the plate to the server, which stores it as a ghost.
+### Shape
 
-| Field | Purpose |
-| --- | --- |
-| ghost\_id | Unique id |
-| player\_id | Owner; used to avoid matching players against themselves |
-| day | Day number the plate was served on |
-| courses, lives | Run record at the time of serving |
-| rating | Optional skill rating for ranked mode |
-| plate | 6 slots: unit id, level, attack, HP, held item, flavor, permanent buffs |
-| created\_at | For pruning and freshness |
+- **Client:** the game as it is, still on GitHub Pages. The kitchen keeps running locally, with no round trip per click.
+- **API:** one Cloudflare Worker (`server/` in this repo), in TypeScript. It imports `src/sim` directly, so the server runs the very same code as the client.
+- **Database:** Cloudflare D1 (SQLite), bound to the Worker.
+- **Cost:** a battle simulates in about 0.5 ms and a bot opponent is generated in under 1 ms, so a Serve fits the free plan's 10 ms CPU limit.
+- **Size:** a battle's frames are about 73 KB, so the server never sends them. It sends the seed, and the client simulates the battle itself to play it back.
+
+### Players (anonymous)
+
+- On first visit the client calls `POST /players` with a chef name (1 to 16 characters, filtered).
+- It gets back a random `playerId` and a secret `token`, kept in `localStorage`. The server stores only a SHA-256 hash of the token.
+- Every request carries `Authorization: Bearer <token>`.
+- Clearing site data loses the player; linking a login (Google, email) to carry runs across devices comes later.
+
+### A day, end to end
+
+1. **New run:** `POST /runs`. The server picks the seed, runs `newRun(seed)`, stores the state and returns it.
+2. **Kitchen:** the client plays the day locally. Every change to the run goes through one `dispatch(action)` that calls the matching `run.ts` function and appends the action to the day's log:
+
+   | Action | `run.ts` call |
+   | --- | --- |
+   | buy | `buyUnit` |
+   | move | `moveUnit` |
+   | sell | `sellUnit` |
+   | refill | `reroll` |
+   | item | `useItem`, with the flavor for Seasoning Blend |
+   | special | `buySpecial` |
+   | pick | `pickPack` |
+
+   The log is saved in `localStorage` with the run, so a refresh keeps the day.
+3. **Serve:** `POST /runs/:id/serve` with `{ day, version, actions, plateHash }`. The server:
+   1. loads the stored state and checks the day and the version match;
+   2. replays the actions with the same `run.ts`, rejecting the day if any action fails or if `serveBlocker` refuses;
+   3. runs `serve()` and checks the plate's hash against the client's;
+   4. saves the plate as a ghost;
+   5. picks an opponent (see Matchmaking) and draws the battle seed from the run's RNG, as the client does today;
+   6. simulates the battle, applies `finishBattle` and stores the new state;
+   7. returns `{ opponent: { plate, label, wins, lives }, seed, outcome, state }`.
+4. **Playback:** the client simulates the same battle from the plates and the seed, and checks it gets the same outcome. A mismatch is a bug: the server's result stands and the client reports it.
+5. **Resync:** if the server rejects a day, the client reloads the server's state from the start of the day (`GET /runs/current`) and tells the player.
+
+The run's RNG lives in its state, so a client could predict its own refills. That is acceptable for an async game: hiding them would cost a server call per refill.
+
+### Database (D1)
+
+```sql
+CREATE TABLE players (
+  id TEXT PRIMARY KEY,               -- random, e.g. 16 bytes base64url
+  token_hash TEXT NOT NULL,
+  name TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_seen INTEGER NOT NULL
+);
+
+CREATE TABLE runs (
+  id TEXT PRIMARY KEY,
+  player_id TEXT NOT NULL REFERENCES players(id),
+  version TEXT NOT NULL,             -- game data version the run is on
+  seed INTEGER NOT NULL,
+  day INTEGER NOT NULL,
+  wins INTEGER NOT NULL,
+  lives INTEGER NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'won', 'lost', 'abandoned')),
+  state TEXT NOT NULL,               -- RunState JSON at the start of the current day
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX runs_player ON runs (player_id, status);
+
+CREATE TABLE ghosts (
+  id INTEGER PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  player_id TEXT NOT NULL,
+  version TEXT NOT NULL,
+  day INTEGER NOT NULL,
+  wins INTEGER NOT NULL,             -- record when served
+  lives INTEGER NOT NULL,
+  plate TEXT NOT NULL,               -- Plate JSON (about 0.5 KB)
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX ghosts_match ON ghosts (version, day, wins, lives, created_at);
+
+CREATE TABLE battles (
+  id INTEGER PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES runs(id),
+  day INTEGER NOT NULL,
+  my_ghost_id INTEGER NOT NULL REFERENCES ghosts(id),
+  opp_ghost_id INTEGER REFERENCES ghosts(id), -- null when the opponent was a bot
+  bot_seed INTEGER,                  -- regenerates the bot plate
+  seed INTEGER NOT NULL,
+  outcome TEXT NOT NULL CHECK (outcome IN ('win', 'loss', 'draw')),
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX battles_run ON battles (run_id);
+```
+
+`battles` keeps both plates (through the ghosts) and the seed, so every real battle can be replayed later. That is how balance gets measured from real play: win rate by food and day, and the lift test (`tools/lift.ts`) run on real plates instead of bot plates.
 
 ### Matchmaking
 
-1. Filter ghosts to the same day number. This is a hard rule: a day-3 plate against a day-9 plate is meaningless.
-2. Prefer ghosts with a similar record (courses and lives within 1 to 2).
-3. Prefer recent ghosts (last 7 days) so matches reflect the current balance patch.
-4. Exclude the player's own ghosts and any opponent they fought in the last 3 days.
-5. If nothing qualifies, fall back to a bot plate for that day.
+1. Same version and same day: a hard rule.
+2. Not the player's own ghosts, and not an opponent already fought this run.
+3. Nearest record: the smallest `|wins - mine| + |lives - mine|`.
+4. Most recent first. From the best 20, pick one at random.
+5. Nothing qualifies, or a 50% coin flip while the pool is small: a bot. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today. Bot plates aren't stored; their seed is enough to rebuild them.
+
+**Pruning:** a daily scheduled run of the Worker keeps the newest 500 ghosts per (version, day), plus every ghost a stored battle points to.
+
+### Versions and patches
+
+- `GAME_VERSION` is a short hash of the food and item data, computed at build time. The client and the Worker are built from the same commit.
+- A Serve from a client on a different version is refused with "the game was updated": the client reloads and resyncs.
+- **Runs in progress carry on under the new rules:** `migrateRun` fills in new fields, and foods that were removed are dropped with a refund of their price.
+- Ghosts are matched only within their version. Right after a patch the pool is empty and bots fill in.
+
+### Endpoints
+
+| Method and path | Does |
+| --- | --- |
+| `POST /players` | New anonymous player: `{ name }` → `{ playerId, token }` |
+| `PATCH /players/me` | Rename |
+| `POST /runs` | New run (an active run is abandoned first) |
+| `GET /runs/current` | The active run's state at the start of its current day |
+| `POST /runs/:id/serve` | Replay the day, battle, advance (above) |
+| `POST /runs/:id/abandon` | The New run button |
+| `GET /runs/:id/battles` | The run's battle history: opponent, seed, outcome |
+
+Limits: requests over 64 KB or with more than 500 actions in a day are refused; there are 60 requests a minute per player and 10 new players an hour per IP. Every body is checked against its expected shape before use.
+
+### Offline and local play
+
+- With no API configured, or the API unreachable, the game falls back to today's local mode: runs and ghosts in `localStorage`, and bots.
+- `npm run dev` runs the client against `wrangler dev`, with a local D1.
+
+### Deploy
+
+- GitHub Actions: on a push to main, after the tests:
+  - Pages builds the client with `VITE_API_URL` set;
+  - a second job applies the D1 migrations and deploys the Worker with `wrangler deploy`.
+- **Setup by the owner, once:** a Cloudflare account, a D1 database, and an API token saved as the `CLOUDFLARE_API_TOKEN` repository secret.
+- CORS allows only the Pages origin and localhost.
+
+### Build order
+
+1. **Action log (client only):** route every kitchen change through `dispatch`. Test that replaying a day's log on the morning state rebuilds the same state and plate, for many bot-played days.
+2. **Worker skeleton:**
+   - `server/` with wrangler, the D1 schema as migration 0001;
+   - players and runs endpoints;
+   - tests with the Workers Vitest pool.
+3. **Serve:** replay, ghost save, matchmaking, battle, state update, tests (including a tampered log being rejected).
+4. **Client:** an API client, the chef-name prompt, Serve through the API, resync, local fallback.
+5. **Deploy:** Actions job, Cloudflare setup, `VITE_API_URL`.
+6. **Later:**
+   - a leaderboard (runs won, best streak);
+   - a real-play balance report (win rate and lift by food and day from `battles`);
+   - linking a login;
+   - seeding the pool with bot runs after a patch.
 
 ### Bots
 
-- At launch the ghost pool is empty, so bots fill it.
-- A bot plays Prep with simple heuristics: buy the highest tier affordable, merge copies, chase the most common flavor, put high-HP units in front.
-- A bot opponent's gold is adjusted by day (`ghostGold` in bot.ts): it spends everything and never plans, so on its own it is too strong early (a player may be saving for interest) and too weak late (a player's plate has grown and found its synergies). It gets 3 gold less on day 1 and 1 less on day 2, then 1 to 5 more a day from day 6. Against a plain bot it wins about 30% on days 1-4, about 50% on days 7-8 and 60-80% from day 10 (`npx tsx tools/ghostcheck.ts`). Balance reports use plain bots on both sides.
-- Bot plates are generated per day and stored as ordinary ghosts, flagged as bots.
+- Before the pool fills (at launch, and after every patch), bots fill in. A bot plays Prep with simple heuristics: buy the highest tier affordable, merge copies, put high-HP units in front.
+- A bot opponent's gold is adjusted by day (`ghostGold` in bot.ts). A bot spends everything and never plans, so on its own it is too strong early (a player may be saving for interest) and too weak late (a player's plate has grown and found its synergies).
+  - It gets 3 gold less on day 1 and 1 less on day 2, then 1 to 5 more a day from day 6.
+  - Against a plain bot it wins about 30% on days 1-4, about 50% on days 7-8 and 60-80% from day 10 (`npx tsx tools/ghostcheck.ts`).
+  - Balance reports use plain bots on both sides.
 - Bots also drive balance testing (see Balance plan).
-
-### Battle authority
-
-- The server runs the authoritative simulation from (player plate, ghost plate, seed) and returns the result plus the seed.
-- The client runs the same simulation to play back the battle. Because the sim is deterministic, both always agree.
-- The server validates each Prep (gold spent, market contents from the seeded market) to stop edited clients from submitting impossible plates.
 
 ## Technical architecture
 
-The recommended stack is TypeScript end to end, with one shared battle simulator package that the browser client, the server and the balance tools all import. The stack is not decided yet (see Open questions).
+The recommended stack is TypeScript end to end, with one shared battle simulator package that the browser client, the server and the balance tools all import. The backend is a Cloudflare Worker with D1 (see Async multiplayer and the backend).
 
 | Package | Role | Notes |
 | --- | --- | --- |
@@ -767,7 +901,7 @@ Balance starts in the simulator, not in playtests: bots play thousands of runs, 
 
 ### Open questions
 
-- [ ] Platform and stack: web with TypeScript (recommended), Godot or Unity?
+- [x] Platform and stack: web with TypeScript; backend on Cloudflare Workers + D1.
 - [ ] Is a 2x3 grid right, or should early days use a smaller plate that grows?
 - [ ] Should back-row units ever attack (a Ranged keyword), or stay ability-only?
 - [ ] What from Batomon should carry over?
