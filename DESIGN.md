@@ -569,8 +569,8 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Smoothie | Sweet + Sour | 6/12 | 5 | Every 2 turns: your friends gain +1/+1, +2/+2 or +3/+3. | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
 | 6 | Roast Turkey | Savory | 4/8 | 5 | End of day: 3 random friends gain +1/+1, +2/+2 or +3/+3. | **Holiday Feast**: End of day: all your foods gain +1/+2. |
 | Mythic | Golden Truffle | Savory | 6/16 | 10 | In battle, the friend in its lane is cooked. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |
-| Mythic | Saffron | All | 6/14 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
-| Mythic | Wagyu | Salty + Sweet | 7/22 | 10 | Your friends get double Crust and HP. Start of battle: they gain 2/3/4 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Start of battle: your friends gain +3 HP. |
+| Mythic | Saffron | All | 4/10 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
+| Mythic | Wagyu | Salty + Sweet | 4/12 | 10 | Your friends get double Crust and HP. Start of battle: they gain 2/3/4 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Start of battle: your friends gain +3 HP. |
 | Mythic | Black Garlic | Sour + Spicy | 6/15 | 10 | Enemies in its lane take double Burn and Rot. Start of battle: they Rot 1/2/3. *(aura: ferment)* | **Black Garlic Ramen**: Every enemy takes double damage from Burn and Rot. |
 
 Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summoner's flavor but don't count toward synergies.
