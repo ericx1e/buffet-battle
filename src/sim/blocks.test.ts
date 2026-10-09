@@ -318,6 +318,11 @@ describe('projectiles and patterns', () => {
 });
 
 describe('Rot and the new triggers', () => {
+  it('Burn stacks higher than Rot: up to 6', () => {
+    const burner = food('t_burn9', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' }], {}, 9);
+    expect(highest(simulateBattle(plate(inst(burner)), plate(inst(wall)), 1), 1, 0, 'burn')).toBe(6);
+  });
+
   it('Rot stacks only up to 4', () => {
     const rotter = food('t_rot5', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }], {}, 5);
     expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall)), 1), 1, 0, 'rot')).toBe(4);

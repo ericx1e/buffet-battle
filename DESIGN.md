@@ -231,7 +231,7 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 
 | Status | Source | Effect |
 | --- | --- | --- |
-| Burn | Spicy | Deals its stacks as damage at the end of each turn, then fades by 1 (Spicy x6: it never fades), up to 4 stacks |
+| Burn | Spicy | Deals its stacks as damage at the end of each turn, then fades by 1 (Spicy x6: it never fades), up to 6 stacks: burst, where Rot is slow and lasting |
 | Rot | Sour | Deals its stacks as damage at the end of each turn and never fades, up to 4 stacks; HP gains on a Rotting food are halved |
 | Chill | Ice Cream | Skips its next attack per stack |
 

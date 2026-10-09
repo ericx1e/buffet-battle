@@ -131,7 +131,7 @@ export const RALLY_CAP = 3;
 /** Most Rot a food can carry. */
 export const ROT_CAP = 4;
 /** Most Burn a food can carry. */
-export const BURN_CAP = 4;
+export const BURN_CAP = 6;
 const TRIGGER_BUDGET = 1000;
 const LANE_NAMES = ['far', 'middle', 'near'];
 
