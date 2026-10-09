@@ -902,3 +902,31 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .tip-jar { z-index: 2; }
 .jar-coins { z-index: 1; }
 .jar-mark { z-index: 3; }
+
+/* The chef-name card (online): two word lists and a shuffle, or a name of your own. */
+.name-card { gap: 5px; }
+.name-card .over-sub { text-align: center; line-height: 11px; padding: 0 6px; }
+.name-row { display: flex; gap: 4px; align-items: center; margin-top: 2px; }
+.name-row select, .name-input {
+  height: 20px; font: 400 10px/1 var(--pixel); color: #3a2a22; text-transform: uppercase; letter-spacing: 0.5px;
+  background: #fbf2da; border: 1px solid #2a1b14; box-shadow: 1px 1px 0 rgba(42, 27, 20, 0.3); border-radius: 0;
+}
+.name-row select { width: 108px; padding: 0 2px; cursor: pointer; }
+.name-input { width: 236px; padding: 0 6px; text-transform: none; font-size: 10px; }
+.name-input::placeholder { color: #b5a48c; }
+.name-row select:focus, .name-input:focus { outline: 2px solid #e0642f; outline-offset: 0; }
+.name-dice {
+  width: 22px; height: 20px; display: grid; place-items: center; padding: 0; cursor: pointer;
+  background: #fbf2da; border: 1px solid #2a1b14; box-shadow: 1px 1px 0 rgba(42, 27, 20, 0.3);
+}
+.name-dice:hover { background: #fff; }
+.name-dice:active { translate: 0 1px; box-shadow: none; }
+.name-preview { min-height: 11px; font: 400 10px/11px var(--pixel); color: #8a7568; text-align: center; }
+.name-preview b { color: #b2401b; font-weight: 400; }
+.name-error { color: #c9453a; }
+.name-buttons { margin-top: auto; display: flex; gap: 8px; align-items: center; }
+.name-buttons .big-btn { margin-top: 0; }
+.name-buttons .big-btn:disabled { opacity: 0.7; cursor: wait; }
+.name-alt { position: static; padding: 0 8px; height: 16px; cursor: pointer; }
+.chef-tag { text-transform: none !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.name-dim { z-index: 59; }

@@ -1,5 +1,9 @@
 import './style.css';
-import { type Action, applyAction, plateHash, replayDay } from '../sim/actions';
+import { type Action, applyAction, canonical, plateHash, replayDay } from '../sim/actions';
+import { GAME_VERSION } from '../sim/version';
+import { NAME_FIRST, NAME_SECOND, nameProblem, randomName, tidyName } from '../names';
+import * as api from './api';
+import type { ServerRun } from './api';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
 import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
@@ -59,6 +63,8 @@ interface PendingBattle {
   me?: { wins: number; lives: number };
   /** Tells battles apart in animation keys (uids restart every battle). */
   id?: number;
+  /** Served online: the server's run after the battle, which the kitchen continues from. */
+  next?: ServerRun;
 }
 
 interface App {
@@ -76,6 +82,21 @@ interface App {
   marketGen: number;
   /** Today: the run as it stood this morning and every action since, which the server replays at Serve. */
   day?: { morning: RunState; log: Action[] };
+  /** Set when this run lives on the server (runId is then the server's id). */
+  server?: { runId: string };
+  /** The chef-name card is open. */
+  naming?: Naming;
+}
+
+/** The chef-name card: a name from the two word lists, or a typed one (which wins when it isn't empty). */
+interface Naming {
+  first: string;
+  second: string;
+  custom: string;
+  error?: string;
+  busy?: boolean;
+  /** Changing the name of a chef who already has one (else: signing up). */
+  renaming?: boolean;
 }
 
 const SAVE_KEY = 'buffetbattle.run';
@@ -167,8 +188,8 @@ function loadApp(): App | null {
 
 function save() {
   try {
-    const { run, runId, battle, day } = app;
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ run, runId, battle, day }));
+    const { run, runId, battle, day, server } = app;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ run, runId, battle, day, server }));
   } catch {
     // Storage unavailable: progress just isn't kept across reloads.
   }
@@ -185,6 +206,108 @@ function dispatch(a: Action): ActionResult {
   const result = applyAction(app.run, a);
   if (result.ok) app.day?.log.push(a);
   return result;
+}
+
+// ---------- online ----------
+
+/** At start-up: a new chef picks a name; a returning one picks up their run from the server. */
+async function connect() {
+  if (!api.online()) return;
+  if (!api.savedPlayer()) return openNaming(false);
+  await syncRun(false);
+}
+
+/**
+ * Lines the kitchen up with the server's run. The run on this device is kept when it is the same run on the same
+ * day (it holds today's moves); otherwise, or with `force`, the server's morning replaces it. No active run on the
+ * server: a new one, unless this device is showing that run's end.
+ */
+async function syncRun(force: boolean) {
+  try {
+    const run = await api.currentRun();
+    if (!run) {
+      if (app.server && isOver(app.run) && !force) return;
+      return adoptRun(await api.startRun(), 'A new run, saved online. Drag a dish from the buffet onto your plate.');
+    }
+    const mine = app.server?.runId === run.id;
+    const sameDay = app.battle ? run.day === app.run.turn + 1 : run.day === app.run.turn;
+    if (mine && sameDay && !force) return;
+    adoptRun(run, mine ? 'Picked up where the server left off.' : 'Welcome back, chef. Your run is saved online.');
+  } catch (e) {
+    app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}. Playing offline for now.`;
+    app.server = undefined;
+    render();
+  }
+}
+
+/** The kitchen switches to a run from the server, at the start of its day. */
+function adoptRun(run: api.ServerRun, message: string) {
+  app.run = migrateRun({ ...run.state, growth: [] });
+  app.runId = run.id;
+  app.server = { runId: run.id };
+  app.day = startOfDay(app.run);
+  app.battle = undefined;
+  app.selected = null;
+  app.message = message;
+  forceWipe = true;
+  save();
+  render();
+}
+
+async function newServerRun() {
+  try {
+    adoptRun(await api.startRun(), 'A new run. Drag a dish from the buffet onto your plate.');
+  } catch (e) {
+    app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}. Try again in a moment.`;
+    render();
+  }
+}
+
+const splitName = (name: string) => {
+  const [first, second] = name.split(' ');
+  return { first, second };
+};
+
+function openNaming(renaming: boolean) {
+  const current = api.savedPlayer()?.name;
+  const listed = current && NAME_FIRST.includes(splitName(current).first as never) && NAME_SECOND.includes(splitName(current).second as never);
+  app.naming = { ...splitName(listed ? current : randomName()), custom: current && !listed ? current : '', renaming };
+  render();
+}
+
+/** The name the card would use: the typed one if any, else the two picked words. */
+const chosenName = (n: Naming) => (tidyName(n.custom) ? tidyName(n.custom) : `${n.first} ${n.second}`);
+
+async function submitName() {
+  const n = app.naming;
+  if (!n || n.busy) return;
+  const name = chosenName(n);
+  const problem = nameProblem(name);
+  if (problem) {
+    n.error = problem;
+    sfx('deny');
+    return render();
+  }
+  n.busy = true;
+  render();
+  try {
+    if (n.renaming) {
+      await api.rename(name);
+      app.naming = undefined;
+      app.message = `You're now ${name}.`;
+      sfx('select');
+      return render();
+    }
+    await api.signUp(name);
+    app.naming = undefined;
+    sfx('bell');
+    await syncRun(false);
+  } catch (e) {
+    n.busy = false;
+    n.error = e instanceof api.Offline ? "Can't reach the kitchen server. Try again, or play offline." : (e as Error).message;
+    sfx('deny');
+    render();
+  }
 }
 
 /** In development, a day that doesn't replay to the plate being served means some change skipped dispatch. */
@@ -528,9 +651,24 @@ function onAction(action: string, el: HTMLElement) {
       return render();
     case 'new-run':
       if (!isOver(run) && !app.battle && !confirm('Abandon this run and start a new one?')) return;
+      if (app.server) return void newServerRun();
       Object.assign(app, freshApp(), { battle: undefined });
       forceWipe = true;
       save();
+      return render();
+    case 'chef':
+      if (!app.battle) openNaming(true);
+      return;
+    case 'name-shuffle':
+      if (app.naming) Object.assign(app.naming, splitName(randomName()), { custom: '', error: undefined });
+      sfx('select');
+      return render();
+    case 'name-offline':
+      app.naming = undefined;
+      app.message = 'Playing offline: your runs stay on this device.';
+      return render();
+    case 'name-cancel':
+      app.naming = undefined;
       return render();
     case 'speed':
       app.speed = app.speed >= 4 ? 1 : app.speed * 2;
@@ -573,7 +711,9 @@ function ringBell() {
   if (bell) animate(bell, 'hop');
   sfx('bell');
   if (stage) floater(stage, LAYOUT.bell[0] + 24, LAYOUT.bell[1] + 2, 'ding!', 'info');
-  // End of day: growing foods grow now, in front of you, before the plate goes out.
+  // End of day: growing foods grow now, in front of you, before the plate goes out. (Online, the day comes back as
+  // it was if the server can't take it.)
+  const beforeEnd = structuredClone(app.run);
   endDay(app.run);
   const summary = growthSummary(app.run.growth);
   if (summary) {
@@ -581,17 +721,18 @@ function ringBell() {
     render();
   }
   const wait = playGrowth(250);
-  setTimeout(() => {
+  setTimeout(async () => {
+    await startBattle(beforeEnd);
     ringing = false;
-    startBattle();
   }, Math.max(300, wait + 250));
 }
 
-function startBattle() {
+async function startBattle(beforeEnd: RunState) {
   const { run } = app;
   if (app.battle || run.plate.every((u) => !u)) return;
   const mine = clonePlate(run.plate); // the day was already ended when the bell rang
   checkReplay(mine);
+  if (app.server) return serveOnline(mine, beforeEnd);
   saveGhost(app.runId, run.turn, mine, run.courses, run.lives);
   const opponent = pickOpponent(app.runId, run.turn, nextSeed(run), run.courses, run.lives);
   const result = simulateBattle(mine, opponent.plate, nextSeed(run));
@@ -603,10 +744,50 @@ function startBattle() {
   render();
 }
 
+/**
+ * Serve through the server: it replays the day, picks the opponent and fights the battle; the battle is played back
+ * here from the plates and the seed. A refused day starts over from this morning; no answer keeps the plate ready.
+ */
+async function serveOnline(mine: Plate, beforeEnd: RunState) {
+  const { run } = app;
+  app.message = 'Sending your plate out...';
+  render();
+  try {
+    const res = await api.serveDay(app.server!.runId, { day: run.turn, version: GAME_VERSION, actions: app.day?.log ?? [], plateHash: plateHash(mine) });
+    // Keep the run's random numbers in step with the server, which drew the opponent's and the battle's seeds.
+    nextSeed(run);
+    nextSeed(run);
+    const result = simulateBattle(mine, res.opponent.plate, res.seed);
+    if (result.outcome !== res.outcome) console.warn('This battle played back differently from the server', res);
+    const foe = { wins: res.opponent.wins, lives: res.opponent.lives };
+    app.battle = { result, opponent: res.opponent.label, foe, me: { wins: run.courses, lives: run.lives }, id: Date.now() % 1e9, next: res.run };
+    shownFrame = -1;
+    app.selected = null;
+    app.frame = 0;
+    save();
+    render();
+  } catch (e) {
+    app.run = beforeEnd;
+    if (e instanceof api.Refused && e.reason === 'version') app.message = `${pix('warn')} The game was updated. Reload the page to carry on.`;
+    else if (e instanceof api.Refused) {
+      await syncRun(true);
+      app.message = `${pix('warn')} The server couldn't follow your day (${e.message}), so it starts over from this morning.`;
+    } else app.message = `${pix('warn')} Can't reach the kitchen server. Ring the bell to try again.`;
+    sfx('deny');
+    save();
+    render();
+  }
+}
+
 function endBattle() {
   const battle = app.battle;
   if (!battle) return;
   finishBattle(app.run, battle.result.outcome);
+  // Online, the server's run is the real one: they should match, but if not the kitchen carries on from the server's.
+  if (battle.next && canonical({ ...app.run, growth: [] }) !== canonical({ ...battle.next.state, growth: [] })) {
+    console.warn('The run after this battle differs from the server; using the server run', battle.next);
+    app.run = migrateRun({ ...battle.next.state, growth: [] });
+  }
   app.battle = undefined;
   app.day = startOfDay(app.run);
   const o = battle.result.outcome;
@@ -1314,8 +1495,65 @@ function renderKitchen() {
         ${cookbook()}
         ${app.message ? `<div class="toast" style="${box(LAYOUT.toast)};animation-delay:-${toastAge}ms" data-k="toast:${toast.id}" data-in="rise"><span>${app.message}</span></div>` : ''}
         ${app.seasoning ? seasoningModal() : ''}
+        ${chefTag()}
+        ${app.naming ? namingCard(app.naming) : ''}
       </main>
     </div>`;
+  if (app.naming) fillNamingCard(app.naming);
+}
+
+/** Online: the chef's name on the rail; click to change it. */
+function chefTag(): string {
+  const player = app.server && api.savedPlayer();
+  if (!player) return '';
+  return `<button class="newrun chef-tag" style="${box(LAYOUT.chef as Rect)}" data-action="chef" ${tipBox(`Chef ${esc(player.name)}`, '<p>Other chefs see this name when they meet your plate. Click to change it.</p>')}>${esc(player.name)}</button>`;
+}
+
+const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+/** The chef-name card: two word lists and a shuffle, or a name of your own. */
+function namingCard(n: Naming): string {
+  const options = (words: readonly string[], chosen: string) => words.map((w) => `<option${w === chosen ? ' selected' : ''}>${w}</option>`).join('');
+  return `
+    <div class="over-dim name-dim" data-k="name-dim" data-in="fade"></div>
+    <form class="over-card name-card" style="${box([170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
+      <div class="ribbon"><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
+      <p class="over-sub">${n.renaming ? 'Pick a new name.' : 'Pick your chef name. Other chefs see it when they meet your plate.'}</p>
+      <div class="name-row">
+        <select data-name="first" ${n.busy ? 'disabled' : ''}>${options(NAME_FIRST, n.first)}</select>
+        <select data-name="second" ${n.busy ? 'disabled' : ''}>${options(NAME_SECOND, n.second)}</select>
+        <button type="button" class="name-dice" data-action="name-shuffle" title="Shuffle" ${n.busy ? 'disabled' : ''}>${pix('dice')}</button>
+      </div>
+      <div class="over-plate-label">or write your own</div>
+      <input class="name-input" data-name="custom" maxlength="20" placeholder="your own name" spellcheck="false" ${n.busy ? 'disabled' : ''}>
+      <div class="name-preview">${n.error ? `<span class="name-error">${esc(n.error)}</span>` : `you'll be <b>${esc(chosenName(n))}</b>`}</div>
+      <div class="name-buttons">
+        <button type="button" class="newrun name-alt" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
+        <button type="submit" class="big-btn" ${n.busy ? 'disabled' : ''}>${n.busy ? 'one moment...' : n.renaming ? 'rename ›' : 'open the kitchen ›'}</button>
+      </div>
+    </form>`;
+}
+
+/** The typed name isn't in the markup (so it can't break it): set it, and keep the card in step as you type. */
+function fillNamingCard(n: Naming) {
+  const input = root.querySelector<HTMLInputElement>('.name-input');
+  if (input) input.value = n.custom;
+}
+
+function onNamingInput(el: HTMLInputElement | HTMLSelectElement) {
+  const n = app.naming;
+  const field = el.dataset.name as 'first' | 'second' | 'custom' | undefined;
+  if (!n || !field) return;
+  n[field] = el.value;
+  if (field !== 'custom') n.custom = '';
+  const problem = tidyName(n.custom) ? nameProblem(n.custom) : null;
+  n.error = problem ?? undefined;
+  const preview = root.querySelector('.name-preview');
+  if (preview) preview.innerHTML = problem ? `<span class="name-error">${esc(problem)}</span>` : `you'll be <b>${esc(chosenName(n))}</b>`;
+  if (field !== 'custom') {
+    const input = root.querySelector<HTMLInputElement>('.name-input');
+    if (input) input.value = '';
+  }
 }
 
 function seasoningModal(): string {
@@ -1740,8 +1978,8 @@ function renderBattle(battle: PendingBattle): boolean {
     <div class="stage-wrap" style="--s:${stageScale()}">
       <main class="stage battle-stage" style="--spd:${app.speed};--fxd:${fxDelay}s">
         <img class="scene-bg" src="${battleUrl}" alt="" draggable="false">
-        ${teamPlaque(0, 'Your plate', battle.me ?? { wins: app.run.courses, lives: app.run.lives })}
-        ${teamPlaque(1, battle.opponent, battle.foe)}
+        ${teamPlaque(0, app.server ? esc(api.savedPlayer()?.name ?? 'Your plate') : 'Your plate', battle.me ?? { wins: app.run.courses, lives: app.run.lives })}
+        ${teamPlaque(1, esc(battle.opponent), battle.foe)}
         ${flavorSide(0, battle.result.flavors?.[0])}${flavorSide(1, battle.result.flavors?.[1])}
         <div class="round-text" style="${box([rx + 3, ry + 3, rw - 6, rh - 6])}" data-vk="round:${bid}" data-v="${f.round}">${f.round > 0 ? `turn ${f.round}` : 'serve!'}</div>
         ${fighters}
@@ -2123,7 +2361,16 @@ root.addEventListener('click', (e) => {
 // Audio can only start from a gesture. On touch screens that means the finger lifting (touchend), not landing.
 for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(type, unlockAudio, true);
 
+// The chef-name card: its fields update as you type; Enter or the button submits.
+root.addEventListener('input', (e) => onNamingInput(e.target as HTMLInputElement));
+root.addEventListener('change', (e) => onNamingInput(e.target as HTMLSelectElement));
+root.addEventListener('submit', (e) => {
+  e.preventDefault();
+  void submitName();
+});
+
 document.addEventListener('keydown', (e) => {
+  if (app.naming || (e.target as HTMLElement).closest?.('input, select')) return;
   if (e.key === 'm') {
     toggleMute();
     return render();
@@ -2149,3 +2396,4 @@ if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]
 
 if (app.battle) app.frame = app.battle.result.frames.length - 1;
 render();
+void connect();

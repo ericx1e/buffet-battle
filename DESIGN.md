@@ -647,7 +647,10 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
 
 ### Players (anonymous)
 
-- On first visit the client calls `POST /players` with a chef name (1 to 16 characters, filtered).
+- On first visit a card asks for a chef name, which other players see on your plate's plaque. It is picked from two word lists (an adjective and a food or kitchen word, 40 each: "Saucy Dumpling"), with a shuffle button, or typed.
+  - A typed name is 1 to 20 letters, digits, spaces or `' . _ -`, and must pass a filter (`src/names.ts`, shared with the server, which applies it too): slurs and profanity are refused even when spaced out, stretched, or spelled with digits and symbols; short or common stems ("anal", "cum") only as whole words, so names like Canal Cook or Nigel pass; a few names that would pass for the game or a bot (admin, Bot Chef) are reserved.
+  - The chef's name sits on the kitchen rail; clicking it changes it. "Play offline" skips signing up for now.
+- The client calls `POST /players` with the name.
 - It gets back a random `playerId` and a secret `token`, kept in `localStorage`. The server stores only a SHA-256 hash of the token.
 - Every request carries `Authorization: Bearer <token>`.
 - Clearing site data loses the player; linking a login (Google, email) to carry runs across devices comes later.
@@ -777,8 +780,10 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
 
 ### Offline and local play
 
-- With no API configured, or the API unreachable, the game falls back to today's local mode: runs and ghosts in `localStorage`, and bots.
-- `cd server && npm run dev` runs the API at http://localhost:8787 on a local D1 (`npm run migrate:local` once first); the client will use it once step 4 is built.
+- With no API configured (no `VITE_API_URL` at build time) the game plays locally as before: runs and ghosts in `localStorage`, and bots.
+- With an API, a returning chef's run is checked against the server at start-up: the run on the device is kept when it is the same run on the same day (it holds the day's moves), else the server's morning replaces it. If the server can't be reached the game says so and plays locally.
+- A Serve the server can't take (no answer) leaves the plate as it was before the bell, to ring again. A refused day (`422`, or `409` for the day or plate) reloads the server's morning and says why; a new version asks for a reload.
+- `cd server && npm run dev` runs the API at http://localhost:8787 on a local D1 (`npm run migrate:local` once first); `VITE_API_URL=http://localhost:8787 npm run dev` runs the game against it.
 
 ### Deploy
 
@@ -799,7 +804,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
    - players and runs endpoints;
    - tests with the Workers Vitest pool.
 3. **Serve, done:** replay, ghost save, matchmaking, battle, state update, tests (including a tampered log being rejected).
-4. **Client:** an API client, the chef-name prompt, Serve through the API, resync, local fallback.
+4. **Client, done:** an API client (`src/ui/api.ts`), the chef-name prompt, Serve through the API, resync, local fallback.
 5. **Deploy:** Actions job, Cloudflare setup, `VITE_API_URL`.
 6. **Later:**
    - a leaderboard (runs won, best streak);

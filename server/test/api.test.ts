@@ -17,7 +17,7 @@ describe('players', () => {
   });
 
   it('refuses bad names', async () => {
-    for (const name of ['', '   ', 'x'.repeat(17), '<script>', 'a\u0000b', 42, undefined]) {
+    for (const name of ['', '   ', 'x'.repeat(21), '<script>', 'a\u0000b', 'Sh1t Chef', 'admin', 42, undefined]) {
       expect((await call('POST', '/players', { body: { name } })).status).toBe(400);
     }
     expect((await call('POST', '/players', { body: { name: 'Café Ñoño 9' } })).status).toBe(201);

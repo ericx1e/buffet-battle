@@ -281,6 +281,16 @@ const ICONS = {
     'dddddddddd',
     'llllllllll',
   ],
+  dice: [
+    '.BBBBBB.',
+    'BxxxxxlB',
+    'BxBxxxlB',
+    'BxxxxxlB',
+    'BxxBxxlB',
+    'BxxxxBlB',
+    'BlllllgB',
+    '.BBBBBB.',
+  ],
   coin: [
     '.hyyyd.',
     'hyhhydd',

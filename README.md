@@ -24,6 +24,8 @@ cd server
 npm install
 npm run migrate:local    # once: the tables in a local database
 npm run dev              # the API at http://localhost:8787
+# then, from the project root, the game against it:
+# VITE_API_URL=http://localhost:8787 npm run dev
 npm test                 # API tests, run in the Workers runtime
 ```
 
@@ -70,4 +72,4 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 
 A shelved **recipes** prototype (cook ingredients into dishes) is kept in [archive/recipes-prototype](archive/recipes-prototype/README.md) as a possible capstone; it is not part of the game.
 
-The game doesn't use the server yet (that's step 4 of the backend plan in DESIGN.md): your served plates are saved to `localStorage` as ghosts, and later runs fight them (or bot plates) on the same day.
+Built without `VITE_API_URL`, the game plays locally: your served plates are saved to `localStorage` as ghosts, and later runs fight them (or bot plates) on the same day. With it, runs, plates and battles live on the server.

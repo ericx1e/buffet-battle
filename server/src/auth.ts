@@ -1,4 +1,5 @@
 // Anonymous players: a random id and a secret token. Only the token's SHA-256 is stored.
+import { nameProblem, tidyName } from '../../src/names';
 import { HttpError } from './http';
 
 export interface Player {
@@ -16,12 +17,12 @@ export async function hashToken(token: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** A chef's name: 1 to 16 letters, digits, spaces and a little punctuation, spaces tidied. */
+/** A chef's name, tidied, if it passes the shared name rules (src/names.ts). */
 export function cleanName(raw: unknown): string {
   if (typeof raw !== 'string') throw new HttpError(400, 'A name is required.');
-  const name = raw.normalize('NFKC').trim().replace(/\s+/g, ' ');
-  if (!/^[\p{L}\p{N} '._-]{1,16}$/u.test(name)) throw new HttpError(400, 'Names are 1 to 16 letters, numbers, spaces or \' . _ -');
-  return name;
+  const problem = nameProblem(raw);
+  if (problem) throw new HttpError(400, problem, { reason: 'name' });
+  return tidyName(raw);
 }
 
 /** The player whose token is on the request, or 401. Notes when they were last seen (at most hourly). */
