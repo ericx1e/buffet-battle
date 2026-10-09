@@ -215,6 +215,10 @@ export interface UnitDef {
   interestMult?: boolean;
   /** Its attacks deal +value (by level) to enemies with this status: a payoff for a plate that spreads it. */
   hitsHarder?: 'burn' | 'rot';
+  /** With hitsHarder: the bonus is value x the target's stacks of that status, not a flat value (Sweet & Sour Pork). */
+  perStack?: boolean;
+  /** Its attacks make the target Rot this much just before they land (Sweet & Sour Pork). */
+  attackRots?: number;
   /** Projectile foods: each throw deals this flat damage (levels add throws, not damage). */
   throwDamage?: number;
   /** A plate-wide effect while this food is on the plate (see Aura). */

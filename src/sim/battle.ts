@@ -566,7 +566,9 @@ class Battle {
         const harder = def.hitsHarder ? def.values[attacker.level - 1] + attacker.abilityBonus : 0;
         this.mark(attacker, 'attack', 1);
         for (const [t, dmg] of hits) {
-          const bonus = def.hitsHarder && t[def.hitsHarder] > 0 ? harder : 0;
+          if (def.attackRots) this.addStatus(t, 'rot', def.attackRots);
+          const stacks = def.hitsHarder ? t[def.hitsHarder] : 0;
+          const bonus = stacks > 0 ? harder * (def.perStack ? stacks : 1) : 0;
           this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
           // Spicy burns everything the attack hits (splash, pierce, fork...), as throws do.
           if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);

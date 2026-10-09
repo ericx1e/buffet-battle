@@ -373,7 +373,7 @@ describe('run', () => {
     expect(cakeFrame!.marks.find((m) => m.kind === 'buff')?.hp).toBe(unitDef('cake').values[0]);
   });
 
-  it('Hot Cocoa turns a neighbour\'s HP gain into attack once a day in the kitchen, up to 4 times in battle', () => {
+  it('Hot Cocoa turns a neighbour\'s HP gain into attack once a day in the kitchen, every time in battle', () => {
     const run = newRun(5);
     run.plate[0] = unit('hotCocoa');
     run.plate[1] = unit('breadDough'); // both neighbours gain HP at the end of day
@@ -381,7 +381,20 @@ describe('run', () => {
     serve(run);
     const gained = (slot: number) => run.plate[slot]!.attack - unitDef(run.plate[slot]!.defId).attack;
     expect(gained(1) + gained(3)).toBe(1);
-    expect(unitDef('hotCocoa').abilities[0]).toMatchObject({ max: 4, dayMax: 1 });
+    expect(unitDef('hotCocoa').abilities[0]).toMatchObject({ dayMax: 1 });
+    expect(unitDef('hotCocoa').abilities[0].max).toBeUndefined();
+    // In battle: an Apple heals the hurt neighbour every turn, and every heal is +1 attack, well past 4.
+    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 3 }), 1: unit('hotCocoa', { hp: 60 }), 4: unit('apple', { hp: 60 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 200 }) }), 1);
+    expect(Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0))).toBeGreaterThan(1 + 4);
+  });
+
+  it('Sweet & Sour Pork: each attack Rots its target 1, then hits +1 per Rot (level 1)', () => {
+    const r = simulateBattle(plate({ 0: unit('sweetSour', { attack: 2, hp: 200 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 200 }) }), 1);
+    const rot = r.frames.map((f) => f.plates[1][0]?.rot ?? 0);
+    expect(Math.max(...rot)).toBeGreaterThanOrEqual(3);
+    // First attack: Rot 1, so 2 + 1; the second: Rot 2, so 2 + 2.
+    const hits = r.frames.filter((f) => f.marks.some((m) => m.side === 1 && m.kind === 'hit')).map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!.amount);
+    expect(hits.slice(0, 2)).toEqual([3, 4]);
   });
 
   it('Caviar raises the interest cap by 1 and, each morning, buffs one random friend per gold of interest', () => {
