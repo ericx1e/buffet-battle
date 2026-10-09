@@ -848,12 +848,11 @@ export function endDay(run: RunState) {
   run.plate.forEach((u, slot) => {
     if (u) fireShop(run, u, slot, 'endTurn');
   });
-  // Hot Sauce (held): +2 HP for good every day.
+  // Hot Sauce (held): +1 attack for good every day.
   for (const u of run.plate) {
     if (u?.item !== 'hotSauce') continue;
-    u.hp += 2;
-    run.growth.push({ uid: u.uid, attack: 0, hp: 2, source: 'Hot Sauce' });
-    afterHpGain(run, u);
+    u.attack += 1;
+    run.growth.push({ uid: u.uid, attack: 1, hp: 0, source: 'Hot Sauce' });
   }
   for (const e of run.fridge) if (e?.kind === 'unit') fireShop(run, e.unit, null, 'fridgeTurn');
 }

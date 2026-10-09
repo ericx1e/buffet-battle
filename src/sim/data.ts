@@ -388,7 +388,7 @@ export const UNITS: UnitDef[] = [
 ];
 
 export const ITEMS: ItemDef[] = [
-  { id: 'hotSauce', name: 'Hot Sauce', emoji: '🔥', tier: 1, cost: 2, held: true, text: 'Held: +1 attack every turn in battle, and +2 HP for good at the end of each day.' },
+  { id: 'hotSauce', name: 'Hot Sauce', emoji: '🔥', tier: 1, cost: 2, held: true, text: 'Held: end of day, +1 attack for good.' },
   { id: 'butter', name: 'Butter', emoji: '🧈', tier: 1, cost: 2, held: false, text: '+1/+2 permanently.' },
   { id: 'sprinkles', name: 'Sprinkles', emoji: '🌈', tier: 1, cost: 2, held: false, anywhere: true, text: '2 random foods on your plate +1/+1 permanently.' },
   { id: 'oliveOil', name: 'Olive Oil', emoji: '🫒', tier: 1, cost: 2, held: false, text: '+1 HP and +3 sell value, permanently.' },

@@ -535,11 +535,12 @@ describe('run', () => {
     expect(season('salty').ok).toBe(false); // three is the most
   });
 
-  it('Hot Sauce (held) gives +2 HP for good at the end of each day', () => {
+  it('Hot Sauce (held) gives +1 attack for good at the end of each day', () => {
     const run = newRun(5);
     run.plate[0] = unit('egg', { item: 'hotSauce' });
     endDay(run);
-    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 2);
+    expect(run.plate[0]!.attack).toBe(unitDef('egg').attack + 1);
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp);
   });
 
   it('a premium restock stocks the buffet from the next tier', () => {
@@ -661,12 +662,6 @@ describe('round 6 rules', () => {
     expect(r.ok && r.levelUp).toBeTruthy();
     expect(run.market.some((o) => o?.kind === 'item' && o.itemId === 'microwave')).toBe(false);
     expect(run.market.some((o) => o?.kind === 'unit' && o.bonus)).toBe(true);
-  });
-
-  it('Hot Sauce (held) gives +1 attack every turn in battle', () => {
-    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 90, item: 'hotSauce' }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }) }), 1);
-    const sauced = r.frames.filter((f) => f.text.includes('Hot Sauce: Cheese +1 attack'));
-    expect(sauced.length).toBeGreaterThan(2);
   });
 });
 

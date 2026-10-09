@@ -595,7 +595,7 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 
 | Item | Unlocks at tier | Cost | Effect |
 | --- | --- | --- | --- |
-| Hot Sauce | 1 | 2 | Held: +1 attack every turn in battle, and +2 HP for good at the end of each day. |
+| Hot Sauce | 1 | 2 | Held: end of day, +1 attack for good. |
 | Butter | 1 | 2 | +1/+2 permanently. |
 | Sprinkles | 1 | 2 | 2 random foods on your plate +1/+1 permanently. |
 | Olive Oil | 1 | 2 | +1 HP and +3 sell value, permanently. |
@@ -612,7 +612,7 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 | Chopsticks | 4 | 4 | Held: attacks twice on its first 2 attacks each battle. |
 | Lunchbox | 5 | 4 | All friends +1/+1 permanently. |
 
-Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than a swing (stats should mostly come from the foods), while held items and the odd ones are where the choices are: a Takeout Bag is a gamble on a food from the next rarity, Chopsticks double a big hitter's opening, Hot Sauce grows a fighter every turn and every day, and a Bouillon Cube nudges a flavor one step closer to its next bonus.
+Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than a swing (stats should mostly come from the foods), while held items and the odd ones are where the choices are: a Takeout Bag is a gamble on a food from the next rarity, Chopsticks double a big hitter's opening, Hot Sauce grows a food's attack every day, and a Bouillon Cube nudges a flavor one step closer to its next bonus.
 
 ## Look and feel
 

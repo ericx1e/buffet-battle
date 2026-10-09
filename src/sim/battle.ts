@@ -608,13 +608,6 @@ class Battle {
         const line = this.fire(u, 'round', {});
         if (line) lines.push(line);
       }
-      // Hot Sauce (held): +1 attack every turn.
-      const sauced = this.units(side).filter((u) => u.item === 'hotSauce');
-      for (const u of sauced) {
-        u.attack += 1;
-        this.mark(u, 'buff', 1, 0);
-      }
-      if (sauced.length > 0) lines.push(`Hot Sauce: ${sauced.map((u) => this.name(u)).join(', ')} +1 attack`);
       const front = this.units(side).filter((f) => b.sweetAll || rowOf(f.slot) === 0);
       if (b.sweetHeal > 0) {
         for (const f of front) {
