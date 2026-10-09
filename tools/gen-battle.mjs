@@ -32,6 +32,24 @@ function panel(x, y, w, h, fill, hi, sh) {
 const inEll = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
 const ell = (cx, cy, rx, ry, c) => s.fill(cx - rx, cy - ry, cx + rx, cy + ry, (x, y) => (inEll(x, y, cx, cy, rx, ry) ? c : null));
 /** Ellipse with alpha (255 = solid), blended over what is there. */
+/**
+ * Paints a shape and a clean 1px dark outline around it, like the food sprites: inside(x, y) says whether a pixel is
+ * in the shape, color(x, y) colours it (null: keep what is drawn there), and every pixel just outside it (sharing
+ * an edge) becomes the outline.
+ */
+function outlined(x0, y0, x1, y1, inside, color) {
+  // Measure the shape first, so painting the outline can't change what counts as inside.
+  const w = x1 - x0 + 3;
+  const mask = [];
+  for (let y = y0 - 2; y <= y1 + 2; y++) for (let x = x0 - 2; x <= x1 + 2; x++) mask.push(!!inside(x, y));
+  const at = (x, y) => x >= x0 - 2 && x <= x1 + 2 && y >= y0 - 2 && y <= y1 + 2 && mask[(y - y0 + 2) * (w + 2) + (x - x0 + 2)];
+  for (let y = y0 - 1; y <= y1 + 1; y++) {
+    for (let x = x0 - 1; x <= x1 + 1; x++) {
+      if (at(x, y)) { if (color) s.px(x, y, color(x, y)); }
+      else if (at(x - 1, y) || at(x + 1, y) || at(x, y - 1) || at(x, y + 1)) s.px(x, y, P.outline);
+    }
+  }
+}
 const ellA = (cx, cy, rx, ry, c, a) => {
   for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) if (inEll(x, y, cx, cy, rx, ry)) s.px(x, y, c, a);
 };
@@ -268,23 +286,27 @@ function plant(cx) {
   const leaves = ramp(P.leaf);
   const pot = ramp(P.pot);
   ellA(cx + 3, 103 + dy, 10, 2, '#6b5236', 60); // shadow on the rail
-  // pot: tapered, lit from the left, with a rim
-  s.fill(cx - 8, 90 + dy, cx + 8, 103 + dy, (x, y) => {
-    const half = 7 - (y - 90 - dy) * 0.2;
-    if (Math.abs(x - cx) > half) return null;
-    const t = (x - cx) / half;
+  // pot: tapered, lit from the left, under a rim; one outlined shape
+  const potHalf = (y) => Math.round(7 - (y - 91 - dy) * 0.2);
+  const inPot = (x, y) => (y >= 88 + dy && y <= 90 + dy && Math.abs(x - cx) <= 8) || (y > 90 + dy && y <= 102 + dy && Math.abs(x - cx) <= potHalf(y));
+  outlined(cx - 9, 88 + dy, cx + 9, 102 + dy, inPot, (x, y) => {
+    if (y <= 90 + dy) return y === 90 + dy ? pot[3] : pot[1];
+    const t = (x - cx) / potHalf(y);
     return t < -0.6 ? pot[1] : t > 0.6 ? pot[3] : pot[2];
   });
-  rect(cx - 9, 88 + dy, 19, 3, pot[1]);
-  rect(cx - 9, 90 + dy, 19, 1, pot[3]);
-  frame(cx - 9, 88 + dy, 19, 3, P.outline);
-  s.fill(cx - 8, 90 + dy, cx + 8, 104 + dy, (x, y) => (Math.abs(Math.abs(x - cx) - (7 - (y - 90 - dy) * 0.2)) < 0.6 || y === 103 + dy && Math.abs(x - cx) <= 5 ? P.outline : null));
   // soil
   rect(cx - 7, 88 + dy, 15, 1, '#6a4a34');
-  // leaf clumps, back to front: each a shaded ball with a dark outline
+  // leaf clumps: one outlined silhouette, then each clump shaded on top, back to front
   const clumps = [[-7, 80, 6, 5], [7, 79, 6, 5], [0, 74, 7, 6], [-4, 84, 5, 4], [5, 84, 5, 4], [0, 81, 6, 5]];
-  for (const [ox, cy, rx, ry] of clumps) ellA(cx + ox, cy + dy, rx + 1, ry + 1, '#3f5a36', 255);
+  // The silhouette is whatever the shaded balls paint, outlined afterwards so no shading covers the outline.
+  const before = s.data.slice();
   for (const [ox, cy, rx, ry] of clumps) s.ball(cx + ox, cy + dy, rx, ry, leaves);
+  const painted = (x, y) => {
+    if (x < 0 || y < 0 || x >= W || y >= H) return false;
+    const i = (y * W + x) * 4;
+    return s.data[i] !== before[i] || s.data[i + 1] !== before[i + 1] || s.data[i + 2] !== before[i + 2];
+  };
+  outlined(cx - 15, 64 + dy, cx + 15, 90 + dy, (x, y) => painted(x, y) && y < 88 + dy, null);
   // a few leaf tips and veins
   for (const [ox, oy] of [[-11, 79], [11, 78], [-2, 67], [3, 68]]) s.px(cx + ox, oy + dy, leaves[3]);
   for (const [ox, oy] of [[-8, 78], [6, 77], [-1, 72]]) rect(cx + ox, oy + dy, 2, 1, leaves[0]);
@@ -409,13 +431,12 @@ function sconce(cx) {
   ellA(cx, y + 2, 9, 12, '#fff2cc', 40);
   rect(cx - 3, y + 14, 6, 3, '#a8812f'); // wall plate
   frame(cx - 3, y + 14, 6, 3, P.outline);
-  s.line(cx, y + 13, cx, y + 6, '#a8812f'); // arm
-  s.fill(cx - 5, y - 4, cx + 5, y + 4, (x, yy) => {
-    const half = 2 + (yy - (y - 4)) * 0.45; // tulip: narrow at the top, flaring down
-    if (Math.abs(x - cx) > half) return null;
-    return Math.abs(x - cx) > half - 1 ? P.outline : x < cx ? '#fffaf0' : '#f2e3c4';
-  });
-  rect(cx - 3, y + 4, 7, 1, '#ffe08a'); // the glowing rim
+  s.line(cx, y + 13, cx, y + 5, '#a8812f'); // arm, up to the shade
+  // tulip shade: narrow at the top, flaring down, outlined all round, lit from the left
+  const half = (yy) => Math.round(1.5 + (yy - (y - 3)) * 0.45);
+  const inShade = (x, yy) => yy >= y - 3 && yy <= y + 3 && Math.abs(x - cx) <= half(yy);
+  outlined(cx - 5, y - 3, cx + 5, y + 3, inShade, (x, yy) => (yy === y + 3 ? '#ffe08a' : x < cx ? '#fffaf0' : '#f2e3c4'));
+  s.px(cx, y + 5, '#ffe9a8'); // the bulb, peeking out under the shade
 }
 sconce(166);
 sconce(W - 166);
