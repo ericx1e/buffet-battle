@@ -1090,8 +1090,8 @@ function marketSlots(): string {
     .join('');
 }
 
-/** A chance as a whole percent. */
-const pct = (chance: number) => `${Math.round(chance * 100)}%`;
+/** A chance as a percent: whole, or to a tenth under 1% (a mythic's 0.5%). */
+const pct = (chance: number) => (chance > 0 && chance < 0.01 ? `${(chance * 100).toFixed(1)}%` : `${Math.round(chance * 100)}%`);
 
 /** Today's odds for each food cubby: the rarities on offer (their share after the mythic chance), then mythic. */
 function todaysOdds(): { rarity: string; chance: number }[] {

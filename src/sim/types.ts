@@ -173,7 +173,7 @@ export interface AbilityDef {
  * cook (Golden Truffle): in battle, the friend in its lane is cooked (every friend, once cooked);
  * infuse (Saffron): adjacent friends count twice toward flavor bonuses (every friend, once cooked);
  * baste (Wagyu): adjacent friends get double from Crust and heals (every friend, once cooked);
- * ferment (Black Garlic): enemies in its lane take double damage from Burn and Rot (every lane, once cooked).
+ * ferment (Black Garlic): enemies in its lane and the lanes beside it take double damage from Burn and Rot (every enemy, triple, once cooked).
  */
 export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment';
 
@@ -217,6 +217,8 @@ export interface UnitDef {
   hitsHarder?: 'burn' | 'rot';
   /** With hitsHarder: the bonus is value x the target's stacks of that status, not a flat value (Sweet & Sour Pork). */
   perStack?: boolean;
+  /** Its attacks make the target Burn its level value, then double the target's Burn (Ghost Pepper). */
+  fansBurn?: boolean;
   /** Its attacks make the target Rot this much just before they land (Sweet & Sour Pork). */
   attackRots?: number;
   /** Projectile foods: each throw deals this flat damage (levels add throws, not damage). */

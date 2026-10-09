@@ -287,10 +287,10 @@ function rollMarket(run: RunState, premium = false) {
 
 /** From this day, each buffet slot has a small chance of holding a mythic. */
 export const MYTHIC_MARKET_DAY = 6;
-export const MYTHIC_MARKET_CHANCE = 0.01;
+export const MYTHIC_MARKET_CHANCE = 0.005;
 /** From this day, the special cubby offers a mythic on this share of days. */
 export const MYTHIC_SPECIAL_DAY = 8;
-export const MYTHIC_SPECIAL_CHANCE = 0.1;
+export const MYTHIC_SPECIAL_CHANCE = 0.07;
 
 /** Mythics you own (plate, fridge, tray), so another copy of one can be offered: a mythic cooks at 3 copies. */
 function ownedMythics(run: RunState): string[] {
@@ -309,7 +309,7 @@ function pickMythic(run: RunState, rng: Rng): string {
 function rollSpecial(run: RunState) {
   const { maxTier } = turnConfig(run.turn);
   run.special = withRng(run, (rng): SpecialOffer => {
-    // Mythics are rare: from day 8, on 1 day in 10.
+    // Mythics are rare: from MYTHIC_SPECIAL_DAY, on MYTHIC_SPECIAL_CHANCE of days.
     if (run.turn >= MYTHIC_SPECIAL_DAY && rng.next() < MYTHIC_SPECIAL_CHANCE) {
       const def = unitDef(pickMythic(run, rng));
       return { kind: 'mythic', defId: def.id, cost: unitCost(def) };

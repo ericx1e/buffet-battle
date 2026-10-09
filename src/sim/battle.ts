@@ -502,7 +502,7 @@ class Battle {
           const flat = pattern === 'volley' ? damage : unitDef(u.defId).throwDamage ?? half;
           const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : pattern === 'scatter' ? 'bursts' : 'shoots';
           const land = (t: BattleUnit, dmg: number) => {
-            this.hit(t, dmg, u, u.item === 'toothpick');
+            this.hit(t, dmg + (u.item === 'toothpick' ? 1 : 0), u, u.item === 'toothpick');
             if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
           };
           for (let i = 0; i < times; i++) {
@@ -567,9 +567,14 @@ class Battle {
         this.mark(attacker, 'attack', 1);
         for (const [t, dmg] of hits) {
           if (def.attackRots) this.addStatus(t, 'rot', def.attackRots);
+          // Ghost Pepper fans the flames: Burn first, then the target's Burn doubles (it stacks without a cap).
+          if (def.fansBurn && this.onPlate(t)) {
+            this.addStatus(t, 'burn', this.levelValue(attacker));
+            this.addStatus(t, 'burn', t.burn);
+          }
           const stacks = def.hitsHarder ? t[def.hitsHarder] : 0;
           const bonus = stacks > 0 ? harder * (def.perStack ? stacks : 1) : 0;
-          this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
+          this.hit(t, dmg + bonus + (attacker.item === 'toothpick' ? 1 : 0), attacker, attacker.item === 'toothpick');
           // Spicy burns everything the attack hits (splash, pierce, fork...), as throws do.
           if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
         }
@@ -637,14 +642,14 @@ class Battle {
     for (const side of [0, 1] as Side[]) {
       const sticks = this.bonus[(1 - side) as Side].burnSticks;
       for (const u of this.units(side)) {
-        const doubled = this.fermented(u);
-        const dmg = (u.burn + u.rot) * (doubled ? 2 : 1);
+        const mult = this.fermented(u);
+        const dmg = (u.burn + u.rot) * mult;
         if (dmg <= 0) continue;
         u.hp -= dmg;
         if (u.burn > 0) this.mark(u, 'burn', u.burn);
         if (u.rot > 0) this.mark(u, 'rot', u.rot);
         ticks.push(`${this.name(u)} ${dmg}`);
-        lines.push(`${this.name(u)} ${u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots'} for ${dmg}${doubled ? ' (doubled)' : ''}`);
+        lines.push(`${this.name(u)} ${u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots'} for ${dmg}${mult === 3 ? ' (tripled)' : mult === 2 ? ' (doubled)' : ''}`);
         if (u.burn > 0) u.burn = sticks ? u.burn - 1 : Math.floor(u.burn / 2);
       }
     }
@@ -660,9 +665,16 @@ class Battle {
     return this.units(u.side).find((w) => w !== u && unitDef(w.defId).aura === 'baste');
   }
 
-  /** Black Garlic on the other side: this food's lane (every lane, once cooked) takes double Burn and Rot damage. */
-  private fermented(u: BattleUnit): boolean {
-    return this.units((1 - u.side) as Side).some((g) => unitDef(g.defId).aura === 'ferment' && (g.level === 3 || laneOf(g.slot) === laneOf(u.slot)));
+/** Black Garlic on the other side: how many times over this food takes Burn and Rot damage. Its lane and the lanes
+   * beside it take double; once it is cooked, every enemy takes triple. */
+  private fermented(u: BattleUnit): number {
+    let mult = 1;
+    for (const g of this.units((1 - u.side) as Side)) {
+      if (unitDef(g.defId).aura !== 'ferment') continue;
+      if (g.level === 3) mult = 3;
+      else if (Math.abs(laneOf(g.slot) - laneOf(u.slot)) <= 1) mult = Math.max(mult, 2);
+    }
+    return mult;
   }
 
   /** The food is going cold: every food loses 1 HP in round 16, 2 in round 17 and so on. Ignores Crust and Tupperware, and isn't a hit. */

@@ -1,6 +1,6 @@
 // Background music, sequenced live from the same marimba, glockenspiel and kitchen percussion as the sound effects
 // (so it is in their key and costs no extra download), with a soft synthesized bass: Prep Time in the kitchen,
-// Dinner Rush in battles (more were auditioned on a jukebox page). Each bar is 16 sixteenth notes. Patterns: 'x' a hit,
+// Boss Plate in battles (more were auditioned on a jukebox page). Each bar is 16 sixteenth notes. Patterns: 'x' a hit,
 // 'o' a soft one, '.' a rest. Bass: R root, 5 fifth, O octave. Arp digits pick the chord's notes (0 lowest).
 // Melodies are [step, MIDI note] per bar and cycle.
 import { audioSettings, musicOut, musicVoice, onAudioChange } from './sound';
@@ -52,26 +52,26 @@ export const TRACKS: Track[] = [
     ],
   },
   {
-    id: 'rush', name: 'Dinner Rush', scene: 'battle', bpm: 138, swing: 0.5,
+    id: 'boss', name: 'Boss Plate', scene: 'battle', bpm: 146, swing: 0.5,
     chords: [
       { name: 'Am', root: 45, notes: [69, 72, 76] },
       { name: 'F', root: 41, notes: [65, 69, 72] },
-      { name: 'C', root: 48, notes: [67, 72, 76] },
-      { name: 'G', root: 43, notes: [67, 71, 74] },
+      { name: 'Dm', root: 38, notes: [62, 65, 69] },
+      { name: 'E', root: 40, notes: [64, 68, 71] },
     ],
-    bass: 'R.R.R.R.R.R.O.R.',
-    arp: { pat: '0120012001200123', v: 0.12 },
+    bass: 'R.R.R.RRR.R.R.OR',
+    arp: { pat: '0120012001200120', v: 0.11 },
     melody: { inst: 'mar', v: 0.42, bars: [
-      [[0, 81], [2, 84], [4, 88], [6, 84], [8, 86], [10, 84], [12, 81], [14, 79]],
-      [[0, 81], [4, 77], [6, 81], [8, 84], [12, 81]],
-      [[0, 79], [2, 84], [4, 88], [6, 91], [8, 88], [12, 84]],
-      [[0, 86], [2, 83], [4, 79], [8, 83], [10, 86], [12, 91], [14, 88]],
+      [[0, 81], [3, 80], [6, 81], [8, 84], [12, 83]],
+      [[0, 81], [4, 77], [8, 81], [12, 84]],
+      [[0, 86], [3, 84], [6, 81], [8, 77], [12, 74]],
+      [[0, 76], [4, 80], [8, 83], [12, 86], [14, 88]],
     ] },
     perc: [
-      { s: 'bongoL', pat: 'x.....x.x.......', v: 0.3 },
-      { s: 'bongoH', pat: '..o.x.o...o.x.oo', v: 0.22 },
-      { s: 'clap', pat: '....x.......x...', v: 0.16 },
-      { s: 'shake', pat: 'oooooooooooooooo', v: 0.06 },
+      { s: 'bongoL', pat: 'x..x..x.x..x..x.', v: 0.32 },
+      { s: 'bongoH', pat: '....x.......x.o.', v: 0.24 },
+      { s: 'clap', pat: '....x.......x...', v: 0.18 },
+      { s: 'shake', pat: 'oooooooooooooooo', v: 0.07 },
     ],
   },
 ];

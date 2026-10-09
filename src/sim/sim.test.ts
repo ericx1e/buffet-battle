@@ -160,7 +160,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.interestMult ? 1 : 0) + (u.hitsHarder ? 1 : 0) + (u.rich ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.interestMult ? 1 : 0) + (u.hitsHarder ? 1 : 0) + (u.fansBurn ? 1 : 0) + (u.rich ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
@@ -648,6 +648,36 @@ describe('round 5 rules', () => {
     const echoed = grow('bento');
     expect(echoed.hp).toBe(6);
     expect(echoed.days).toEqual(grow('cheese').days);
+  });
+
+  it('Ghost Pepper: each attack Burns the target 2, then doubles its Burn (level 1)', () => {
+    const r = simulateBattle(plate({ 0: unit('ghostPepper', { attack: 1, hp: 200 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 300 }) }), 1);
+    const burns = r.frames.map((f) => f.plates[1][0]?.burn ?? 0);
+    // First attack: 0 + 2 = 2, doubled to 4. It halves at the turn's end (2), then the next attack: 2 + 2, doubled, 8.
+    expect(burns).toContain(4);
+    expect(burns).toContain(8);
+  });
+
+  it('Black Garlic doubles Burn and Rot in its lane and the lanes beside it; cooked, triples them everywhere', () => {
+    const tick = (garlicSlot: number, copies: number, enemySlot: number) => {
+      // A cooked Grapefruit behind it makes every enemy Rot, so the reach is what decides the multiplier.
+      const garlic = { [garlicSlot]: unit('blackGarlic', { attack: 1, hp: 200, copies }), [garlicSlot + 3]: unit('grapefruit', { attack: 1, hp: 200, copies: 6 }) };
+      const enemy = { [enemySlot]: unit('cheese', { attack: 1, hp: 200 }) };
+      const r = simulateBattle(plate(garlic), plate(enemy), 1);
+      return r.frames.find((f) => / rots for /.test(f.text))?.text ?? '';
+    };
+    expect(tick(1, 1, 0)).toContain('(doubled)'); // middle lane reaches the far lane
+    expect(tick(0, 1, 2)).not.toContain('(doubled)'); // far lane doesn't reach the near lane
+    expect(tick(0, 6, 2)).toContain('(tripled)');
+  });
+
+  it('Toothpick (held): attacks deal +1 and ignore Crust', () => {
+    const lost = (item?: 'toothpick') => {
+      const r = simulateBattle(plate({ 0: unit('cheese', { attack: 3, hp: 200, item }) }), plate({ 0: unit('cheese', { attack: 1, hp: 200 }) }), 1);
+      const hit = r.frames.flatMap((f) => f.marks).find((m) => m.side === 1 && m.kind === 'hit');
+      return hit?.amount;
+    };
+    expect(lost('toothpick')).toBe((lost() ?? 0) + 1);
   });
 
   it('Bento Box does nothing for a friend ahead that only attacks (a pattern, no abilities)', () => {

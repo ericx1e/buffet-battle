@@ -105,7 +105,7 @@ The last teal cubby holds one special offer each day. Refilling doesn't change i
 An open Spice Pack or Farm Box can be skipped (the button under it) when nothing in it is worth keeping or there is no room for it; the gold is spent.
 | Pair | Any day | About 1.5x one food's price (3→5, 4→6, 5→8) | 2 copies of one unlocked food, delivered to the counter tray |
 | Premium Refill | Day 3+ | 3 | Refills the market with only next-tier foods (drag onto the refill sign or the tray) |
-| Mythic Delivery | Day 8+, 10% of days | 10 | One mythic food, dragged straight onto the plate (half the time one you already own, if any) |
+| Mythic Delivery | Day 8+, 7% of days | 10 | One mythic food, dragged straight onto the plate (half the time one you already own, if any) |
 
 ### Counter tray (overflow)
 
@@ -159,7 +159,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
 | HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack: once a day in the kitchen, every time in battle), Birthday Cake (+1 to every gain) |
 | Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
-| Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (+damage to Burning enemies) |
+| Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (its attacks Burn, then double the Burn) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
 
@@ -296,7 +296,7 @@ There are no automatic pairings. Positioning comes from specific foods' abilitie
 | Ramen | Front-row friends get Crust | Double for Savory friends |
 | Bento Box | Aura: the friend ahead | |
 | Smoothie | Every 2 turns, every friend gains +1/+1 to +3/+3 | A plain, readable whole-plate grower for the late game |
-| Mythics | Golden Truffle (lane partner), Saffron (neighbours), Wagyu (every friend), Black Garlic (its lane, enemy side) | See Mythics |
+| Mythics | Golden Truffle (lane partner), Saffron (neighbours), Wagyu (every friend), Black Garlic (its lane and the lanes beside it, enemy side) | See Mythics |
 
 ### Keyword: Crust
 
@@ -355,14 +355,14 @@ Every food is one entry in `UNITS` in `src/sim/data.ts`. Its abilities are built
 - Art: drop `art/units/<id>.png` (32x32), or add a drawing to `tools/gen-foods.mjs`. Without art a covered dish is shown. The `emoji` field is only a label for the data file and is never shown in the game.
 ### Mythics
 
-Mythics are rare: a Mythic Delivery can show up from day 8, on 10% of days, and from day 6 each buffet slot has a 1% chance of holding one, for 10 gold. Half the time an offer is a mythic you already own, so it can level up. Each bends one rule of the game, and where it sits decides who it reaches, so placing it is the decision. Together they cover every flavor tree. None has numbers to track beyond one opening effect, and cooking one makes its rule reach further. A mythic copy is a whole level: two make level 2 and three cook it (a Microwave still adds one copy), and it sells for half the mythics merged into it.
+Mythics are rare: a Mythic Delivery can show up from day 8, on 7% of days, and from day 6 each buffet slot has a 0.5% chance of holding one, for 10 gold. Half the time an offer is a mythic you already own, so it can level up. Each bends one rule of the game, and where it sits decides who it reaches, so placing it is the decision. Together they cover every flavor tree. None has numbers to track beyond one opening effect, and cooking one makes its rule reach further. A mythic copy is a whole level: two make level 2 and three cook it (a Microwave still adds one copy), and it sells for half the mythics merged into it.
 
 | Mythic | Flavor | The rule | Where it wants to be | Cooked |
 | --- | --- | --- | --- | --- |
 | Golden Truffle | Savory | In battle, the friend in its lane is cooked: level 3 numbers and its cooked bonus | Ahead of or behind the food whose cooked bonus you want most, usually a tier 5-6 food you'll never get 6 copies of | Every friend is cooked |
 | Saffron | All | Counts as every flavor; adjacent friends count twice toward flavor bonuses | Back middle touches three foods; ring it with your main flavor to reach 4 and 6 | Every friend counts twice |
 | Wagyu | Salty + Sweet | Your friends get double from Crust and HP gains; start of battle, they gain 2/3/4 Crust (4/6/8 after doubling) | Anywhere: it reaches the whole plate | Start of battle: your friends gain +3 HP (6, doubled) |
-| Black Garlic | Sour + Spicy | Enemies in its lane take double damage from Burn and Rot; start of battle, they Rot 1/2/3 | The lane your Burn and Rot sources aim at (Chili and Ice Cream hit the enemy across) | Every lane |
+| Black Garlic | Sour + Spicy | Enemies in its lane and the lanes beside it take double damage from Burn and Rot; start of battle, the front enemy in each of those lanes Rots 1/2/3 | The middle lane reaches every lane; a side lane reaches two | Every enemy, triple |
 
 Black Garlic and Wagyu mirror each other: one doubles the offensive statuses (Spicy and Sour), the other the defensive ones (Salty and Sweet). The rules use words the game already teaches (cooked, flavor counts, Crust, heals, Burn, Rot, lanes), and the kitchen shows reach with the same link arrows as other positional foods.
 
@@ -529,9 +529,9 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Fortune Cookie | Sweet | 3/5 | 4 | Start of day: +1/2/3 HP per gold of interest earned. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
 | 3 | Kebab | Savory | 6/9 | 4 | Pierce attack: also hits the enemy behind its target for 50/75/100% damage. *(pierce attack)* | **Shish Platter**: Start of battle: attacks twice on its first 2 attacks. |
 | 3 | Nachos | Salty | 5/11 | 4 | Splash attack: also hits the enemies beside its target for 1/2/3. *(splash attack)* | **Supreme Nachos**: Every 2 turns: deal 3 damage to the enemy front row. |
-| 3 | Yogurt | Sour | 2/5 | 4 | Cultures: start of day, +2/3/4 HP, +1 more next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
-| 3 | Chili Oil | Spicy | 2/5 | 4 | Infuses: start of day, +1/2/3 attack, +1 more next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
-| 3 | Maple Syrup | Sweet | 4/7 | 4 | End of day: 2 random friends gain +2/3/4 HP. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
+| 3 | Yogurt | Sour | 3/5 | 4 | Cultures: start of day, +2/3/4 HP, +1 more next to a Sour friend. | **Frozen Yogurt**: Start of battle: the enemy across is Chilled 2. |
+| 3 | Chili Oil | Spicy | 2/6 | 4 | Infuses: start of day, +1/2/3 attack, +1 more next to a Spicy friend. | **Chili Crisp**: Start of battle: Spicy friends gain +3 attack. |
+| 3 | Maple Syrup | Sweet | 3/6 | 4 | End of day: 2 random friends gain +2/3/4 HP. | **Maple Taffy**: Start of battle: your friends gain +2 attack. |
 | 3 | Peppercorns | Spicy | 2/6 | 4 | Start of battle, 3/4/5 peppercorns hit random enemies for half its attack. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 4/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 5/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
@@ -540,7 +540,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 4 | Mushroom | Savory | 4/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 5/8 | 4 | Start of battle: the friend ahead (or itself) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 4/16 | 4 | Eaten, and every 2nd time hit: summon a 2/2, 3/3 or 4/4 Slice. | **Fruit Salad**: Eaten: summon two more 4/4 Slices. |
-| 4 | Grapefruit | Sour | 5/9 | 4 | Every turn: Rotting enemies lose 1/2/3 attack. | **Sorbet**: Start of battle: every enemy Rots 1. |
+| 4 | Grapefruit | Sour | 5/11 | 4 | Every turn: Rotting enemies lose 1/2/3 attack. | **Sorbet**: Start of battle: every enemy Rots 1. |
 | 4 | Bacon | Salty | 6/8 | 4 | Hit: deal 2/3/4 damage to the attacker. | **BLT**: Start of battle: adjacent friends gain 3 Crust. |
 | 4 | Soy Sauce | Salty | 4/11 | 4 | Refill: a random friend gains +1/+1, +2/+2 or +3/+3. | **Aged Shoyu**: Refill: another random friend gains +1/+1 too. |
 | 4 | Blue Cheese | Sour + Savory | 5/9 | 4 | Hit: the attacker Rots 1/2/3. | **Roquefort**: Start of battle: all enemies Rot 2. |
@@ -554,15 +554,15 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 4 | Rice Ball | Salty | 4/11 | 4 | Rich: counts as 2/3/4 Salty foods for flavors. | **Yaki Onigiri**: Start of battle: adjacent friends gain 3 Crust. |
 | 4 | Miso | Savory | 4/11 | 4 | Rich: counts as 2/3/4 Savory foods for flavors. | **Miso Soup**: Start of battle: adjacent friends gain +1/+2. |
 | 5 | Steak | Savory | 7/13 | 5 | Friend summoned: give it +2/+2, +3/+3 or +4/+4. | **Steak Frites**: Start of battle: adjacent friends gain +3/+3. |
-| 5 | Ghost Pepper | Spicy | 7/12 | 5 | Deals +3/4/6 damage to Burning enemies. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
+| 5 | Ghost Pepper | Spicy | 6/12 | 5 | Attacks: the target Burns 2/3/4, then its Burn doubles. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 6/10 | 5 | Hit: your friends gain +1/+1, +2/+2 or +3/+3. | **Pina Colada**: Every turn: your friends gain +1/+1. |
 | 5 | Durian | Sour | 5/10 | 5 | Hit: the enemy front row Rots 1/2/3. | **Durian Crepe**: Start of battle: all enemies Rot 1. |
 | 5 | Caviar | Salty | 5/10 | 5 | Interest cap +1. Start of day: a random friend per gold of interest earned gains +1/+1, +2/+2 or +3/+3. | **Blini Platter**: End of day: +3 gold tomorrow. |
-| 5 | Spaghetti | Savory | 6/14 | 5 | Escalating attack: its 1st attack hits one enemy, its 2nd the front row, then every enemy. Extra targets take 50/75/100%. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
-| 5 | Takoyaki | Savory | 4/14 | 5 | Every turn, from any row, instead of attacking: throws 1/2/3 balls at random enemies for its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
+| 5 | Spaghetti | Savory | 6/12 | 5 | Escalating attack: its 1st attack hits one enemy, its 2nd the front row, then every enemy. Extra targets take 50/75/100%. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
+| 5 | Takoyaki | Savory | 5/14 | 5 | Every turn, from any row, instead of attacking: throws 1/2/3 balls at random enemies for its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
 | 6 | Pizza | Savory | 5/11 | 5 | Start of battle: your friends gain +1/2/3 HP per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1 attack per flavor on your plate. |
-| 6 | Hot Pot | Spicy | 5/13 | 5 | Simmers: every turn, all enemies Burn 1/2/3. | **Mala Hot Pot**: Start of battle: all enemies Burn 4. |
-| 6 | Birthday Cake | Sweet | 5/15 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
+| 6 | Hot Pot | Spicy | 5/10 | 5 | Simmers: every turn, all enemies Burn 1/2/3. | **Mala Hot Pot**: Start of battle: all enemies Burn 4. |
+| 6 | Birthday Cake | Sweet | 5/12 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
 | 6 | Kimchi | Sour + Spicy | 4/8 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 7/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 6/16 | 5 | The friend ahead's abilities trigger +1/2/3 times, in battle and the kitchen. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
@@ -571,7 +571,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | Mythic | Golden Truffle | Savory | 6/16 | 10 | In battle, the friend in its lane is cooked. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |
 | Mythic | Saffron | All | 4/10 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
 | Mythic | Wagyu | Salty + Sweet | 4/12 | 10 | Your friends get double Crust and HP. Start of battle: they gain 2/3/4 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Start of battle: your friends gain +3 HP. |
-| Mythic | Black Garlic | Sour + Spicy | 6/15 | 10 | Enemies in its lane take double Burn and Rot. Start of battle: they Rot 1/2/3. *(aura: ferment)* | **Black Garlic Ramen**: Every enemy takes double damage from Burn and Rot. |
+| Mythic | Black Garlic | Sour + Spicy | 6/15 | 10 | Enemies in its lane and the lanes beside it take double Burn and Rot. Start of battle: the front enemy in each of those lanes Rots 1/2/3. *(aura: ferment)* | **Black Garlic Ramen**: Every enemy takes triple damage from Burn and Rot. |
 
 Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summoner's flavor but don't count toward synergies.
 
@@ -603,7 +603,7 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 | Flavor Packet | 2 | 2 | The food gains a random flavor it doesn't have (up to 3 flavors). |
 | Bone Broth | 2 | 2 | +4 HP permanently. |
 | Salt Shaker | 2 | 3 | Held: gain 5 Crust at Start of battle. |
-| Toothpick | 2 | 3 | Held: this food's attacks ignore Crust. |
+| Toothpick | 2 | 3 | Held: this food's attacks deal +1 damage and ignore Crust. |
 | Bouillon Cube | 3 | 3 | Held: this food counts as one more food of its flavors. |
 | Party Mix | 3 | 3 | 4 random foods on your plate +1/+1 permanently. |
 | Seasoning Blend | 3 | 3 | The food gains a flavor you pick (up to 3 flavors). |
@@ -630,7 +630,7 @@ Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than
 - **Captions:** one short line per moment. Three or more targets are counted ("Durian: 3 enemies Rot 1"), several foods taking Burn and Rot share one line ("Burn & Rot: Popcorn 4, Kimchi 2"), repeats collapse ("+1/+1 ×3"), and each plate's end-of-turn effects get their own moment. Anything still longer than two lines ends in an ellipsis.
 - **Battle:** side view across a dining table, lanes receding into depth, foods lunging at each other and getting eaten by a fork; a plaque per team counts the foods left. Hits are built for impact: a slow wind-up, an accelerating dash, a short freeze on contact (hit-stop) while the target flashes white, a ring and sparks where they connect, then the target is knocked back and tipped away and springs back while the table jolts (big hits shake it). The damage number and the reaction wait for contact. Burn, Rot and Chill show as pixel flame, mould and snowflake badges on the food.
 - **Input:** drag and drop (mouse and touch) for buying, freezing, moving, merging, items, selling, opening specials and picking from packs. Clicking only selects, to read a food in the cookbook.
-- **Sound:** modelled on Super Auto Pets: soft real instruments and bubbly pops, all in C major so everything agrees (CC0 samples from the Versilian Community Sample Library, OpenGameArt and Kenney, as WAVs in `src/ui/sfx/`, credits there; instrument notes tuned exactly on import). A marimba plays the meaningful moments as little tunes: two notes up to buy, down to sell, a three-note rise to merge, a four-note run with a glockenspiel ding to level up, a fanfare with a clap to win, a sinking line to lose. A glockenspiel sparkles for heals, interest coins, freezing (with a triangle) and cooking. A woodblock ticks for taps and knocks for Crust, a high bongo bonks each hit (a slapstick and low bongo for big hits), a log drum goes "nuh-uh" when an action isn't allowed, a pop and plop pick up and place a food, the shop refill is a shaker and five rising pops as the new stock appears, and an eaten food gets the knife, a synthesized poof and a falling note. Buffs, heals, growth and interest coins within 0.35 s of each other climb a pentatonic scale, so a chain of buffs plays like a run up the marimba. A few kitchen sounds stay: coins, the fridge door, the pot lid for blocks, the service bell, a squish for Rot, and a synthesized sizzle for Burn. Music: two loops sequenced live in `src/ui/music.ts` from the same marimba, glockenspiel and percussion plus a soft synthesized bass, so they share the effects' key and cost no download: Prep Time (100 bpm, swung) in the kitchen and Dinner Rush (138 bpm, straight) in battles. The music fades between screens, is silent on the game-over card, and stops in a background tab. Settings (the gear button): music and effects volumes, each with an on/off switch, and mute all (`m`); remembered in the browser. `tools/import-sfx.mjs` converts .ogg, .wav or .mp3 files, with optional length caps and tuning.
+- **Sound:** modelled on Super Auto Pets: soft real instruments and bubbly pops, all in C major so everything agrees (CC0 samples from the Versilian Community Sample Library, OpenGameArt and Kenney, as WAVs in `src/ui/sfx/`, credits there; instrument notes tuned exactly on import). A marimba plays the meaningful moments as little tunes: two notes up to buy, down to sell, a three-note rise to merge, a four-note run with a glockenspiel ding to level up, a fanfare with a clap to win, a sinking line to lose. A glockenspiel sparkles for heals, interest coins, freezing (with a triangle) and cooking. A woodblock ticks for taps and knocks for Crust, a high bongo bonks each hit (a slapstick and low bongo for big hits), a log drum goes "nuh-uh" when an action isn't allowed, a pop and plop pick up and place a food, the shop refill is a shaker and five rising pops as the new stock appears, and an eaten food gets the knife, a synthesized poof and a falling note. Buffs, heals, growth and interest coins within 0.35 s of each other climb a pentatonic scale, so a chain of buffs plays like a run up the marimba. A few kitchen sounds stay: coins, the fridge door, the pot lid for blocks, the service bell, a squish for Rot, and a synthesized sizzle for Burn. Music: two loops sequenced live in `src/ui/music.ts` from the same marimba, glockenspiel and percussion plus a soft synthesized bass, so they share the effects' key and cost no download: Prep Time (100 bpm, swung) in the kitchen and Boss Plate (146 bpm, A minor turning to E major) in battles. The music fades between screens, is silent on the game-over card, and stops in a background tab. Settings (the gear button): music and effects volumes, each with an on/off switch, and mute all (`m`); remembered in the browser. `tools/import-sfx.mjs` converts .ogg, .wav or .mp3 files, with optional length caps and tuning.
 - **Interest at a glance:** the tip jar is a measuring jar. Coins fill it to a height set by your gold (seen through its glass), and a line on its side for each step of interest (5, 10, 15 gold) is marked +1, +2, +3, lit gold once the coins reach it: fill it to the line to earn. Its label shows your gold; hover or tap it for the rule and tomorrow's total. Foods that raise the cap add lines.
 - **Phones:** played in landscape (held upright, a screen asks to turn the phone). Touch drags carry the food above the finger; a tap shows a tooltip until the next tap; holding a food in battle shows its card. On high-density screens the stage scales by whole device pixels, so the art stays crisp while filling more of the screen. `npm run build:single` bundles the game into one self-contained page for hosting.
 - **Angle:** every food is drawn in a 3/4 view from slightly above: containers show their top (a jar's rim and contents, a bowl's ellipse), flat foods lying down show their thickness, and round toppings are squashed ovals.
