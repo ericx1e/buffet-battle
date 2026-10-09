@@ -50,7 +50,8 @@ import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
-import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
+import { type AudioSettings, type Sfx, audioSettings, isMuted, setAudio, sfx, toggleMute, unlockAudio } from './sound';
+import { type Scene, syncMusic, tracksFor } from './music';
 
 /**
  * The scenes and kitchen props, fetched and decoded at start-up and kept in memory: otherwise a screen's backdrop
@@ -138,8 +139,8 @@ const tipBox = (title: string, body: string) => tip(`<div class="tip-title">${ti
 
 /** Keywords explained at the bottom of any card or tooltip whose text mentions them. */
 const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[] = [
-  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then halves. No limit, but it burns out fast.' },
-  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. No limit. HP gains on a Rotting food are halved.' },
+  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then halves.' },
+  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. HP gains on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
   { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
@@ -713,6 +714,24 @@ function onAction(action: string, el: HTMLElement) {
     case 'sound':
       toggleMute();
       return render();
+    case 'settings':
+      settingsOpen = !settingsOpen;
+      sfx('page');
+      return render();
+    case 'close-settings':
+      settingsOpen = false;
+      sfx('select');
+      return render();
+    case 'audio-on': {
+      const key = el.dataset.key as 'sfxOn' | 'musicOn';
+      setAudio({ [key]: !audioSettings()[key] });
+      sfx('select');
+      return render();
+    }
+    case 'track':
+      setAudio({ [el.dataset.scene as Scene]: el.dataset.track! });
+      sfx('select');
+      return render();
     case 'skip':
       if (app.battle) app.frame = app.battle.result.frames.length - 1;
       return render();
@@ -875,6 +894,7 @@ function render() {
   if (app.message !== toast.text) toast = { text: app.message, id: toast.id + 1, at: performance.now() };
 
   document.body.dataset.screen = screen;
+  syncMusic(screen === 'over' ? null : screen);
   // Keep the images already on screen (same markup) instead of fresh copies: iPhone Safari can draw a newly inserted
   // <img> blank for a frame, which flashed the dark page through the scene on every tap.
   const keep = changed ? null : imagesByMarkup();
@@ -911,10 +931,42 @@ function imagesByMarkup(): Map<string, HTMLImageElement[]> {
   return map;
 }
 
-/** The sound on/off button (key m). `cls` may carry extra attributes for the kitchen's placement. */
-function soundButton(cls: string): string {
-  const off = isMuted();
-  return `<button class="${cls}" data-action="sound" ${tip(`<p>Sound ${off ? 'off' : 'on'}: tap to turn it ${off ? 'on' : 'off'} (key m).</p>`)} aria-label="sound ${off ? 'off' : 'on'}">${pix(off ? 'soundOff' : 'soundOn')}</button>`;
+/** The settings button: opens the popup with volumes, mutes and music. `cls` may carry extra attributes for the kitchen's placement. */
+function settingsButton(cls: string): string {
+  return `<button class="${cls}" data-action="settings" ${tip('<p>Settings: volume, music and sound on/off (key m mutes everything).</p>')} aria-label="settings">${pix(isMuted() ? 'soundOff' : 'gear')}</button>`;
+}
+
+/** The settings popup is open (not saved: it closes on reload). */
+let settingsOpen = false;
+
+/** Settings: a volume slider and an on/off switch for music and for sound effects, and the music for each screen. */
+function settingsModal(): string {
+  const a = audioSettings();
+  const row = (label: string, vol: 'music' | 'sfx', on: 'musicOn' | 'sfxOn') => `
+    <div class="set-row">
+      <span class="set-label">${label}</span>
+      <input class="set-slider" type="range" min="0" max="100" value="${Math.round(a[vol] * 100)}" data-audio="${vol}" aria-label="${label} volume" ${a[on] ? '' : 'disabled'}>
+      <button class="chip set-switch ${a[on] ? 'on' : ''}" data-action="audio-on" data-key="${on}">${a[on] ? 'on' : 'off'}</button>
+    </div>`;
+  const picks = (scene: Scene, label: string) => `
+    <div class="set-row">
+      <span class="set-label">${label}</span>
+      <div class="set-tracks">${tracksFor(scene).map((t) => `<button class="chip set-track ${a[scene] === t.id ? 'on' : ''}" data-action="track" data-scene="${scene}" data-track="${t.id}">${t.name}</button>`).join('')}</div>
+    </div>`;
+  return `
+    <div class="modal" data-k="modal" data-in="fade" data-action="close-settings"></div>
+    <div class="modal-card settings-card" data-k="settings" data-in="pop">
+      <div class="pg-title">Settings</div>
+      ${row('Music', 'music', 'musicOn')}
+      ${row('Sound effects', 'sfx', 'sfxOn')}
+      ${picks('kitchen', 'Kitchen music')}
+      ${picks('battle', 'Battle music')}
+      <div class="row">
+        <button class="chip" data-action="sound">${isMuted() ? 'unmute all' : 'mute all'}</button>
+        <button class="chip" data-action="close-settings">done</button>
+      </div>
+      <div class="set-hint">key m mutes everything</div>
+    </div>`;
 }
 
 const flavorOf = (u: { defId: string; flavorOverride?: Flavor } | null) => (u ? (u.flavorOverride ?? unitDef(u.defId).flavor) : null);
@@ -1511,7 +1563,7 @@ function renderKitchen() {
         <img class="scene-bg" src="${kitchenUrl}" alt="" draggable="false">
         <div class="ticket-text" style="${box(LAYOUT.ticket)}" data-vk="turn">day ${run.turn}</div>
         <button class="newrun" style="${box(LAYOUT.newRun)}" data-action="new-run">new run</button>
-        ${soundButton(`hotspot sound-btn" style="${box(LAYOUT.sound)}`)}
+        ${settingsButton(`hotspot sound-btn" style="${box(LAYOUT.sound)}`)}
         ${freezerMagnets()}
         ${orderTickets()}
         ${spiceJars()}
@@ -1537,6 +1589,7 @@ function renderKitchen() {
         ${cookbook()}
         ${app.message ? `<div class="toast" style="${box(LAYOUT.toast)};animation-delay:-${toastAge}ms" data-k="toast:${toast.id}" data-in="rise"><span>${app.message}</span></div>` : ''}
         ${app.seasoning ? seasoningModal() : ''}
+        ${settingsOpen ? settingsModal() : ''}
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
       </main>
@@ -2036,7 +2089,7 @@ function renderBattle(battle: PendingBattle): boolean {
         ${done ? '' : `<div class="hold-hint" style="${box([6, 338, 86, 12])}" data-k="hint" data-in="fade">hold a food to read it</div>`}
         ${held ? inspectCard(app.inspect!.side, app.inspect!.slot, held) : ''}
         <div class="controls" style="${box(BATTLE.controls)}">
-          ${soundButton('chip')}${done ? '' : `<button class="chip" data-action="speed" data-k="speed" data-in="fade" data-vk="speed" data-v="${app.speed}">${app.speed}x</button><button class="chip" data-action="skip" data-k="skip" data-in="fade">skip</button>`}
+          ${settingsButton('chip')}${done ? '' : `<button class="chip" data-action="speed" data-k="speed" data-in="fade" data-vk="speed" data-v="${app.speed}">${app.speed}x</button><button class="chip" data-action="skip" data-k="skip" data-in="fade">skip</button>`}
         </div>
         ${done
           ? `<div class="result-card ${outcome}" style="${box(BATTLE.result)}" data-k="result:${bid}" data-in="${outcome === 'loss' ? 'thud' : 'stamp'}" data-delay="250">
@@ -2045,12 +2098,13 @@ function renderBattle(battle: PendingBattle): boolean {
                <button class="big-btn" data-action="continue">back to the kitchen ›</button>
              </div>`
           : ''}
+        ${settingsOpen ? settingsModal() : ''}
       </main>
     </div>`;
 
   // Holding a food pauses the battle so its card stays up; letting go resumes it. The opening frame waits for the
   // scene transition and for the foods to be set down.
-  if (!done && !held) {
+  if (!done && !held && !settingsOpen) {
     timer = window.setTimeout(() => {
       app.frame++;
       render();
@@ -2411,7 +2465,15 @@ root.addEventListener('click', (e) => {
 for (const type of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) document.addEventListener(type, unlockAudio, true);
 
 // The chef-name card: its fields update as you type; Enter or the button submits.
-root.addEventListener('input', (e) => onNamingInput(e.target as HTMLInputElement));
+root.addEventListener('input', (e) => {
+  const el = e.target as HTMLInputElement;
+  if (el.dataset.audio) return setAudio({ [el.dataset.audio as keyof AudioSettings]: Number(el.value) / 100 });
+  onNamingInput(el);
+});
+// Letting go of the effects slider plays a sound at the new volume.
+root.addEventListener('change', (e) => {
+  if ((e.target as HTMLElement).dataset?.audio === 'sfx') sfx('coin');
+});
 root.addEventListener('change', (e) => onNamingInput(e.target as HTMLSelectElement));
 root.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -2424,13 +2486,17 @@ document.addEventListener('keydown', (e) => {
     toggleMute();
     return render();
   }
+  if (settingsOpen && e.key === 'Escape') {
+    settingsOpen = false;
+    return render();
+  }
   if (e.key === 'f') {
     // Fullscreen, on browsers that allow it (the stage refits on resize).
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
     else void document.documentElement.requestFullscreen?.().catch(() => {});
     return;
   }
-  if (app.battle || app.seasoning || isOver(app.run)) return;
+  if (app.battle || app.seasoning || settingsOpen || isOver(app.run)) return;
   if (e.key === 'r') onAction('reroll', root);
   else if (e.key === 's') sellSelected();
   else if (e.key === 'Escape') {

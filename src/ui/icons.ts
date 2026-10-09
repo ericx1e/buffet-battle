@@ -308,6 +308,17 @@ const ICONS = {
     '.xx...m..',
     '..x......',
   ],
+  gear: [
+    '...m.m...',
+    '..mmmmm..',
+    '.mmMMMmm.',
+    'mmM...Mmm',
+    '.mM...Mm.',
+    'mmM...Mmm',
+    '.mmMMMmm.',
+    '..mmmmm..',
+    '...m.m...',
+  ],
   soundOff: [
     '..x......',
     '.xx......',

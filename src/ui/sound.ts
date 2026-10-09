@@ -7,10 +7,64 @@
 // synthesized. Samples are CC0 (Versilian Community Sample Library, OpenGameArt, Kenney; credits in ./sfx), converted to
 // WAVs at full quality, normalized to the same peak, and the instrument notes tuned exactly.
 // Effects with several takes (wood_0, wood_1...) pick one at random, and untuned sounds vary their pitch a little, so
-// repeats don't drone. Audio starts on the first tap or click (browsers require it) and can be muted; the choice is
-// remembered.
+// repeats don't drone. Audio starts on the first tap or click (browsers require it). Sound effects and music (see
+// music.ts) each have a volume and an on/off switch, remembered in the browser.
 
+/** Before the settings popup there was only one switch: its value still mutes both for returning players. */
 const MUTE_KEY = 'buffetbattle.muted';
+const SETTINGS_KEY = 'buffetbattle.audio';
+
+export interface AudioSettings {
+  /** Volumes from 0 to 1. */
+  sfx: number;
+  music: number;
+  sfxOn: boolean;
+  musicOn: boolean;
+  /** The chosen loop for each screen (a track id from music.ts). */
+  kitchen: string;
+  battle: string;
+}
+
+const DEFAULTS: AudioSettings = { sfx: 0.8, music: 0.5, sfxOn: true, musicOn: true, kitchen: 'prep', battle: 'rush' };
+
+let settings: AudioSettings = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
+    if (saved) return { ...DEFAULTS, ...saved };
+    if (localStorage.getItem(MUTE_KEY) === '1') return { ...DEFAULTS, sfxOn: false, musicOn: false };
+  } catch {
+    // unreadable: defaults
+  }
+  return { ...DEFAULTS };
+})();
+
+export const audioSettings = (): Readonly<AudioSettings> => settings;
+
+/** Changes and remembers audio settings, and applies the volumes at once. */
+export function setAudio(patch: Partial<AudioSettings>) {
+  settings = { ...settings, ...patch };
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch {
+    // not remembered: fine
+  }
+  applyVolumes();
+  changed();
+}
+
+/** Volume sliders feel even when the gain follows their square. Effects keep the mix they were tuned at (0.8 is 1). */
+function applyVolumes() {
+  if (!ctx || !sfxBus || !musicBus) return;
+  sfxBus.gain.setTargetAtTime(settings.sfxOn ? (settings.sfx / 0.8) ** 2 : 0, ctx.currentTime, 0.03);
+  musicBus.gain.setTargetAtTime(settings.musicOn ? settings.music ** 2 * 0.9 : 0, ctx.currentTime, 0.03);
+}
+
+/** Called when audio starts running or the settings change (music.ts starts or switches its loop). */
+const hooks: (() => void)[] = [];
+export function onAudioChange(cb: () => void) {
+  hooks.push(cb);
+}
+const changed = () => hooks.forEach((cb) => cb());
 
 /** Every effect file, by name ("plate_1"). */
 const FILES = Object.fromEntries(
@@ -20,16 +74,11 @@ const FILES = Object.fromEntries(
 
 let ctx: AudioContext | null = null;
 let out: GainNode | null = null;
+let sfxBus: GainNode | null = null;
+let musicBus: GainNode | null = null;
 let noiseBuf: AudioBuffer | null = null;
 let primed = false;
 const buffers = new Map<string, AudioBuffer>();
-let muted = (() => {
-  try {
-    return localStorage.getItem(MUTE_KEY) === '1';
-  } catch {
-    return false;
-  }
-})();
 
 /**
  * Starts audio from a user gesture. Call it from tap-release, click and key handlers: iPhone Safari only lets audio
@@ -37,7 +86,7 @@ let muted = (() => {
  */
 export function unlockAudio() {
   if (ctx) {
-    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    if (ctx.state !== 'running') ctx.resume().then(changed).catch(() => {});
     prime();
     return;
   }
@@ -46,7 +95,7 @@ export function unlockAudio() {
   } catch {
     return; // no Web Audio: the game stays silent
   }
-  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  if (ctx.state !== 'running') ctx.resume().then(changed).catch(() => {});
   prime();
   // A gentle compressor keeps a busy battle frame from clipping.
   const comp = ctx.createDynamicsCompressor();
@@ -55,6 +104,11 @@ export function unlockAudio() {
   out = ctx.createGain();
   out.gain.value = 0.9;
   out.connect(comp).connect(ctx.destination);
+  sfxBus = ctx.createGain();
+  sfxBus.connect(out);
+  musicBus = ctx.createGain();
+  musicBus.connect(out);
+  applyVolumes();
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noiseBuf.getChannelData(0);
   for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
@@ -67,6 +121,7 @@ export function unlockAudio() {
       .then((buf) => buffers.set(name, buf))
       .catch(() => {});
   }
+  if (ctx.state === 'running') changed();
 }
 
 /** iPhone: playing one silent sample inside the gesture finishes unlocking audio. */
@@ -79,22 +134,20 @@ function prime() {
   src.start(0);
 }
 
-export const isMuted = () => muted;
+/** Everything off: sound effects and music. */
+export const isMuted = () => !settings.sfxOn && !settings.musicOn;
 
+/** Key m: everything off, or (when it all is) everything back on. */
 export function toggleMute(): boolean {
-  muted = !muted;
-  try {
-    localStorage.setItem(MUTE_KEY, muted ? '1' : '0');
-  } catch {
-    // not remembered: fine
-  }
-  if (!muted) sfx('select');
-  return muted;
+  const on = isMuted();
+  setAudio({ sfxOn: on, musicOn: on });
+  if (on) sfx('select');
+  return !on;
 }
 
 /** Plays a recorded effect (a random take when there are several: "plate" picks plate_0, plate_1...). `exact` keeps the pitch in tune (for the scale). */
-function play(name: string, at: number, opts: { v?: number; rate?: number; exact?: boolean } = {}) {
-  if (!ctx || !out) return;
+function play(name: string, at: number, opts: { v?: number; rate?: number; exact?: boolean } = {}, bus: AudioNode | null = sfxBus) {
+  if (!ctx || !bus) return;
   const takes = buffers.has(name) ? [name] : [0, 1, 2, 3].map((i) => `${name}_${i}`).filter((n) => buffers.has(n));
   if (!takes.length) return;
   const src = ctx.createBufferSource();
@@ -102,7 +155,7 @@ function play(name: string, at: number, opts: { v?: number; rate?: number; exact
   src.playbackRate.value = (opts.rate ?? 1) * (opts.exact ? 1 : 0.96 + Math.random() * 0.08);
   const g = ctx.createGain();
   g.gain.value = opts.v ?? 0.6;
-  src.connect(g).connect(out);
+  src.connect(g).connect(bus);
   src.start(at);
 }
 
@@ -110,9 +163,54 @@ function play(name: string, at: number, opts: { v?: number; rate?: number; exact
 const NOTES = { mar: [65, 72, 79, 83, 89, 96], glock: [96, 103, 108] } as const;
 
 /** Plays one note (MIDI number) on an instrument, from its nearest recorded note. */
-function note(inst: keyof typeof NOTES, midi: number, at: number, v = 0.5) {
+function note(inst: keyof typeof NOTES, midi: number, at: number, v = 0.5, bus: AudioNode | null = sfxBus) {
   const from = NOTES[inst].reduce<number>((a, b) => (Math.abs(b - midi) < Math.abs(a - midi) ? b : a), NOTES[inst][0]);
-  play(`${inst}_${from}`, at, { v, rate: 2 ** ((midi - from) / 12), exact: true });
+  play(`${inst}_${from}`, at, { v, rate: 2 ** ((midi - from) / 12), exact: true }, bus);
+}
+
+/** A soft plucked bass for the music: a triangle with a sine an octave down, through a gentle low-pass, dying away. */
+function bass(midi: number, at: number, v: number, len: number, bus: AudioNode) {
+  if (!ctx) return;
+  const f = 440 * 2 ** ((midi - 69) / 12);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, at);
+  g.gain.exponentialRampToValueAtTime(v, at + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, at + len);
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 700;
+  lp.Q.value = 0.7;
+  for (const [type, mult, amp] of [['triangle', 1, 1], ['sine', 0.5, 0.7]] as const) {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = f * mult;
+    const og = ctx.createGain();
+    og.gain.value = amp;
+    o.connect(og).connect(lp);
+    o.start(at);
+    o.stop(at + len + 0.05);
+  }
+  lp.connect(g).connect(bus);
+}
+
+/** The music bus, once audio has started. */
+export const musicOut = () => musicBus;
+
+/** What music.ts plays its loops with: the instruments, routed to a bus of its own. Null until audio is running. */
+export function musicVoice() {
+  if (!ctx || ctx.state !== 'running') return null;
+  const c = ctx;
+  return {
+    now: () => c.currentTime,
+    bus: (parent: AudioNode) => {
+      const g = c.createGain();
+      g.connect(parent);
+      return g;
+    },
+    note: (inst: keyof typeof NOTES, midi: number, at: number, v: number, bus: AudioNode) => note(inst, midi, at, v, bus),
+    sample: (name: string, at: number, v: number, rate: number, bus: AudioNode) => play(name, at, { v, rate }, bus),
+    bass,
+  };
 }
 
 /** A little tune: [MIDI note, beat] pairs, a beat being `beat` seconds. */
@@ -132,7 +230,7 @@ function ladder(at: number) {
 
 /** A soft puff of air, falling: the poof of a food that's been eaten. */
 function poof(at: number, v = 1) {
-  if (!ctx || !out || !noiseBuf) return;
+  if (!ctx || !sfxBus || !noiseBuf) return;
   const src = ctx.createBufferSource();
   src.buffer = noiseBuf;
   const f = ctx.createBiquadFilter();
@@ -144,14 +242,14 @@ function poof(at: number, v = 1) {
   g.gain.setValueAtTime(0.0001, at);
   g.gain.exponentialRampToValueAtTime(0.35 * v, at + 0.02);
   g.gain.exponentialRampToValueAtTime(0.0001, at + 0.32);
-  src.connect(f).connect(g).connect(out);
+  src.connect(f).connect(g).connect(sfxBus);
   src.start(at, Math.random() * 0.5);
   src.stop(at + 0.35);
 }
 
 /** Fat in a hot pan, synthesized: crackles over a soft hiss. */
 function sizzle(at: number, d = 0.35, v = 1) {
-  if (!ctx || !out || !noiseBuf) return;
+  if (!ctx || !sfxBus || !noiseBuf) return;
   const burst = (t: number, len: number, vol: number, f: number) => {
     const src = ctx!.createBufferSource();
     src.buffer = noiseBuf;
@@ -162,7 +260,7 @@ function sizzle(at: number, d = 0.35, v = 1) {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.exponentialRampToValueAtTime(vol, t + 0.003);
     g.gain.exponentialRampToValueAtTime(0.0001, t + len);
-    src.connect(filter).connect(g).connect(out!);
+    src.connect(filter).connect(g).connect(sfxBus!);
     src.start(t, Math.random() * 0.5);
     src.stop(t + len + 0.02);
   };
@@ -285,6 +383,6 @@ export type Sfx = keyof typeof SOUNDS;
 
 /** Plays a sound now, or `delay` ms from now. */
 export function sfx(name: Sfx, delay = 0) {
-  if (muted || !ctx || ctx.state !== 'running') return;
+  if (!settings.sfxOn || !ctx || ctx.state !== 'running') return;
   SOUNDS[name](ctx.currentTime + Math.max(0, delay) / 1000);
 }
