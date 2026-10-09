@@ -1,24 +1,8 @@
-import { env, exports } from 'cloudflare:workers';
+import { env } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import { GAME_VERSION } from '../../src/sim/version';
 import { hashToken } from '../src/auth';
-
-type Json = Record<string, any>;
-
-async function call(method: string, path: string, opts: { token?: string; body?: unknown; origin?: string; raw?: string } = {}) {
-  const headers: Record<string, string> = {};
-  if (opts.token) headers.authorization = `Bearer ${opts.token}`;
-  if (opts.origin) headers.origin = opts.origin;
-  if (opts.body !== undefined || opts.raw !== undefined) headers['content-type'] = 'application/json';
-  const res = await exports.default.fetch(`https://api.test${path}`, { method, headers, body: opts.raw ?? (opts.body === undefined ? undefined : JSON.stringify(opts.body)) });
-  return { status: res.status, headers: res.headers, body: (res.status === 204 ? {} : await res.json()) as Json };
-}
-
-async function newPlayer(name = 'Chef Test') {
-  const res = await call('POST', '/players', { body: { name } });
-  expect(res.status).toBe(201);
-  return res.body as { playerId: string; token: string; name: string };
-}
+import { type Json, call, newPlayer } from './helpers';
 
 describe('players', () => {
   it('signs up anonymously and keeps only a hash of the token', async () => {

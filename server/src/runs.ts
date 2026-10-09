@@ -34,15 +34,34 @@ const view = (row: RunRow, state: RunState): RunView => ({ id: row.id, version: 
 /** The state as stored: without the growth log, which is only for the client's animations. */
 const stored = (state: RunState) => JSON.stringify({ ...state, growth: [] });
 
-export async function activeRun(env: Env, playerId: string): Promise<RunView | null> {
-  const row = await env.DB.prepare("SELECT * FROM runs WHERE player_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1").bind(playerId).first<RunRow>();
-  if (!row) return null;
+/** A stored run as the client sees it. If the rules changed since this morning, it carries on under the new ones. */
+async function load(env: Env, row: RunRow): Promise<RunView> {
   const state = JSON.parse(row.state) as RunState;
-  if (row.version === GAME_VERSION) return view(row, state);
-  // The rules changed since this morning: the run carries on under the new ones.
+  if (row.version === GAME_VERSION || row.status !== 'active') return view(row, state);
   const migrated = migrateRun(state);
   await env.DB.prepare('UPDATE runs SET version = ?, state = ?, updated_at = ? WHERE id = ?').bind(GAME_VERSION, stored(migrated), Date.now(), row.id).run();
   return view({ ...row, version: GAME_VERSION }, migrated);
+}
+
+export async function activeRun(env: Env, playerId: string): Promise<RunView | null> {
+  const row = await env.DB.prepare("SELECT * FROM runs WHERE player_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1").bind(playerId).first<RunRow>();
+  return row ? load(env, row) : null;
+}
+
+/** One of the player's runs by id; 404 when it isn't theirs. */
+export async function ownRun(env: Env, playerId: string, runId: string): Promise<RunView> {
+  const row = await env.DB.prepare('SELECT * FROM runs WHERE id = ? AND player_id = ?').bind(runId, playerId).first<RunRow>();
+  if (!row) throw new HttpError(404, 'No such run.');
+  return load(env, row);
+}
+
+/** The run's state after a day: its record and status follow from the state. 409 if the day was already served. */
+export async function saveDay(env: Env, run: RunView, next: RunState, status: RunStatus): Promise<RunView> {
+  const result = await env.DB.prepare("UPDATE runs SET day = ?, wins = ?, lives = ?, status = ?, state = ?, updated_at = ? WHERE id = ? AND day = ? AND status = 'active'")
+    .bind(next.turn, next.courses, next.lives, status, stored(next), Date.now(), run.id, run.day)
+    .run();
+  if (result.meta.changes === 0) throw new HttpError(409, 'That day was already served.');
+  return { ...run, day: next.turn, wins: next.courses, lives: next.lives, status, state: { ...next, growth: [] } };
 }
 
 /** A new run for the player; any run they had going is abandoned. */

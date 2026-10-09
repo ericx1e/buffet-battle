@@ -1,5 +1,6 @@
 import { type Action, applyAction } from './actions';
 import { unitDef } from './data';
+import { Rng } from './rng';
 import { type Loc, type RunState, INTEREST_STEP, advanceTurn, interestCap, rerollCost, getUnit, newRun, offerCost, serve } from './run';
 import { type Plate, PLATE_SIZE, type UnitInstance, isAdjacent, laneOf, levelOf, rowOf, slotAt } from './types';
 
@@ -146,4 +147,20 @@ export function generateGhost(turn: number, seed: number, fair = false): Plate {
     if (t < turn) advanceTurn(run);
   }
   return plate;
+}
+
+/** An opponent for a battle: its plate, name and record. */
+export interface Opponent {
+  plate: Plate;
+  label: string;
+  wins: number;
+  lives: number;
+  bot?: true;
+}
+
+/** A bot opponent for `turn` from `seed`, given a record next to yours (`wins`, `lives`). */
+export function botOpponent(turn: number, seed: number, wins: number, lives: number): Opponent {
+  const rng = new Rng(seed ^ 0x5bd1e995);
+  const near = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n + rng.int(3) - 1));
+  return { plate: generateGhost(turn, seed), label: `Bot Chef #${seed % 1000}`, wins: near(wins, 0, turn - 1), lives: near(lives, 1, 5), bot: true };
 }

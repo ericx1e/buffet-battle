@@ -4,11 +4,14 @@
 //   PATCH /players/me          rename: { name }
 //   POST  /runs                new run (an active run is abandoned first) -> { run }
 //   GET   /runs/current        the active run, this morning -> { run } (null when there is none)
+//   POST  /runs/:id/serve      replay the day, battle, move on: { day, version, actions, plateHash } -> { opponent, seed, outcome, run }
+//   GET   /runs/:id/battles    the run's battles, both plates and the seed -> { battles }
 //   POST  /runs/:id/abandon    the New run button
 import { GAME_VERSION } from '../../src/sim/version';
 import { cleanName, hashToken, randomId, requirePlayer } from './auth';
 import { HttpError, allowedOrigin, json, readBody, withCors } from './http';
 import { abandonRun, activeRun, startRun } from './runs';
+import { battlesOf, serveDay } from './serve';
 
 async function route(req: Request, env: Env): Promise<Response> {
   const { pathname } = new URL(req.url);
@@ -36,11 +39,13 @@ async function route(req: Request, env: Env): Promise<Response> {
 
   if (at('POST', '/runs')) return json({ run: await startRun(env, player.id) }, 201);
   if (at('GET', '/runs/current')) return json({ run: await activeRun(env, player.id) });
-  const abandon = /^\/runs\/([\w-]{1,40})\/abandon$/.exec(pathname);
-  if (abandon && req.method === 'POST') {
-    await abandonRun(env, player.id, abandon[1]);
+  const [, runId, sub] = /^\/runs\/([\w-]{1,40})\/(abandon|serve|battles)$/.exec(pathname) ?? [];
+  if (sub === 'abandon' && req.method === 'POST') {
+    await abandonRun(env, player.id, runId);
     return json({ ok: true });
   }
+  if (sub === 'serve' && req.method === 'POST') return json(await serveDay(req, env, player.id, runId));
+  if (sub === 'battles' && req.method === 'GET') return json({ battles: await battlesOf(env, player.id, runId) });
 
   throw new HttpError(404, 'Not found.');
 }
@@ -52,7 +57,7 @@ export default {
     try {
       return withCors(await route(req, env), origin);
     } catch (e) {
-      if (e instanceof HttpError) return withCors(json({ error: e.message }, e.status), origin);
+      if (e instanceof HttpError) return withCors(json({ error: e.message, ...e.extra }, e.status), origin);
       console.error(e);
       return withCors(json({ error: 'Something went wrong in the kitchen.' }, 500), origin);
     }

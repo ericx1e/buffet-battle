@@ -677,7 +677,9 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
    4. saves the plate as a ghost;
    5. picks an opponent (see Matchmaking) and draws the battle seed from the run's RNG, as the client does today;
    6. simulates the battle, applies `finishBattle` and stores the new state;
-   7. returns `{ opponent: { plate, label, wins, lives }, seed, outcome, state }`.
+   7. returns `{ opponent: { plate, label, wins, lives, bot? }, seed, outcome, run }`.
+
+   This is built (`server/src/serve.ts`). A refused day changes nothing and says why: `400` for a malformed action, `422` with `reason: 'replay'` and the action's `index` when one fails, `409` with `reason` `'plate'` (and the server's `plateHash`), `'day'` or `'version'`. A day can only be served once.
 4. **Playback:** the client simulates the same battle from the plates and the seed, and checks it gets the same outcome. A mismatch is a bug: the server's result stands and the client reports it.
 5. **Resync:** if the server rejects a day, the client reloads the server's state from the start of the day (`GET /runs/current`) and tells the player.
 
@@ -741,10 +743,12 @@ CREATE INDEX battles_run ON battles (run_id);
 ### Matchmaking
 
 1. Same version and same day: a hard rule.
-2. Not the player's own ghosts, and not an opponent already fought this run.
+2. Not the player's own ghosts, and not a run already fought this run.
 3. Nearest record: the smallest `|wins - mine| + |lives - mine|`.
 4. Most recent first. From the best 20, pick one at random.
-5. A bot instead, when the pool is thin: always with fewer than 10 ghosts that qualify, never with 100 or more, and in between a chance that falls evenly from 100% to 0%. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today. Bot plates aren't stored; their seed is enough to rebuild them.
+5. A bot instead, when the pool is thin (counting the ghosts that pass 1 and 2): always with fewer than 10 ghosts that qualify, never with 100 or more, and in between a chance that falls evenly from 100% to 0%. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today (`botOpponent` in bot.ts, shared with the client). Bot plates aren't stored; their seed is enough to rebuild them.
+
+Every random choice here comes from a seed drawn from the run, so a day's opponent is fixed once the day is played.
 
 Bot opponents are labelled as bots in battle, so a loss to one doesn't read as a loss to a person. Battles against bots are kept out of the real-play balance report.
 
@@ -794,7 +798,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
    - `server/` with wrangler, the D1 schema as migration 0001;
    - players and runs endpoints;
    - tests with the Workers Vitest pool.
-3. **Serve:** replay, ghost save, matchmaking, battle, state update, tests (including a tampered log being rejected).
+3. **Serve, done:** replay, ghost save, matchmaking, battle, state update, tests (including a tampered log being rejected).
 4. **Client:** an API client, the chef-name prompt, Serve through the API, resync, local fallback.
 5. **Deploy:** Actions job, Cloudflare setup, `VITE_API_URL`.
 6. **Later:**

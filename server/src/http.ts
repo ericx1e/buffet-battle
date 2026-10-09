@@ -1,10 +1,11 @@
 // Small HTTP helpers: JSON responses, errors, size-limited bodies and CORS.
 
-/** Thrown anywhere in a handler; becomes `{ error }` with this status. */
+/** Thrown anywhere in a handler; becomes `{ error, ...extra }` with this status. */
 export class HttpError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    readonly extra: Record<string, unknown> = {},
   ) {
     super(message);
   }

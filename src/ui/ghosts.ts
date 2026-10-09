@@ -1,6 +1,6 @@
 // Local stand-in for the async server: every served plate is saved as a ghost, and later runs
 // can be matched against ghosts from the same turn. Falls back to bot plates.
-import { generateGhost } from '../sim/bot';
+import { type Opponent, botOpponent } from '../sim/bot';
 import { isUnit } from '../sim/data';
 import { Rng } from '../sim/rng';
 import type { Plate } from '../sim/types';
@@ -15,14 +15,6 @@ interface Ghost {
   /** The run's courses won and lives left when it was saved (older ghosts lack them). */
   wins?: number;
   lives?: number;
-}
-
-/** An opponent: its plate, name, and its run so far (wins and lives), matched to yours. */
-export interface Opponent {
-  plate: Plate;
-  label: string;
-  wins: number;
-  lives: number;
 }
 
 function load(): Ghost[] {
@@ -58,6 +50,5 @@ export function pickOpponent(runId: string, turn: number, seed: number, wins: nu
     const g = rng.pick(past.filter((p) => gap(p) === best));
     return { plate: g.plate, label: 'Ghost of a past run', wins: g.wins ?? wins, lives: g.lives ?? lives };
   }
-  const near = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n + rng.int(3) - 1));
-  return { plate: generateGhost(turn, seed), label: `Bot Chef #${seed % 1000}`, wins: near(wins, 0, turn - 1), lives: near(lives, 1, 5) };
+  return botOpponent(turn, seed, wins, lives);
 }
