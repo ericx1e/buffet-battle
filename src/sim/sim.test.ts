@@ -579,14 +579,63 @@ describe('cooked bonus', () => {
   });
 
   it('switches on only at level 3, and shows as a cooked mark', () => {
-    // Bento cooked: start of battle, your friends gain +3/+3.
+    // Smoothie cooked: start of battle, your friends gain +2 attack.
     const attackOf = (copies: number) => {
-      const r = simulateBattle(plate({ 0: unit('bento', { copies }), 1: unit('egg', { attack: 1, hp: 50 }) }), plate({ 0: unit('egg', { hp: 50 }) }), 1);
+      const r = simulateBattle(plate({ 0: unit('smoothie', { copies }), 1: unit('egg', { attack: 1, hp: 50 }) }), plate({ 0: unit('egg', { hp: 50 }) }), 1);
       const egg = r.frames[2].plates[0].find((u) => u?.defId === 'egg');
       return { attack: egg?.attack, cooked: r.frames.some((f) => f.marks.some((m) => m.kind === 'cooked')) };
     };
     expect(attackOf(5)).toEqual({ attack: 1, cooked: false });
-    expect(attackOf(6)).toEqual({ attack: 4, cooked: true });
+    expect(attackOf(6)).toEqual({ attack: 3, cooked: true });
+  });
+
+  it('cooked Ice Cream: Chilled enemies take +2 from every hit', () => {
+    const firstHit = (copies: number) => {
+      const r = simulateBattle(plate({ 0: unit('iceCream', { copies, attack: 3, hp: 50 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 50 }) }), 1);
+      return r.frames.flatMap((f) => f.marks).find((m) => m.side === 1 && m.kind === 'hit')?.amount;
+    };
+    expect(firstHit(6)).toBe((firstHit(5) ?? 0) + 2);
+  });
+
+  it('cooked Olive: its pits Rot', () => {
+    const rots = (copies: number) => {
+      const r = simulateBattle(plate({ 0: unit('olive', { copies, hp: 50 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 50 }) }), 1);
+      return Math.max(...r.frames.map((f) => f.plates[1][0]?.rot ?? 0));
+    };
+    expect(rots(5)).toBe(0);
+    expect(rots(6)).toBeGreaterThan(0);
+  });
+
+  it('cooked Takoyaki: one more ball at half damage each throw', () => {
+    const dealt = (copies: number) => {
+      const r = simulateBattle(plate({ 0: unit('takoyaki', { copies, attack: 6, hp: 99 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 300 }) }), 1);
+      return r.frames.filter((f) => f.round === 1).flatMap((f) => f.marks).filter((m) => m.side === 1 && m.kind === 'hit').reduce((n, m) => n + (m.amount ?? 0), 0);
+    };
+    // One enemy: each ball needs a different target, so one ball lands (6); cooked adds the half ball (3).
+    expect(dealt(5)).toBe(6);
+    expect(dealt(6)).toBe(9);
+  });
+
+  it('cooked Bento Box echoes every friend next to it', () => {
+    const grow = (copies: number) => {
+      const run = newRun(3);
+      run.plate[3] = unit('bento', { copies });
+      run.plate[4] = unit('breadDough'); // beside it in the back row, not ahead
+      endDay(run);
+      return run.plate[4]!.hp - unitDef('breadDough').hp;
+    };
+    expect(grow(5)).toBe(3);
+    expect(grow(6)).toBe(3 + 3 * 3); // echoed 3 more times
+  });
+
+  it('cooked Yogurt: adjacent Sour friends gain +2 HP at the start of the day', () => {
+    const run = newRun(3);
+    run.plate[0] = unit('yogurt', { copies: 6 });
+    run.plate[1] = unit('lemon'); // Sour
+    run.plate[3] = unit('egg'); // not Sour
+    finishBattle(run, 'win');
+    expect(run.plate[1]!.hp).toBe(unitDef('lemon').hp + 2);
+    expect(run.plate[3]!.hp).toBe(unitDef('egg').hp);
   });
 
   it('works in the kitchen too', () => {

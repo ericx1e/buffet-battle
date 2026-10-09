@@ -503,9 +503,11 @@ class Battle {
           // Pomegranate's scatter, every turn).
           const flat = pattern === 'volley' ? damage : unitDef(u.defId).throwDamage ?? half;
           const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : pattern === 'scatter' ? 'bursts' : 'shoots';
+          const cooked = u.level === 3 ? unitDef(u.defId).cooked : undefined;
           const land = (t: BattleUnit, dmg: number) => {
             this.hit(t, dmg + (u.item === 'toothpick' ? 1 : 0), u, u.item === 'toothpick');
             if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
+            if (cooked?.throwRot && this.onPlate(t)) this.addStatus(t, 'rot', cooked.throwRot);
           };
           for (let i = 0; i < times; i++) {
             // One throw is one moment: its projectiles fly together, each at an enemy not hit yet in this throw.
@@ -519,6 +521,15 @@ class Battle {
               else t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
               hit.push(t);
               land(t, flat);
+            }
+            // Cooked Takoyaki: one more ball in the same throw, at half damage.
+            if (cooked?.halfThrow && hit.length > 0) {
+              const left = this.units(enemy).filter((e) => !hit.includes(e) && e.hp > 0);
+              const t = left.length > 0 ? this.rng.pick(left) : hit[hit.length - 1];
+              if (this.onPlate(t)) {
+                if (!hit.includes(t)) hit.push(t);
+                land(t, Math.max(1, Math.ceil(flat / 2)));
+              }
             }
             if (hit.length === 0) break;
             this.mark(u, 'shoot', 1);
@@ -661,6 +672,13 @@ class Battle {
   }
 
   /** Wagyu: friends next to it (every friend, once it is cooked) get double from Crust and heals. */
+
+/** Cooked Ice Cream on a side: how much more its hits deal to Chilled enemies. */
+  private chillBite(side: Side): number {
+    let most = 0;
+    for (const u of this.units(side)) if (u.level === 3) most = Math.max(most, unitDef(u.defId).cooked?.chillBite ?? 0);
+    return most;
+  }
 
   /** The Wagyu basting this food, if any. */
   private bastedBy(u: BattleUnit): BattleUnit | undefined {
@@ -859,8 +877,7 @@ class Battle {
     const lines: string[] = [];
     // Echo aura: a food in the back row makes the friend ahead's abilities go off again (its level number of
     // times). Each repeat waits for its own moment (see resolve); an echo doesn't echo.
-    const echo = echoOf === undefined && rowOf(u.slot) === 0 ? this.plates[u.side][slotAt(laneOf(u.slot), 1)] : null;
-    const repeats = echo && this.onPlate(u) && unitDef(echo.defId).aura === 'echo' ? this.levelValue(echo) : 0;
+    const repeats = echoOf === undefined && this.onPlate(u) ? this.echoesOn(u) : 0;
     const times = 1;
     const def = unitDef(u.defId);
     const own = abilitiesOf(def, u.level);
@@ -895,6 +912,18 @@ class Battle {
       }
     }
     return lines.length > 0 ? lines.join(' · ') : undefined;
+  }
+
+/** Bento Box: how many extra times this food's abilities go off (behind it in its lane; cooked, any neighbour). */
+  private echoesOn(u: BattleUnit): number {
+    let most = 0;
+    for (const b of this.units(u.side)) {
+      if (b === u || unitDef(b.defId).aura !== 'echo') continue;
+      const behind = rowOf(u.slot) === 0 && b.slot === slotAt(laneOf(u.slot), 1);
+      const beside = b.level === 3 && !!unitDef(b.defId).cooked?.echoAll && isAdjacent(b.slot, u.slot);
+      if (behind || beside) most = Math.max(most, this.levelValue(b));
+    }
+    return most;
   }
 
   /** A food's level number (its value at its level): what its pattern, throw or aura scales with. */
@@ -1108,6 +1137,7 @@ class Battle {
     if (amount <= 0 || !this.onPlate(target)) return;
     const foe = source && source.side !== target.side ? source : undefined;
     if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
+    if (foe && target.chill > 0) amount += this.chillBite(foe.side); // cooked Ice Cream
     if (target.item === 'tupperware' && !target.tupperwareUsed) {
       target.tupperwareUsed = true;
       this.mark(target, 'blocked');

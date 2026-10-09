@@ -1476,7 +1476,8 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   if (slot >= 0) {
     const ahead = rowOf(slot) === 1 ? app.run.plate[slotAt(laneOf(slot), 0)] : null;
     const behind = rowOf(slot) === 0 ? app.run.plate[slotAt(laneOf(slot), 1)] : null;
-    if (d.aura === 'echo') {
+    if (d.aura === 'echo' && level === 3 && d.cooked?.echoAll) notes.push('Cooked: echoing every friend next to it that has abilities.');
+    else if (d.aura === 'echo') {
       if (rowOf(slot) === 0) notes.push('Echoing nothing: put it behind a food.');
       else if (!ahead) notes.push('Echoing nothing: no food ahead.');
       else {

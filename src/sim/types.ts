@@ -202,7 +202,18 @@ export interface UnitDef {
   /** Ability text; `{v}` is replaced by the value for the unit's level. */
   text: string;
   /** A bonus that switches on at level 3 (cooked), on top of its abilities. Fixed numbers; stronger with tier. */
-  cooked?: { text: string; abilities: AbilityDef[] };
+  cooked?: {
+    text: string;
+    abilities: AbilityDef[];
+    /** Its throws also make each target Rot this much (Olive). */
+    throwRot?: number;
+    /** Chilled enemies take this much more from every hit by your foods (Ice Cream). */
+    chillBite?: number;
+    /** Each throw adds one more projectile, at half damage (Takoyaki). */
+    halfThrow?: boolean;
+    /** Its echo reaches every adjacent friend, not only the one ahead (Bento Box). */
+    echoAll?: boolean;
+  };
   /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
   rarity?: Rarity;
   /** Summoned tokens never appear in the market and don't count for synergies. */

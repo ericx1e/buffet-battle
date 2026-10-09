@@ -672,6 +672,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
           default:
             targets = [unit];
         }
+        if (ab.onlyFlavor) targets = targets.filter((t) => flavorsOf(t).includes(ab.onlyFlavor!));
         if (targets.length === 0) return;
         const a = amount * (ab.attack ?? 1);
         const h = amount * (ab.hp ?? 1);
@@ -727,10 +728,17 @@ function fireKitchen(run: RunState, trigger: Trigger): string[] {
 
 /** How many extra times a food's abilities go off: a Bento Box behind a front-row food echoes it (its level number). */
 function echoesOn(run: RunState, slot: number | null): number {
-  if (slot === null || rowOf(slot) !== 0) return 0;
-  const behind = run.plate[slotAt(laneOf(slot), 1)];
-  if (!behind || unitDef(behind.defId).aura !== 'echo') return 0;
-  return unitDef(behind.defId).values[levelOf(behind.copies) - 1];
+  if (slot === null) return 0;
+  let most = 0;
+  run.plate.forEach((b, i) => {
+    if (!b || i === slot || unitDef(b.defId).aura !== 'echo') return;
+    const def = unitDef(b.defId);
+    const level = levelOf(b.copies);
+    // Behind a front-row food; cooked, any friend next to it.
+    const reaches = (rowOf(slot) === 0 && i === slotAt(laneOf(slot), 1)) || (level === 3 && !!def.cooked?.echoAll && isAdjacent(i, slot));
+    if (reaches) most = Math.max(most, def.values[level - 1]);
+  });
+  return most;
 }
 
 /** Gold for selling a food: half what its copies cost (rounded down, at least 1), plus sell value it gained. */
