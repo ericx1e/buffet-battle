@@ -769,6 +769,7 @@ async function serveOnline(mine: Plate, beforeEnd: RunState) {
   } catch (e) {
     app.run = beforeEnd;
     if (e instanceof api.Refused && e.reason === 'version') app.message = `${pix('warn')} The game was updated. Reload the page to carry on.`;
+    else if (e instanceof api.Refused && e.status === 429) app.message = `${pix('warn')} ${e.message}`;
     else if (e instanceof api.Refused) {
       await syncRun(true);
       app.message = `${pix('warn')} The server couldn't follow your day (${e.message}), so it starts over from this morning.`;

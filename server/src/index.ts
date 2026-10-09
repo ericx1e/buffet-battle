@@ -20,6 +20,9 @@ async function route(req: Request, env: Env): Promise<Response> {
   if (at('GET', '/')) return json({ ok: true, version: GAME_VERSION });
 
   if (at('POST', '/players')) {
+    // Cloudflare always sets the caller's address; without it (local tests) there is no one to count.
+    const ip = req.headers.get('cf-connecting-ip');
+    if (ip && !(await env.SIGNUP_LIMIT.limit({ key: ip })).success) throw new HttpError(429, 'Too many new chefs from here. Try again in a minute.');
     const name = cleanName((await readBody(req)).name);
     const playerId = randomId();
     const token = randomId(32);
@@ -29,6 +32,7 @@ async function route(req: Request, env: Env): Promise<Response> {
   }
 
   const player = await requirePlayer(req, env);
+  if (!(await env.PLAYER_LIMIT.limit({ key: player.id })).success) throw new HttpError(429, 'Slow down, chef: too many requests. Try again in a minute.');
 
   if (at('GET', '/players/me')) return json({ playerId: player.id, name: player.name });
   if (at('PATCH', '/players/me')) {

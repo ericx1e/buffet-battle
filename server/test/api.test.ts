@@ -1,4 +1,4 @@
-import { env } from 'cloudflare:workers';
+import { env, exports } from 'cloudflare:workers';
 import { describe, expect, it } from 'vitest';
 import { GAME_VERSION } from '../../src/sim/version';
 import { hashToken } from '../src/auth';
@@ -73,6 +73,25 @@ describe('runs', () => {
     const run = (await call('POST', '/runs', { token: p.token })).body.run;
     await env.DB.prepare("UPDATE runs SET version = 'old' WHERE id = ?").bind(run.id).run();
     expect((await call('GET', '/runs/current', { token: p.token })).body.run.version).toBe(GAME_VERSION);
+  });
+});
+
+describe('limits', () => {
+  it('lets 3 new chefs a minute sign up from one address', async () => {
+    const from = (ip: string) =>
+      exports.default.fetch('https://api.test/players', { method: 'POST', headers: { 'content-type': 'application/json', 'cf-connecting-ip': ip }, body: JSON.stringify({ name: 'Rush' }) });
+    const statuses = [];
+    for (let i = 0; i < 4; i++) statuses.push((await from('203.0.113.7')).status);
+    expect(statuses).toEqual([201, 201, 201, 429]);
+    expect((await from('203.0.113.8')).status).toBe(201);
+  });
+
+  it('lets a chef make 60 requests a minute', async () => {
+    const p = await newPlayer();
+    const statuses = [];
+    for (let i = 0; i < 61; i++) statuses.push((await call('GET', '/players/me', { token: p.token })).status);
+    expect(statuses.filter((s) => s === 200).length).toBe(60);
+    expect(statuses.at(-1)).toBe(429);
   });
 });
 
