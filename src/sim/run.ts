@@ -552,7 +552,7 @@ function kitchenHpGain(run: RunState, t: UnitInstance, parts: string[]) {
 /**
  * Runs a food's kitchen-phase abilities for one trigger. Effects: buff, gold, sellValue, freeReroll, gainFlavor,
  * buyBonus. Buff targets: self, randomFriends, level3Friends, adjacentFriends, friendAhead. Conditions: ifNoReroll,
- * ifAdjacentFlavor, ifLevel3; amounts: perFriend, perInterest, perLevel3; `max` caps the total over the run.
+ * ifAdjacentFlavor, ifLevel3; amounts: perFriend, perInterest, perLevel3 (countPerInterest: one random friend per gold of interest); `max` caps the total over the run.
  * `slot` is the food's plate slot (null in the fridge or overflow, or just sold). Returns a summary or ''.
  */
 function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigger: Trigger): string {
@@ -614,7 +614,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         let targets: UnitInstance[];
         switch (ab.target ?? 'self') {
           case 'randomFriends':
-            targets = withRng(run, (rng) => rng.sample(friends, ab.count ?? 1));
+            targets = withRng(run, (rng) => rng.sample(friends, ab.countPerInterest ? run.lastInterest : (ab.count ?? 1)));
             break;
           case 'level3Friends':
             targets = withRng(run, (rng) => rng.sample(friends.filter((u) => levelOf(u.copies) === 3), ab.count ?? 1));

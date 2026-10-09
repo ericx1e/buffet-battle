@@ -226,6 +226,7 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 | `lob` (opening throw) | Olive | First turn only, from either row: the enemy back row of its lane first, 1/2/3 pits by level, for half each |
 | `spray` (opening throw) | Peppercorns | First turn only, from either row: 3/4/5 at random enemies by level, half its attack each (so it grows a little with attack); Spicy bonuses Burn with every one |
 | `volley` (projectile) | Takoyaki | Every turn, from either row, instead of attacking: 1/2/3 balls by level, each at a different random enemy, for its attack |
+| `scatter` (projectile) | Pomegranate | Every turn, from either row, instead of attacking: 2/3/4 seeds by level, each at a different random enemy, for half its attack |
 
 ### Statuses
 
@@ -291,7 +292,8 @@ There are no automatic pairings. Positioning comes from specific foods' abilitie
 | Cheese | Ages faster next to a Savory friend | |
 | Garlic | | +1 per other Spicy friend |
 | Ramen | Front-row friends get Crust | Double for Savory friends |
-| Bento Box, Smoothie | Auras: the friend ahead (Bento) / every friend (Smoothie) | |
+| Bento Box | Aura: the friend ahead | |
+| Smoothie | Every 2 turns, every friend gains +1/+1 to +3/+3 | A plain, readable whole-plate grower for the late game |
 | Mythics | Golden Truffle (lane partner), Saffron (neighbours), Wagyu (every friend), Black Garlic (its lane, enemy side) | See Mythics |
 
 ### Keyword: Crust
@@ -465,7 +467,7 @@ Set on the food itself rather than on an ability. Auras are gentle and gated on 
 | Trait | Effect |
 | --- | --- |
 | `aura: 'echo'` | The friend ahead's abilities trigger +1/2/3 extra times by level (Bento Box) |
-| `aura: 'rally'` | Every friend gains +1/2/3 attack (by the Smoothie's level) whenever its ability fires, at most 3 times a battle each (Smoothie) |
+| `aura: 'rally'` | Every friend gains +1/2/3 attack whenever its ability fires, at most 3 times a battle each. No food uses it now: Smoothie had it and was too hard to read (October 2026) |
 | `aura: 'cook'` / `'infuse'` / `'baste'` / `'ferment'` | The mythic rules (see Mythics) |
 | `aura: 'soothe'` | Every HP gain on your plate is +1/2/3 by level (Birthday Cake) |
 | `attackPattern` | How its attacks land (see Attack patterns) |
@@ -531,6 +533,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Pork Crackling | Salty | 4/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 5/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Crème Brûlée | Sweet | 3/7 | 4 | Crust broken on your plate: that food gains +1/2/3 attack. | **Torched Brûlée**: Start of battle: your front row gains 3 Crust. |
+| 4 | Pomegranate | Sour | 4/9 | 4 | Every turn, from any row, instead of attacking: its seeds burst at 2/3/4 random enemies for half its attack. *(scatter attack)* | **Grenadine**: Start of battle: a random back-row enemy Rots 3. |
 | 4 | Mushroom | Savory | 4/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 5/8 | 4 | Start of battle: the friend ahead (or itself) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 4/16 | 4 | Eaten, and every 2nd time hit: summon a 2/2, 3/3 or 4/4 Slice. | **Fruit Salad**: Eaten: summon two more 4/4 Slices. |
@@ -551,7 +554,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 5 | Ghost Pepper | Spicy | 7/12 | 5 | Deals +3/4/6 damage to Burning enemies. | **Ghost Pepper Wings**: Start of battle: all enemies Burn 3. |
 | 5 | Pineapple | Sweet | 6/10 | 5 | Hit: your friends gain +1/+1, +2/+2 or +3/+3. | **Pina Colada**: Every turn: your friends gain +1/+1. |
 | 5 | Durian | Sour | 6/12 | 5 | Hit: the enemy front row Rots 1/2/3. | **Durian Crepe**: Start of battle: all enemies Rot 2. |
-| 5 | Caviar | Salty | 5/10 | 5 | Start of day: a random friend gains +1/+1, +2/+2 or +3/+3 per gold of interest earned. | **Blini Platter**: End of day: +3 gold tomorrow. |
+| 5 | Caviar | Salty | 5/10 | 5 | Interest cap +1. Start of day: a random friend per gold of interest earned gains +1/+1, +2/+2 or +3/+3. | **Blini Platter**: End of day: +3 gold tomorrow. |
 | 5 | Spaghetti | Savory | 6/14 | 5 | Escalating attack: its 1st attack hits one enemy, its 2nd the front row, then every enemy. Extra targets take 50/75/100%. *(escalate attack)* | **Spaghetti Bolognese**: Start of battle: attacks twice on its first 3 attacks. |
 | 5 | Takoyaki | Savory | 4/14 | 5 | Every turn, from any row, instead of attacking: throws 1/2/3 balls at random enemies for its attack. *(volley attack)* | **Takoyaki Boat**: Start of battle: the enemy front row Burns 2. |
 | 6 | Pizza | Savory | 5/11 | 5 | Start of battle: your friends gain +1/2/3 HP per flavor on your plate. | **Deep Dish**: Start of battle: your friends gain +1 attack per flavor on your plate. |
@@ -560,7 +563,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Kimchi | Sour + Spicy | 5/9 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 7/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 6/16 | 5 | The friend ahead's abilities trigger +1/2/3 times. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
-| 6 | Smoothie | Sweet + Sour | 6/12 | 5 | Your friends gain +1/2/3 attack when their ability fires. *(aura: rally)* | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
+| 6 | Smoothie | Sweet + Sour | 6/12 | 5 | Every 2 turns: your friends gain +1/+1, +2/+2 or +3/+3. | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
 | 6 | Roast Turkey | Savory | 5/9 | 5 | End of day: 3 random friends gain +1/+1, +2/+2 or +3/+3. | **Holiday Feast**: End of day: all your foods gain +1/+2. |
 | Mythic | Golden Truffle | Savory | 6/16 | 10 | In battle, the friend in its lane is cooked. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |
 | Mythic | Saffron | All | 6/14 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |

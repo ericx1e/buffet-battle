@@ -133,7 +133,12 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .u-item { position: absolute; right: 0; top: 0; display: flex; }
 .unit.item .u-art { top: 6px; }
 .frost { left: 0; top: 0; width: 40px; height: 48px; background: rgba(210, 238, 248, 0.35); pointer-events: none; }
-.price { width: 24px; height: 9px; font: 400 10px/9px var(--pixel); color: #fff3d6; text-align: center; pointer-events: none; }
+/* A price tag on each cubby: paper, a coin and a dark number, red when you can't afford it. */
+.price {
+  width: 28px; height: 11px; display: flex; align-items: center; justify-content: center; gap: 1px; pointer-events: none;
+  font: 400 10px/11px var(--pixel); color: #3a2a22; background: #f4ecd8; border: 1px solid #2a1b14; box-shadow: 0 1px 0 rgba(42, 27, 20, 0.45);
+}
+.price.dear { color: #c9453a; }
 
 /* Labels painted onto the scene */
 .label { font: 400 10px/9px var(--pixel); white-space: nowrap; pointer-events: none; }
@@ -696,7 +701,7 @@ body[data-screen='battle'] {
   position: absolute; right: 0; top: 0; z-index: 2; height: 9px; padding: 0 1px;
   font: 400 10px/9px var(--pixel); color: #fff; background: #3f9b4a; border: 1px solid #2a1b14;
 }
-.price.free { color: #b6f0a0; }
+.price.free { color: #3f7a34; }
 /* Today's buffet odds: a little card on the tiles beside the refill sign, three rarities a row. */
 .odds-strip {
   position: absolute; display: grid; grid-template-columns: repeat(3, 1fr); align-content: center; row-gap: 1px; padding: 0 2px; cursor: help;
@@ -852,6 +857,7 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .bit.proj-peppercorn { background: #3a2a22; width: 3px; height: 3px; margin: -1px 0 0 -1px; box-shadow: 0 0 0 1px #e4502a; }
 .bit.proj-cherry { background: #e8d2a8; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 2px; box-shadow: 0 0 0 1px #8a2a2a; }
 .bit.proj-takoyaki { background: #c88a3e; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 3px; box-shadow: inset -1px -1px 0 #8a5530, inset 1px 1px 0 #ffe0a0; }
+.bit.proj-pomegranate { background: #d8283c; width: 4px; height: 5px; margin: -2px 0 0 -2px; border-radius: 2px; box-shadow: inset 1px 1px 0 #ff8a96, inset -1px -1px 0 #8a1020; }
 
 /* Level in battle: a chunky gold number on a dark tab, lit from above with a shadow under it (orange when cooked). */
 .f-lvl {

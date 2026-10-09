@@ -279,12 +279,12 @@ describe('projectiles and patterns', () => {
     expect(volleys.length).toBeGreaterThan(1);
   });
 
-  it('a throw of several projectiles hits a different enemy with each, one frame each', () => {
+  it('a throw of several projectiles hits a different enemy with each, all in one step', () => {
     const shooter = food('t_shot3', 2, 60, [], { attackPattern: 'shot', throwDamage: 2, values: [3, 3, 3] });
     const r = simulateBattle(plate(inst(shooter)), plate(inst(wall), inst(wall), inst(wall)), 1);
     const shots = r.frames.filter((f) => f.text.includes('t_shot3 shoots at'));
-    expect(shots.length).toBe(3);
-    const targets = shots.map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!.slot);
+    expect(shots.length).toBe(1);
+    const targets = shots[0].marks.filter((m) => m.side === 1 && m.kind === 'hit').map((m) => m.slot);
     expect(new Set(targets).size).toBe(3);
   });
 
@@ -304,8 +304,9 @@ describe('projectiles and patterns', () => {
     const baller = food('t_volley3', 3, 60, [], { attackPattern: 'volley', values: [2, 2, 2] });
     const r = simulateBattle(plate(null, null, null, inst(baller)), plate(inst(wall), inst(wall), inst(wall)), 1);
     const balls = r.frames.filter((f) => f.round === 1 && f.text.includes('t_volley3 throws at'));
-    expect(balls.length).toBe(2);
-    const targets = balls.map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!);
+    expect(balls.length).toBe(1); // both balls fly in one step
+    const targets = balls[0].marks.filter((m) => m.side === 1 && m.kind === 'hit');
+    expect(targets.length).toBe(2);
     expect(new Set(targets.map((m) => m.slot)).size).toBe(2);
     expect(targets.every((m) => m.amount === 3)).toBe(true);
   });
@@ -380,5 +381,30 @@ describe('round of October 9', () => {
     const r = simulateBattle(plate(inst(crusty), null, null, null, inst(brulee)), plate(inst(crusty, { attack: 5 })), 1);
     expect(highest(r, 0, 0, 'attack')).toBe(1 + 3); // its Crust broke on turn 1
     expect(highest(r, 1, 0, 'attack')).toBe(5); // the enemy's broke too, but the brûlée isn't theirs
+  });
+});
+
+describe('one step per reaction and per throw', () => {
+  it('a food reacting to several things at once does it in one step', () => {
+    const brulee = food('t_brulee2', 1, 60, [{ trigger: 'plateCrustBreak', effect: 'buff', target: 'thatFriend', hp: 0 }], {}, 2);
+    const crusty = food('t_crusty2', 1, 60, [{ trigger: 'startOfBattle', effect: 'crust', target: 'self' }], {}, 1);
+    // Two crusted friends in front lose their Crust in the same attack.
+    const r = simulateBattle(plate(inst(crusty), inst(crusty), null, null, null, inst(brulee)), plate(inst(wall, { attack: 5 }), inst(wall, { attack: 5 })), 1);
+    const steps = r.frames.filter((f) => f.round === 1 && f.text.includes('t_brulee2'));
+    expect(steps.length).toBe(1);
+    expect(highest(r, 0, 0, 'attack')).toBe(3);
+    expect(highest(r, 0, 1, 'attack')).toBe(3);
+  });
+
+  it('scatter (Pomegranate): every turn, from the back row, half its attack at its level number of enemies, in one step', () => {
+    const seeds = food('t_seeds', 4, 60, [], { attackPattern: 'scatter', values: [3, 3, 3] });
+    const r = simulateBattle(plate(null, null, null, inst(seeds)), plate(inst(wall), inst(wall), inst(wall)), 1);
+    for (const round of [1, 2]) {
+      const bursts = r.frames.filter((f) => f.round === round && f.text.includes('t_seeds bursts at'));
+      expect(bursts.length).toBe(1);
+      const hits = bursts[0].marks.filter((m) => m.side === 1 && m.kind === 'hit');
+      expect(new Set(hits.map((m) => m.slot)).size).toBe(3);
+      expect(hits.every((m) => m.amount === 2)).toBe(true);
+    }
   });
 });

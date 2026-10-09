@@ -1018,7 +1018,7 @@ function marketSlots(): string {
       const key = `${app.run.turn}:${app.marketGen}:${i}`;
       const attrs = `data-drag="offer:market:${i}" data-k="m:${key}" data-in="drop" data-out="drop-out"`;
       return `<div class="slot" style="${at(pos)}" data-offer="market:${i}">${offerTile(o, attrs, isSelectedSrc(src))}</div>
-        <div class="price" style="${at([pos[0] + 8, pos[1] + 51])}" data-k="p:${key}" data-in="fade" data-out="drop-out">${offerCost(o)}g</div>`;
+        <div class="price ${offerCost(o) > app.run.gold ? 'dear' : ''}" style="${at([pos[0] + 6, pos[1] + 49])}" data-k="p:${key}" data-in="fade" data-out="drop-out">${pix('coin')}${offerCost(o)}</div>`;
     })
     .join('');
 }
@@ -1068,9 +1068,9 @@ function specialSlot(): string {
       tile = `<div class="unit item special ${selected ? 'selected' : ''}" ${attrs}><div class="u-art">${specialArt(s.kind)}</div></div>`;
     }
   }
-  const price = s.kind === 'freeItem' ? 'free' : `${specialCost(s)}g`;
+  const price = s.kind === 'freeItem' ? 'free' : `${pix('coin')}${specialCost(s)}`;
   return `${tag}<div class="slot" style="${at(pos)}" data-special="1">${tile}</div>
-    <div class="price ${s.kind === 'freeItem' ? 'free' : ''}" style="${at([pos[0] + 8, pos[1] + 51])}" data-k="p:${key}" data-in="fade">${price}</div>`;
+    <div class="price ${s.kind === 'freeItem' ? 'free' : specialCost(s) > app.run.gold ? 'dear' : ''}" style="${at([pos[0] + 6, pos[1] + 49])}" data-k="p:${key}" data-in="fade">${price}</div>`;
 }
 
 /**
@@ -1768,7 +1768,7 @@ function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: 
   const el = root.querySelector<HTMLElement>(`.fighter[data-inspect="${shooter.side}:${shooter.slot}"] .f-art`);
   const back = shooter.side === 0 ? -4 : 4;
   el?.animate([{ translate: '0 0' }, { translate: `${back}px 1px`, scale: '0.9 1.1', offset: 0.3 }, { translate: '0 0' }], { duration: 260 / speed, delay, easing: 'ease-out' });
-  const arc = pattern === 'lob' ? 46 : pattern === 'volley' ? 22 : pattern === 'spray' ? 14 : 6;
+  const arc = pattern === 'lob' ? 46 : pattern === 'volley' ? 22 : pattern === 'spray' ? 14 : pattern === 'scatter' ? 18 : 6;
   const hits = f.marks.filter((m) => m.side !== shooter.side && (m.kind === 'hit' || m.kind === 'blocked' || (m.kind === 'crust' && (m.amount ?? 0) < 0)));
   const seen = new Map<string, number>();
   hits.slice(0, 8).forEach((m, i) => {

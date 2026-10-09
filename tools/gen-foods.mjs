@@ -418,6 +418,28 @@ const foods = {
     s.rect(12, 22, 9, 1, '#4a6a44');
     for (const [x, y] of [[9, 20], [13, 14], [18, 12], [22, 21]]) s.px(x, y, '#ffffff');
   },
+  pomegranate(s) {
+    s.shadow(17, 29, 11, 2);
+    // A round, leathery red fruit with its little crown on top, split open at the front: ruby seeds packed in pale pith.
+    const rind = R('#b8283a');
+    s.ball(16, 18, 11, 10, rind);
+    // The crown: a short collar with four points, lit on the left.
+    s.rect(13, 7, 7, 2, rind[3]);
+    s.rect(13, 7, 2, 2, rind[2]);
+    for (const [x, h] of [[13, 3], [15, 4], [17, 4], [19, 3]]) {
+      s.rect(x, 7 - h, 1, h, x < 16 ? rind[2] : rind[4]);
+      s.px(x, 7 - h, rind[1]);
+    }
+    s.fill(9, 14, 23, 25, (x, y) => {
+      const nx = (x - 16.5) / 6.5, ny = (y - 19.5) / 5;
+      const d = nx * nx + ny * ny;
+      if (d > 1) return null;
+      if (d > 0.7) return '#f3e2c8'; // the pith around the split
+      // Packed seeds: a ruby kernel every other pixel, offset row by row, dark gaps between, a few catching light.
+      if ((x + (y % 2)) % 2 === 1) return '#7a1020';
+      return (x * 7 + y * 5) % 9 === 0 || ny < -0.4 ? '#ff8a96' : '#d61e38';
+    });
+  },
   cremeBrulee(s) {
     s.shadow(17, 28, 12, 2);
     // A fluted white ramekin from the side and a little above, its burnt-sugar top cracked open on one side.

@@ -408,6 +408,7 @@ const PATTERN_MAPS: Record<string, [string, string, string]> = {
   shot: ['..', 'r.', '..'],
   lob: ['..', '.r', '..'],
   spray: ['o.', '.o', 'o.'],
+  scatter: ['.o', 'oo', '.o'],
   volley: ['o.', 'o.', 'o.'],
 };
 

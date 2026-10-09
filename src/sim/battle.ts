@@ -499,28 +499,30 @@ class Battle {
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
           const n = this.levelValue(u); // shots, lobs, peppercorns and balls thrown
-          // A volley (Takoyaki) throws for its attack; other throws a flat amount, or half its attack (Peppercorns).
+          // A volley (Takoyaki) throws for its attack; other throws a flat amount, or half its attack (Peppercorns, and
+          // Pomegranate's scatter, every turn).
           const flat = pattern === 'volley' ? damage : unitDef(u.defId).throwDamage ?? half;
-          const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : 'shoots';
+          const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : pattern === 'scatter' ? 'bursts' : 'shoots';
           const land = (t: BattleUnit, dmg: number) => {
             this.hit(t, dmg, u, u.item === 'toothpick');
             if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
           };
           for (let i = 0; i < times; i++) {
-            // One projectile at a time, each at an enemy not hit yet in this throw, each its own moment.
-            const hit = new Set<BattleUnit>();
+            // One throw is one moment: its projectiles fly together, each at an enemy not hit yet in this throw.
+            const hit: BattleUnit[] = [];
             for (let k = 0; k < n; k++) {
-              const left = this.units(enemy).filter((e) => !hit.has(e) && e.hp > 0);
+              const left = this.units(enemy).filter((e) => !hit.includes(e) && e.hp > 0);
               if (left.length === 0) break;
               const near = (e: BattleUnit) => Math.abs(laneOf(e.slot) - lane);
               let t: BattleUnit;
               if (pattern !== 'lob') t = this.rng.pick(left); // random, a different enemy each time
               else t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
-              hit.add(t);
+              hit.push(t);
               land(t, flat);
-              this.mark(u, 'shoot', 1);
-              this.snap(`Turn ${this.round} · ${this.name(u)} ${verb} at ${this.name(t)}`);
             }
+            if (hit.length === 0) break;
+            this.mark(u, 'shoot', 1);
+            this.snap(`Turn ${this.round} · ${this.name(u)} ${verb} at ${hit.map((t) => this.name(t)).join(', ')}`);
           }
         }
       }
@@ -729,10 +731,28 @@ class Battle {
           this.snap(`${this.name(from)}: ${joinLines(got)}`);
           continue;
         }
-        const { unit, trigger, ctx, echo } = this.later.shift()!;
-        if (!this.onPlate(unit) || !trigger) continue;
-        const line = this.fire(unit, trigger, ctx ?? {}, undefined, echo);
-        if (line) this.snap(echo !== undefined ? `Echo! ${line}` : line);
+        // A food reacting several times to the same thing at once (Pork Crackling to each blocked hit, Crème Brûlée to
+        // each Crust that broke) does it all in one step.
+        const first = this.later.shift()!;
+        const same = this.later.filter((l) => !l.bonus && l.unit === first.unit && l.trigger === first.trigger && l.echo === first.echo);
+        this.later = this.later.filter((l) => !same.includes(l));
+        const lines: string[] = [];
+        for (const { unit, trigger, ctx, echo } of [first, ...same]) {
+          if (!this.onPlate(unit) || !trigger) continue;
+          const line = this.fire(unit, trigger, ctx ?? {}, undefined, echo);
+          if (line) lines.push(line);
+        }
+        if (lines.length === 0) continue;
+        let counted = [...new Set(lines)].map((l) => {
+          const n = lines.filter((x) => x === l).length;
+          return n > 1 ? `${l} (x${n})` : l;
+        });
+        // "Crème Brûlée: Cheese +1 attack" three times over reads as one line naming the food once.
+        const prefix = counted[0].includes(': ') ? counted[0].slice(0, counted[0].indexOf(': ') + 2) : '';
+        if (counted.length > 1 && prefix && counted.every((l) => l.startsWith(prefix))) {
+          counted = [prefix + counted.map((l) => l.slice(prefix.length)).join(', ')];
+        }
+        for (const c of captionChunks(counted.map((l) => (first.echo !== undefined ? `Echo! ${l}` : l)))) this.snap(c);
         continue;
       }
 

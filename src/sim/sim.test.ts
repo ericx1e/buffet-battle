@@ -382,18 +382,18 @@ describe('run', () => {
     expect(unitDef('hotCocoa').abilities[0]).toMatchObject({ max: 4, dayMax: 1 });
   });
 
-  it('Caviar gives a random friend +1/+1 per gold of interest at the start of day', () => {
+  it('Caviar raises the interest cap by 1 and, each morning, buffs one random friend per gold of interest', () => {
     const run = newRun(5);
     run.plate[0] = unit('caviar');
-    run.plate[1] = unit('egg');
+    for (const [i, id] of [[1, 'egg'], [2, 'apple'], [3, 'lemon'], [4, 'potato']] as const) run.plate[i] = unit(id);
+    expect(interestCap(run)).toBe(4);
     run.gold = 0; // no interest into day 2
     finishBattle(run, 'win');
     run.gold = 15;
     finishBattle(run, 'win');
     expect(run.lastInterest).toBe(3);
-    const gained = run.plate.reduce((n, u) => n + (u ? u.attack - unitDef(u.defId).attack : 0), 0);
-    expect(gained).toBe(3);
-    expect(run.plate.reduce((n, u) => n + (u ? u.hp - unitDef(u.defId).hp : 0), 0)).toBe(3);
+    const fed = run.plate.filter((u) => u && u.defId !== 'caviar' && u.attack === unitDef(u.defId).attack + 1 && u.hp === unitDef(u.defId).hp + 1);
+    expect(fed.length).toBe(3); // three friends, +1/+1 each
   });
 
   it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {
@@ -630,5 +630,15 @@ describe('round 6 rules', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 90, item: 'hotSauce' }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }) }), 1);
     const sauced = r.frames.filter((f) => f.text.includes('Hot Sauce: Cheese +1 attack'));
     expect(sauced.length).toBeGreaterThan(2);
+  });
+});
+
+describe('Smoothie', () => {
+  it('every 2 turns, every friend gains +1/+1 (level 1)', () => {
+    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 80 }), 3: unit('smoothie', { hp: 80 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 80 }) }), 1);
+    const attackAt = (round: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[0][0]!.attack;
+    expect(attackAt(1)).toBe(1);
+    expect(attackAt(2)).toBe(2);
+    expect(attackAt(4)).toBe(3);
   });
 });

@@ -153,16 +153,7 @@ const jars = [
   ['salty: sea salt', '#c8e0ee', '#9cc4dc', '#ffffff'],
   ['savory: bouillon', '#8a5a32', '#6a4224', '#b8763f'],
 ];
-jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
-  const x = 494 + 29 * j;
-  rect(x, 37, 16, 18, P.jar);
-  rect(x + 1, 45, 14, 10, c); // ground spice
-  rect(x + 1, 45, 14, 1, d);
-  for (const [sx, sy] of [[3, 48], [8, 50], [12, 47], [5, 52], [10, 53]]) px(x + sx, sy, speck);
-  rect(x + 2, 38, 1, 14, P.glassHi);
-  frame(x, 37, 16, 18, P.jarEdge);
-  panel(x - 1, 31, 18, 7, '#4a4240', '#6b615d', '#2f2927'); // matching dark lids
-}));
+// (the jars themselves are drawn below, once the round-shape helpers exist)
 panel(484, 55, 154, 7, P.woodLight, P.woodHi, P.wood); // shelf
 
 // ---------- chalkboard (480..640, 64..148) ----------
@@ -282,6 +273,34 @@ const inEllipse = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / r
 /** How far a horizontal band on a round body dips toward you at `t` (-1..1 across): the camera is a little above. */
 const dip = (t, ry) => Math.round(ry * Math.sqrt(Math.max(0, 1 - t * t)));
 const shadow = () => {}; // props sit flat on the counter like the rest of the scene
+
+// Spice jars on the rack: little glass cylinders seen a little from above, like the tip jar. A round dark lid with
+// its top showing, the glass lit on the left and shaded on the right, and the spice inside with the top of its pile
+// an oval. Every edge across a jar (the lid's rim, the pile, the bottom) curves toward you by the same amount.
+const LID = ['#8a807b', '#6b615d', '#4a4240', '#3a3331', '#2f2927'];
+jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
+  const cx = 501.5 + 29 * j, rx = 8.5, ry = 2.2, lidTop = 33, lidBottom = 37, pile = 45, bottom = 53;
+  const curve = (x) => ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
+  blob(Math.floor(cx - rx), lidTop - 3, Math.ceil(cx + rx), bottom + 3, (x, y) => {
+    const t = (x - cx) / rx;
+    if (Math.abs(t) > 1) return null;
+    const k = curve(x);
+    // The lid: its top (an oval) and its side, with a dark rim where it meets the glass
+    if (inEllipse(x, y, cx, lidTop, rx, ry)) return inEllipse(x, y, cx - 1.5, lidTop - 0.6, rx - 3, ry - 0.9) ? LID[0] : LID[1];
+    if (y < lidTop) return null; // above the lid's rim: nothing, so the lid reads round
+    if (y >= lidTop && y <= lidBottom + k) return y >= lidBottom + k - 0.5 ? LID[4] : side(t, LID);
+    if (y > bottom + k) return null;
+    // The spice: the top of the pile, then the pile pressed against the glass, with a few bright specks
+    if (inEllipse(x, y, cx, pile, rx - 1, ry)) return Math.abs(t) > 0.8 ? d : y < pile ? d : c;
+    if (y > pile && Math.abs(t) < 0.94) {
+      if ((x * 5 + y * 3) % 11 === 0) return speck;
+      return t > 0.62 ? d : c;
+    }
+    // Empty glass above the spice: tinted, a highlight streak on the left, the far edge darker
+    if (t > -0.7 && t < -0.5) return P.glassHi;
+    return t > 0.8 ? P.jarEdge : '~' + P.jar;
+  }, '#2f2927', true, true);
+}));
 
 const BRASS = ['#fff4c2', '#f6d36b', '#e2ac3c', '#b97c23', '#7f4f14'];
 const STEEL = ['#ffffff', '#e6ecef', '#c3ccd2', '#929da5', '#66717a'];

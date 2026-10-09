@@ -41,10 +41,10 @@ export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
  * enemies. volley: every enemy in the front row. Opening throws (see OPENING_THROWS) fly once, on the first turn;
  * after that the food attacks like any other. A volley flies every turn instead of attacking.
  */
-export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate' | 'shot' | 'lob' | 'spray' | 'volley';
-export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate', 'shot', 'lob', 'spray', 'volley'];
+export type AttackPattern = 'single' | 'pierce' | 'splash' | 'fork' | 'snipe' | 'escalate' | 'shot' | 'lob' | 'spray' | 'volley' | 'scatter';
+export const ATTACK_PATTERNS: readonly AttackPattern[] = ['single', 'pierce', 'splash', 'fork', 'snipe', 'escalate', 'shot', 'lob', 'spray', 'volley', 'scatter'];
 /** Patterns thrown from either row. */
-export const PROJECTILES: readonly AttackPattern[] = ['shot', 'lob', 'spray', 'volley'];
+export const PROJECTILES: readonly AttackPattern[] = ['shot', 'lob', 'spray', 'volley', 'scatter'];
 /** Projectiles thrown once, on the first turn; the food then attacks normally. The rest are thrown every turn. */
 export const OPENING_THROWS: readonly AttackPattern[] = ['shot', 'lob', 'spray'];
 
@@ -153,6 +153,8 @@ export interface AbilityDef {
   ifLevel3?: boolean;
   /** Kitchen startTurn: amount x the interest you earned this turn. */
   perInterest?: boolean;
+  /** Kitchen, randomFriends: as many friends as the gold of interest you earned this turn. */
+  countPerInterest?: boolean;
   /** Kitchen startTurn: only if you earned interest this turn. */
   ifInterest?: boolean;
   /** +1 to the amount for each level 3 friend (Golden Truffle). */
