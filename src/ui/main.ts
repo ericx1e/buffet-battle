@@ -1352,7 +1352,7 @@ function flavorTip(f: Flavor, n: number): string {
 }
 
 /** The glass of a spice jar, inside its prop box: where the spice fills from (bottom) toward the lid (top). */
-const JAR_GLASS = { left: 2, width: 15, top: 7, bottom: 22 };
+const JAR_GLASS = { left: 2, width: 15, top: 9, bottom: 22 };
 /** A full jar: the top flavor bonus. */
 const JAR_FULL = 8;
 /** Every jar starts with a little spice in it, so you can tell which flavor is which. */
