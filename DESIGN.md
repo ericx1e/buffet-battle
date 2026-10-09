@@ -759,8 +759,9 @@ Balance starts in the simulator, not in playtests: bots play thousands of runs, 
 
 1. **Unit duels:** every unit vs every unit at each level, in each lane position. Flags units that win too often for their tier.
 2. **Bot runs:** 10,000 full runs with heuristic bots. Track each unit's pick rate and the win rate of plates that include it.
-3. **Targets:** no unit above 60% inclusion win rate; each flavor between 15% and 25% of winning plates; average run length 12 to 18 days.
-4. **Human playtests:** only after the sim targets are met. Watch for confusion about lanes, targeting and Crust.
+3. **Battle lift (the main measure):** inclusion win rate credits a food with the plate around it and the day it fights on (a rarity-6 food only fights on strong late plates), so it can't say what the food itself does. `npx tsx tools/lift.ts` replays every bot battle with one food swapped for a plain stand-in (the average body of its rarity, same flavors and item, no ability) against the same opponent and seed, and reports the difference in points, split into early (days 1-4), mid (5-8) and late (9+). It measures what a food does in a fight; growth it already banked or gave its friends is kept, so kitchen scalers read near 0 and are judged by their growth instead (see Growth budget).
+4. **Targets:** in lift, no food far above the others at its stage (about +15 is the edge), and fight foods above 0 at the stage they're bought for; each flavor between 15% and 25% of winning plates; average run length 12 to 18 days. Inclusion win rate (`npm run balance`) stays as a rough second check.
+5. **Human playtests:** only after the sim targets are met. Watch for confusion about lanes, targeting and Crust.
 
 ### Open questions
 

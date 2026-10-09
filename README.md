@@ -12,6 +12,7 @@ npm run balance -- 500   # bot-vs-bot balance report over 500 runs
 npx tsx tools/cooked-check.ts   # what each cooked bonus is worth
 npx tsx tools/mythic-check.ts   # each mythic in each plate slot
 npx tsx tools/ghostcheck.ts     # how bot opponents fare against a plain bot, by day
+npx tsx tools/lift.ts 400       # what each food adds to a fight over a plain body, by stage of the run
 npm run build:single      # the whole game as one page: dist/single/buffet-battle.html
 ```
 
