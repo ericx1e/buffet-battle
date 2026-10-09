@@ -28,6 +28,7 @@ import {
   interestOn,
   INCOME,
   INTEREST_STEP,
+  cellarFoods,
   MAX_FLAVORS,
   isOver,
   marketOdds,
@@ -1468,6 +1469,8 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
     if (all) notes.push(`${all}/${all} this battle`);
   }
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
+  // Sweet Potato's root cellar: a fridge food it keeps going says so.
+  if (u && cellarFoods(app.run).includes(u)) notes.push('In the root cellar: its kitchen abilities keep going.');
   // Bento Box: whether the food ahead can be echoed, shown on both of them.
   const slot = u ? app.run.plate.indexOf(u) : -1;
   if (slot >= 0) {

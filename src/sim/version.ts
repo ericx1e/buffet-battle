@@ -1,2 +1,2 @@
 // Written by `npm run version` (tools/sim-version.ts): a hash of the rules in src/sim. Do not edit.
-export const GAME_VERSION = '2784111b53';
+export const GAME_VERSION = '79c654348e';

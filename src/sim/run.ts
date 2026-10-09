@@ -230,9 +230,7 @@ function startTurn(run: RunState) {
   run.growth = run.growth.slice(-60); // the UI clears it as it plays; bots never do
   rollMarket(run);
   rollSpecial(run);
-  run.plate.forEach((u, slot) => {
-    if (u) fireShop(run, u, slot, 'startTurn');
-  });
+  fireKitchen(run, 'startTurn');
 }
 
 /**
@@ -341,7 +339,7 @@ export function reroll(run: RunState): ActionResult {
   run.rerolls++;
   run.rerolledThisTurn = true;
   rollMarket(run);
-  const notes = run.plate.map((u, slot) => (u ? fireShop(run, u, slot, 'reroll') : '')).filter(Boolean);
+  const notes = fireKitchen(run, 'reroll');
   return ok(notes.join(', ') || undefined);
 }
 
@@ -678,12 +676,9 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         const a = amount * (ab.attack ?? 1);
         const h = amount * (ab.hp ?? 1);
         for (const t of targets) {
-          const more = roastedBy(run, t);
-          const ta = a > 0 ? a + more : 0;
-          const th = h > 0 ? h + more : 0;
-          t.attack += ta;
-          t.hp += th;
-          run.growth.push({ uid: t.uid, attack: ta, hp: th, from: t === unit ? undefined : unit.uid, source: def.name });
+          t.attack += a;
+          t.hp += h;
+          run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name });
           if (h > 0) afterHpGain(run, t, parts);
         }
         grew();
@@ -704,18 +699,30 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
   return parts.join(', ');
 }
 
-/** Sweet Potato: how much more a food on the plate grows, per stat, from a kitchen ability (0 when none reaches it). */
-function roastedBy(run: RunState, t: UnitInstance): number {
-  const at = run.plate.indexOf(t);
-  if (at < 0) return 0;
-  let more = 0;
-  run.plate.forEach((sp, i) => {
-    if (!sp || sp === t || unitDef(sp.defId).aura !== 'roast') return;
-    const level = levelOf(sp.copies);
-    if (isAdjacent(i, at)) more = Math.max(more, unitDef(sp.defId).values[level - 1]);
-    else if (level === 3) more = Math.max(more, 1);
-  });
-  return more;
+/** Sweet Potato's root cellar on the plate: how many fridge foods it keeps going, and whether it is cooked. */
+function cellarOf(run: RunState): { count: number; cooked: boolean } {
+  let count = 0;
+  let cooked = false;
+  for (const u of run.plate) {
+    if (!u || unitDef(u.defId).aura !== 'cellar') continue;
+    const level = levelOf(u.copies);
+    count = Math.max(count, unitDef(u.defId).values[level - 1]);
+    cooked ||= level === 3;
+  }
+  return { count, cooked };
+}
+
+/** The fridge foods a Sweet Potato keeps going (the first ones in the fridge, up to its count). */
+export function cellarFoods(run: RunState): UnitInstance[] {
+  const { count } = cellarOf(run);
+  return run.fridge.flatMap((e) => (e?.kind === 'unit' ? [e.unit] : [])).slice(0, count);
+}
+
+/** Fires a kitchen trigger for every food on the plate, then for the fridge foods a Sweet Potato keeps going. */
+function fireKitchen(run: RunState, trigger: Trigger): string[] {
+  const notes = run.plate.map((u, slot) => (u ? fireShop(run, u, slot, trigger) : ''));
+  for (const u of cellarFoods(run)) notes.push(fireShop(run, u, null, trigger));
+  return notes.filter(Boolean);
 }
 
 /** How many extra times a food's abilities go off: a Bento Box behind a front-row food echoes it (its level number). */
@@ -739,7 +746,7 @@ export function sellUnit(run: RunState, loc: Loc): ActionResult {
   const value = sellPrice(unit);
   setUnit(run, loc, null);
   run.gold += value;
-  const effects = [fireShop(run, unit, null, 'sell'), ...run.plate.map((u, slot) => (u ? fireShop(run, u, slot, 'friendSold') : ''))].filter(Boolean);
+  const effects = [fireShop(run, unit, null, 'sell'), ...fireKitchen(run, 'friendSold')].filter(Boolean);
   return ok(`Sold ${unitDef(unit.defId).name} for ${value} gold${effects.length ? `; ${effects.join('; ')}` : ''}.`);
 }
 
@@ -921,9 +928,16 @@ export function serveBlocker(run: RunState): string | null {
 
 /** End of day: fires End of day abilities (plate) and freezer abilities (fridge). Part of serving. */
 export function endDay(run: RunState) {
-  run.plate.forEach((u, slot) => {
-    if (u) fireShop(run, u, slot, 'endTurn');
-  });
+  fireKitchen(run, 'endTurn');
+  // Sweet Potato, cooked: every food in the fridge grows +1/+1.
+  if (cellarOf(run).cooked) {
+    for (const e of run.fridge) {
+      if (e?.kind !== 'unit') continue;
+      e.unit.attack += 1;
+      e.unit.hp += 1;
+      run.growth.push({ uid: e.unit.uid, attack: 1, hp: 1, source: 'Sweet Potato' });
+    }
+  }
   // Hot Sauce (held): +1 attack for good every day.
   for (const u of run.plate) {
     if (u?.item !== 'hotSauce') continue;

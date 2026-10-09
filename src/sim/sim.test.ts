@@ -680,18 +680,19 @@ describe('round 5 rules', () => {
     expect(lost('toothpick')).toBe((lost() ?? 0) + 1);
   });
 
-  it('Sweet Potato: a neighbour grows +1 more per stat from kitchen abilities (others as usual); cooked, everyone else +1', () => {
-    const grow = (potatoSlot: number, copies = 1) => {
+  it('Sweet Potato: fridge foods keep their kitchen abilities (1, then 2 of them); cooked, they also grow +1/+1', () => {
+    const fridgeGrowth = (copies?: number) => {
       const run = newRun(3);
-      run.plate[0] = unit('breadDough'); // +3 HP a day
-      run.plate[potatoSlot] = unit('sweetPotato', { copies });
+      if (copies) run.plate[0] = unit('sweetPotato', { copies });
+      run.fridge[0] = { kind: 'unit', unit: unit('breadDough') }; // +3 HP a day
+      run.fridge[1] = { kind: 'unit', unit: unit('breadDough') };
       endDay(run);
-      return run.plate[0]!.hp - unitDef('breadDough').hp;
+      return run.fridge.map((e) => (e?.kind === 'unit' ? e.unit.hp - unitDef('breadDough').hp : 0));
     };
-    expect(grow(1)).toBe(4); // adjacent: 3 + 1
-    expect(grow(2)).toBe(3); // not adjacent
-    expect(grow(1, 6)).toBe(6); // cooked, adjacent: 3 + 3
-    expect(grow(2, 6)).toBe(4); // cooked, not adjacent: 3 + 1
+    expect(fridgeGrowth()).toEqual([0, 0]);
+    expect(fridgeGrowth(1)).toEqual([3, 0]);
+    expect(fridgeGrowth(3)).toEqual([3, 3]);
+    expect(fridgeGrowth(6)).toEqual([4, 4]);
   });
 
   it('Chicken Tender Tower: the friend in its lane comes back once with half its HP (level 1)', () => {
