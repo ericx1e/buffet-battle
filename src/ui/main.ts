@@ -1355,14 +1355,16 @@ function flavorTip(f: Flavor, n: number): string {
 const JAR_GLASS = { left: 2, width: 15, top: 7, bottom: 22 };
 /** A full jar: the top flavor bonus. */
 const JAR_FULL = 8;
+/** Every jar starts with a little spice in it, so you can tell which flavor is which. */
+const JAR_BASE = 3;
 
 function spiceJars(): string {
   const counts = flavorCounts();
   return FLAVORS.map((f, j) => {
     const n = counts.get(f) ?? 0;
     const tier = flavorTier(n);
-    // The spice, drawn behind the jar's see-through glass, rising with the count (full at the top bonus).
-    const h = Math.round((Math.min(n, JAR_FULL) / JAR_FULL) * (JAR_GLASS.bottom - JAR_GLASS.top));
+    // The spice in the jar: a little to start, rising with the count (full at the top bonus).
+    const h = JAR_BASE + Math.round((Math.min(n, JAR_FULL) / JAR_FULL) * (JAR_GLASS.bottom - JAR_GLASS.top - JAR_BASE));
     const spice = h > 0 ? `<i class="jar-spice spice-${f}" style="left:${JAR_GLASS.left}px;top:${JAR_GLASS.bottom - h}px;width:${JAR_GLASS.width}px;height:${h}px"></i>` : '';
     return `<div class="jar ${tier ? `active t${tier}` : ''}" style="${box(PROPS[`spice${j}` as keyof typeof PROPS] as Rect)}" ${flavorTip(f, n)} data-vk="jar:${f}" data-v="${n}" data-va="hop">${spice}${propArt(`spice${j}`)}<span>${n}</span></div>`;
   }).join('');
