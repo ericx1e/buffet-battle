@@ -240,6 +240,11 @@ function startTurn(run: RunState) {
  * each older one less so (weights 4, 3, 2, 1, 1, 1 from the newest down). Then a food at random within it. Many
  * foods per rarity keep copies, and so level 3, hard to come by.
  */
+/** The chance a buffet food cubby holds a mythic today (0 before MYTHIC_MARKET_DAY). */
+export function mythicOdds(turn: number): number {
+  return turn >= MYTHIC_MARKET_DAY ? MYTHIC_MARKET_CHANCE : 0;
+}
+
 export function marketOdds(turn: number): { tier: Tier; chance: number }[] {
   const { maxTier } = turnConfig(turn);
   const tiers = [...new Set(MARKET_UNITS.filter((u) => u.tier <= maxTier).map((u) => u.tier))].sort();

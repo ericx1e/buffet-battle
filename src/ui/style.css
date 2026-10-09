@@ -721,6 +721,9 @@ body[data-screen='battle'] {
   background: #f4ecd8; border: 1px solid #2a1b14; box-shadow: 1px 2px 0 rgba(42, 27, 20, 0.35);
 }
 .odds-cell { display: inline-flex; align-items: center; gap: 1px; }
+/* Seven entries (six rarities and mythic) fit in two rows of four. */
+.odds-strip.wide { grid-template-columns: repeat(4, 1fr); padding: 0 1px; }
+.odds-strip.wide .odds-cell { gap: 0; }
 
 /* The counter tray: a steel baking sheet. Busy (holding a bundle or an open pack) it glints and must be cleared. */
 .tray {

@@ -31,6 +31,10 @@ import {
   MAX_FLAVORS,
   isOver,
   marketOdds,
+  mythicOdds,
+  MYTHIC_SPECIAL_CHANCE,
+  MYTHIC_SPECIAL_DAY,
+  MYTHIC_MARKET_DAY,
   migrateRun,
   newRun,
   nextSeed,
@@ -40,7 +44,7 @@ import {
   serveBlocker,
   specialCost,
 } from '../sim/run';
-import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf, slotAt } from '../sim/types';
+import { type AttackPattern, FLAVORS, type Rarity, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf, slotAt } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { PROP_URLS, itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
@@ -1086,18 +1090,31 @@ function marketSlots(): string {
     .join('');
 }
 
+/** A chance as a whole percent. */
+const pct = (chance: number) => `${Math.round(chance * 100)}%`;
+
+/** Today's odds for each food cubby: the rarities on offer (their share after the mythic chance), then mythic. */
+function todaysOdds(): { rarity: string; chance: number }[] {
+  const mythic = mythicOdds(app.run.turn);
+  const rows = marketOdds(app.run.turn).map((o) => ({ rarity: RARITY_BY_TIER[o.tier] as string, chance: o.chance * (1 - mythic) }));
+  return mythic > 0 ? [...rows, { rarity: 'mythic', chance: mythic }] : rows;
+}
+
 /** Today's buffet odds as a table of rarities and chances (for tooltips). */
 function oddsTable(): string {
-  const rows = marketOdds(app.run.turn).map((o) => `<p>${rarityName(RARITY_BY_TIER[o.tier])} <b>${Math.round(o.chance * 100)}%</b></p>`).join('');
+  const rows = todaysOdds().map((o) => `<p>${rarityName(o.rarity as Rarity)} <b>${pct(o.chance)}</b></p>`).join('');
   return `<p class="dim">Each food cubby today:</p>${rows}`;
 }
 
 /** The buffet's odds, on the tiles beside the refill sign: a gem and a chance for each rarity on offer today. */
 function oddsStrip(): string {
-  const odds = marketOdds(app.run.turn);
-  const cells = odds.map((o) => `<span class="odds-cell">${gemIcon(RARITY_BY_TIER[o.tier])}${Math.round(o.chance * 100)}%</span>`).join('');
-  const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p>`;
-  return `<div class="odds-strip" style="${box(LAYOUT.odds as Rect)}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
+  const odds = todaysOdds();
+  const cells = odds.map((o) => `<span class="odds-cell">${gemIcon(o.rarity)}${pct(o.chance)}</span>`).join('');
+  const mythicNote = mythicOdds(app.run.turn) > 0
+    ? 'Mythics can turn up in any food cubby now, and in the special cubby'
+    : `Mythics start turning up in the buffet on day ${MYTHIC_MARKET_DAY}, and in the special cubby on day ${MYTHIC_SPECIAL_DAY}`;
+  const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p><p class="dim">${mythicNote} (${pct(MYTHIC_SPECIAL_CHANCE)} of days). Half the time it is one you already own.</p>`;
+  return `<div class="odds-strip ${odds.length > 6 ? 'wide' : ''}" style="${box(LAYOUT.odds as Rect)}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
 }
 
 /** Names and blurbs for what the special cubby can hold. */
@@ -1106,14 +1123,14 @@ const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string
   farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to one rarity above the buffet.' },
   bundle: { name: 'Pair', text: 'Two copies of one food for about one and a half times the price. They land on the counter tray: place, merge or sell them before serving.' },
   premium: { name: 'Premium Refill', text: 'Refills the buffet with nothing but foods of the next rarity.' },
-  mythic: { name: 'Mythic Delivery', text: 'A one-of-a-kind dish that never shows up in the buffet. Drag it straight onto your plate.' },
+  mythic: { name: 'Mythic Delivery', text: 'A rare dish that bends a rule of the game. Each extra copy is a whole level: three cook it. Drag it straight onto your plate.' },
 };
 
 /** The special cubby (the last teal one): one offer a turn that restocking leaves alone. */
 function specialSlot(): string {
   const s = app.run.special;
   const pos = LAYOUT.market[LAYOUT.market.length - 1];
-  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', '<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Refill or, late in the run, a mythic. Refilling leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it (a mythic goes straight onto your plate).</p>')}>${pix('starSmall')}special</div>`;
+  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', `<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Refill or, from day ${MYTHIC_SPECIAL_DAY}, a mythic (${pct(MYTHIC_SPECIAL_CHANCE)} of days). Refilling leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it (a mythic goes straight onto your plate).</p>`)}>${pix('starSmall')}special</div>`;
   if (!s) return tag;
   const key = `sp:${app.run.turn}:${s.kind}`;
   const selected = app.selected?.kind === 'special' || isSelectedSrc({ area: 'special', index: 0 });
