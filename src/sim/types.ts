@@ -173,7 +173,7 @@ export interface AbilityDef {
  * cook (Golden Truffle): in battle, the friend in its lane is cooked (every friend, once cooked);
  * infuse (Saffron): adjacent friends count twice toward flavor bonuses (every friend, once cooked);
  * baste (Wagyu): adjacent friends get double from Crust and heals (every friend, once cooked);
- * roast (Sweet Potato): adjacent friends grow x2/x3/x3 (its level value) from their kitchen abilities (every friend, once cooked);
+ * roast (Sweet Potato): an adjacent friend that grows from a kitchen ability grows +1/+2/+3 more of each stat it gained (every other friend +1, once cooked);
  * tower (Chicken Tender Tower): the friend in its lane comes back once when eaten, with 50/75/100% of its starting HP (every friend, once cooked);
  * ferment (Black Garlic): enemies in its lane and the lanes beside it take double damage from Burn and Rot (every enemy, triple, once cooked).
  */

@@ -680,7 +680,7 @@ describe('round 5 rules', () => {
     expect(lost('toothpick')).toBe((lost() ?? 0) + 1);
   });
 
-  it('Sweet Potato: neighbours grow x2 from kitchen abilities (others as usual); cooked, every friend x3', () => {
+  it('Sweet Potato: a neighbour grows +1 more per stat from kitchen abilities (others as usual); cooked, everyone else +1', () => {
     const grow = (potatoSlot: number, copies = 1) => {
       const run = newRun(3);
       run.plate[0] = unit('breadDough'); // +3 HP a day
@@ -688,9 +688,10 @@ describe('round 5 rules', () => {
       endDay(run);
       return run.plate[0]!.hp - unitDef('breadDough').hp;
     };
-    expect(grow(1)).toBe(6); // adjacent
+    expect(grow(1)).toBe(4); // adjacent: 3 + 1
     expect(grow(2)).toBe(3); // not adjacent
-    expect(grow(2, 6)).toBe(9); // cooked reaches every friend, x3
+    expect(grow(1, 6)).toBe(6); // cooked, adjacent: 3 + 3
+    expect(grow(2, 6)).toBe(4); // cooked, not adjacent: 3 + 1
   });
 
   it('Chicken Tender Tower: the friend in its lane comes back once with half its HP (level 1)', () => {

@@ -372,10 +372,10 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Every enemy takes triple damage from Burn and Rot.', abilities: [] },
     abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyLaneAndAdjacent' }] },
 
-  { id: 'sweetPotato', name: 'Sweet Potato', cookedName: 'Candied Yams', emoji: '🍠', tier: 6, flavor: 'sweet', flavor2: 'savory', attack: 7, hp: 17, values: [2, 3, 3],
+  { id: 'sweetPotato', name: 'Sweet Potato', cookedName: 'Candied Yams', emoji: '🍠', tier: 6, flavor: 'sweet', flavor2: 'savory', attack: 7, hp: 17, values: [1, 2, 3],
     rarity: 'mythic', aura: 'roast',
-    text: 'Adjacent friends grow x{v} from their kitchen abilities.',
-    cooked: { text: 'Every friend grows x3 from its kitchen abilities.', abilities: [] },
+    text: 'When an adjacent friend grows in the kitchen, it grows +{v} more of each stat it gained.',
+    cooked: { text: 'Every other friend grows +1 more too.', abilities: [] },
     abilities: [] },
   { id: 'chickenTenderTower', name: 'Chicken Tender Tower', cookedName: 'Tender Skyscraper', emoji: '🍗', tier: 6, flavor: 'savory', flavor2: 'salty', attack: 7, hp: 18, values: [50, 75, 100],
     rarity: 'mythic', aura: 'tower',
