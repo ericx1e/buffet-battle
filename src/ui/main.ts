@@ -1651,7 +1651,7 @@ function namingCard(n: Naming): string {
   return `
     <div class="over-dim name-dim" data-k="name-dim" data-in="fade"></div>
     <form class="over-card name-card" style="${box([170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
-      <div class="ribbon"><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
+      <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
       <p class="over-sub">${n.renaming ? 'Pick a new name.' : 'Pick your chef name. Other chefs see it when they meet your plate.'}</p>
       <div class="name-row">
         <select data-name="first" ${n.busy ? 'disabled' : ''}>${options(NAME_FIRST, n.first)}</select>
@@ -2132,7 +2132,7 @@ function renderBattle(battle: PendingBattle): boolean {
         </div>
         ${done
           ? `<div class="result-card ${outcome}" style="${box(BATTLE.result)}" data-k="result:${bid}" data-in="${outcome === 'loss' ? 'thud' : 'stamp'}" data-delay="250">
-               <div class="ribbon"><span>${outcome === 'win' ? 'Victory!' : outcome === 'loss' ? 'Defeat' : 'Draw'}</span></div>
+               <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${outcome === 'win' ? 'Victory!' : outcome === 'loss' ? 'Defeat' : 'Draw'}</span></div>
                ${resultDetail(outcome)}
                <button class="big-btn" data-action="continue">back to the kitchen ›</button>
              </div>`
@@ -2190,7 +2190,7 @@ function renderOver() {
         <img class="scene-bg" src="${kitchenUrl}" alt="" draggable="false">
         <div class="over-dim"></div>
         <div class="over-card ${won ? 'won' : 'lost'}" style="${box([150, 50, 340, 228])}" data-k="over" data-in="drop">
-          <div class="ribbon"><span>${won ? 'Michelin-worthy!' : 'Kitchen closed'}</span></div>
+          <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${won ? 'Michelin-worthy!' : 'Kitchen closed'}</span></div>
           <p class="over-sub">${won ? 'Ten courses served. You won the run!' : 'Out of lives. Your kitchen closes for the night.'}</p>
           <div class="result-row trophies">${trophyRow(run.courses, 2)}</div>
           <div class="over-stats">
