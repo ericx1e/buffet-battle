@@ -154,7 +154,13 @@ const jars = [
   ['savory: bouillon', '#8a5a32', '#6a4224', '#b8763f'],
 ];
 // (the jars themselves are drawn below, once the round-shape helpers exist)
-panel(484, 55, 154, 7, P.woodLight, P.woodHi, P.wood); // shelf
+// The shelf: its top, seen a little from above (darker at the back, where it meets the rack), the jars' shadows
+// on it, and its front edge.
+rect(485, 49, 152, 6, P.woodLight);
+rect(485, 49, 152, 1, P.woodDark);
+rect(485, 50, 152, 1, P.wood);
+for (let j = 0; j < 5; j++) ellipse(502 + 29 * j, 53, 8, 1, P.wood);
+panel(484, 55, 154, 7, P.woodLight, P.woodHi, P.wood);
 
 // ---------- chalkboard (480..640, 64..148) ----------
 panel(484, 66, 154, 80, P.woodMid, P.woodHi, P.wood);
@@ -279,7 +285,7 @@ const shadow = () => {}; // props sit flat on the counter like the rest of the s
 // an oval. Every edge across a jar (the lid's rim, the pile, the bottom) curves toward you by the same amount.
 const LID = ['#8a807b', '#6b615d', '#4a4240', '#3a3331', '#2f2927'];
 jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
-  const cx = 501.5 + 29 * j, rx = 8.5, ry = 2.2, lidTop = 33, lidBottom = 37, pile = 45, bottom = 53;
+  const cx = 501.5 + 29 * j, rx = 8.5, ry = 2.2, lidTop = 32, lidBottom = 36, pile = 44, bottom = 51;
   const curve = (x) => ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
   blob(Math.floor(cx - rx), lidTop - 3, Math.ceil(cx + rx), bottom + 3, (x, y) => {
     const t = (x - cx) / rx;

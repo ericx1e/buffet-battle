@@ -1,10 +1,10 @@
 {
   "comment": "Written by tools/gen-kitchen.mjs: [x, y, w, h] of each prop sprite in art/scenes/props/ on the kitchen scene.",
-  "spice0": [493, 31, 19, 26],
-  "spice1": [522, 31, 19, 26],
-  "spice2": [551, 31, 19, 26],
-  "spice3": [580, 31, 19, 26],
-  "spice4": [609, 31, 19, 26],
+  "spice0": [493, 30, 19, 25],
+  "spice1": [522, 30, 19, 25],
+  "spice2": [551, 30, 19, 25],
+  "spice3": [580, 30, 19, 25],
+  "spice4": [609, 30, 19, 25],
   "bell": [258, 280, 46, 36],
   "tipjar": [317, 254, 32, 62],
   "bin": [365, 242, 56, 73]
