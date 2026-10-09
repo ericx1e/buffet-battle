@@ -2390,6 +2390,16 @@ function stagePoint(e: PointerEvent): [number, number] {
   return [Math.round((e.clientX - r.left) / s), Math.round((e.clientY - r.top) / s)];
 }
 
+/**
+ * Where a drag drops: under the carried food, not the finger. On touch screens the food rides above the finger
+ * (drag.lift) so it stays visible, and you line the food up with the slot, so that is the point that counts.
+ */
+function dropTargetAt(e: PointerEvent, lift: number): HTMLElement | undefined {
+  const stage = root.querySelector<HTMLElement>('.stage');
+  const scale = stage ? stage.getBoundingClientRect().width / LAYOUT.size[0] : 1;
+  return document.elementFromPoint(e.clientX, e.clientY - lift * scale)?.closest<HTMLElement>('[data-drop]') ?? undefined;
+}
+
 window.addEventListener('pointermove', (e) => {
   if (!drag) return;
   if (!drag.ghost) {
@@ -2411,7 +2421,7 @@ window.addEventListener('pointermove', (e) => {
   drag.ghost.style.left = `${x - 20}px`;
   drag.ghost.style.top = `${y - 24 - drag.lift}px`;
   // Recompute (a render may have replaced the element we were over).
-  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-drop]') ?? undefined;
+  const over = dropTargetAt(e, drag.lift);
   if (over !== drag.over || (over && !over.classList.contains('drop-hover'))) {
     drag.over?.classList.remove('drop-hover');
     over?.classList.add('drop-hover');
@@ -2453,7 +2463,7 @@ window.addEventListener('pointerup', (e) => {
   const d = drag;
   drag = null;
   if (!d?.ghost) return;
-  const target = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-drop]');
+  const target = dropTargetAt(e, d.lift);
   // The next render animates from here: the food lands where it was let go (or flies home).
   const r = d.ghost.getBoundingClientRect();
   const t = target?.getBoundingClientRect();
