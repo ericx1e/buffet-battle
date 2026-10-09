@@ -67,6 +67,8 @@ The market offers higher-tier units as the run goes on. Tiers unlock by day, not
 
 ## The Kitchen (prep phase)
 
+**Order rail:** the top of the kitchen is a ticket rail. The day ticket hangs in the middle, with four order tickets beside it, each showing one fact (hover for the detail): the buffet's newest rarity and the day the next one opens, tomorrow's gold (income, interest on what you hold, gold from foods), the plate's total attack and HP, and what a loss today costs (free on days 1-2, else a life, with the courses still to win).
+
 Gold is now a resource to manage across days: it carries over, interest rewards saving, foods cost more as their tier rises, and refills cost 1 gold each, as many as you like.
 
 ### Economy

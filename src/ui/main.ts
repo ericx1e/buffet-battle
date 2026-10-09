@@ -11,6 +11,7 @@ import {
   type OfferSource,
   type RunState,
   START_LIVES,
+  turnConfig,
   type SpecialOffer,
   buySpecial,
   buyUnit,
@@ -40,7 +41,7 @@ import {
   specialCost,
   useItem,
 } from '../sim/run';
-import { type AttackPattern, FLAVORS, type Flavor, type HeldItemId, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
+import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
@@ -1102,6 +1103,45 @@ function jarMarks(): string {
 }
 
 /** The jar's tooltip: gold, the interest rule, and what tomorrow brings. */
+/**
+ * Order tickets clipped to the rail beside the day ticket: the buffet's newest rarity and when the next opens,
+ * tomorrow's gold, the plate's total attack and HP, and what a loss today costs. Hover one for the detail.
+ */
+function orderTickets(): string {
+  const { run } = app;
+  const { maxTier } = turnConfig(run.turn);
+  const unlockDay = (tier: number) => { for (let d = run.turn + 1; d < run.turn + 20; d++) if (turnConfig(d).maxTier >= tier) return d; return null; };
+  const next = maxTier < 6 ? ((maxTier + 1) as Tier) : null;
+  const nextDay = next ? unlockDay(next) : null;
+  const schedule = ([1, 2, 3, 4, 5, 6] as const).map((t) => {
+    const d = t === 1 ? 1 : (() => { for (let x = 1; x < 30; x++) if (turnConfig(x).maxTier >= t) return x; return 0; })();
+    return `<p class="${t <= maxTier ? '' : 'dim'}">${rarityName(RARITY_BY_TIER[t])} from day ${d}</p>`;
+  }).join('');
+  const rarity = `${gemIcon(RARITY_BY_TIER[maxTier])}${next ? `<span class="t-arrow">›</span>${gemIcon(RARITY_BY_TIER[next])}d${nextDay}` : ' all'}`;
+  const rarityTip = tipBox('Buffet rarities', `<p>Newest in the buffet: ${rarityName(RARITY_BY_TIER[maxTier])}.${next ? ` Next: ${rarityName(RARITY_BY_TIER[next])} on day ${nextDay}.` : ' Every rarity is open.'}</p>${schedule}<p class="dim">${turnConfig(run.turn).unitSlots} food cubbies today.</p>`);
+
+  const interest = interestOn(run, run.gold);
+  const tomorrow = INCOME + interest + run.bonusGoldNext;
+  const goldTip = tipBox(`${pix('coin')} Tomorrow: +${tomorrow} gold`, `<p>+${INCOME} income, +${interest} interest on the ${run.gold} gold you hold now${run.bonusGoldNext ? `, +${run.bonusGoldNext} from your foods` : ''}.</p><p class="dim">Spend less today to earn more interest (see the tip jar).</p>`);
+
+  const foods = run.plate.filter((u): u is UnitInstance => !!u);
+  const atk = foods.reduce((n, u) => n + u.attack + (u.tempAttack ?? 0), 0);
+  const hp = foods.reduce((n, u) => n + u.hp, 0);
+  const plateTip = tipBox('Your plate', `<p>${foods.length} of 6 foods: <b>${atk}</b> attack and <b>${hp}</b> HP in all.</p><p class="dim">Before battle buffs, Crust and flavor bonuses.</p>`);
+
+  const freeLoss = run.turn < 3;
+  const stakes = freeLoss ? 'free loss' : `loss ${pix('lifeOff')}-1`;
+  const stakesTip = tipBox(freeLoss ? 'A loss today is free' : 'A loss costs a life', `<p>${freeLoss ? 'Losses on days 1 and 2 cost no lives.' : `Lose today and you have ${run.lives - 1} of ${START_LIVES} lives left.`} A win serves a course: ${COURSES_TO_WIN - run.courses} more to win the run.</p>`);
+
+  const t = (x: number, w: number, body: string, tip: string, key: string, cls = '') => `<div class="order-ticket ${cls}" style="${box([x, 9, w, 13])}" ${tip} data-vk="ticket:${key}" data-v="${hash(body)}" data-va="hop">${body}</div>`;
+  return [
+    t(152, 66, rarity, rarityTip, 'rarity'),
+    t(224, 66, `${pix('coin')}+${tomorrow} next`, goldTip, 'gold'),
+    t(350, 70, `${statBadge('atk', atk)}${statBadge('hp', hp)}`, plateTip, 'plate'),
+    t(426, 66, stakes, stakesTip, 'stakes', freeLoss ? 'safe' : ''),
+  ].join('');
+}
+
 function interestTip(): string {
   const { run } = app;
   const mult = interestMult(run);
@@ -1236,6 +1276,7 @@ function renderKitchen() {
         <button class="newrun" style="${box(LAYOUT.newRun)}" data-action="new-run">new run</button>
         ${soundButton(`hotspot sound-btn" style="${box(LAYOUT.sound)}`)}
         ${freezerMagnets()}
+        ${orderTickets()}
         ${spiceJars()}
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"

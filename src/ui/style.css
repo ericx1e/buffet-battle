@@ -141,6 +141,16 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .label.light { color: #fff3d6; }
 .label.center { text-align: center; }
 .label.tag { color: #fff; background: #a3452a; border: 1px solid #2a1b14; line-height: 9px; }
+/* Order tickets on the rail beside the day: one fact each, the detail in the hover. */
+.order-ticket {
+  position: absolute; display: flex; align-items: center; justify-content: center; gap: 2px; cursor: help;
+  font: 400 10px/1 var(--pixel); color: #3a2a22; white-space: nowrap;
+  background: #f4ecd8; border: 1px solid #c9b896; box-shadow: 0 1px 0 rgba(42, 27, 20, 0.35);
+}
+.order-ticket::before { content: ''; position: absolute; top: -2px; left: 50%; width: 6px; height: 3px; margin-left: -3px; background: #6b6b74; }
+.order-ticket .stat-badge { transform: scale(0.85); }
+.order-ticket.safe { color: #3f7a34; }
+.t-arrow { color: #8a7568; }
 .ticket-text { font: 400 10px/15px var(--pixel); text-align: center; color: #3a2a22; text-transform: uppercase; pointer-events: none; }
 .tip-text { position: absolute; font: 400 10px/13px var(--pixel); text-align: center; color: #3a2a22; pointer-events: none; }
 .newrun { font: 400 10px/14px var(--pixel) !important; text-transform: uppercase; color: #fff3d6 !important; background: rgba(42, 27, 20, 0.55) !important; border: 1px solid #2a1b14 !important; }
