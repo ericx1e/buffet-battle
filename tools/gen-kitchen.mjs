@@ -159,7 +159,7 @@ const jars = [
 rect(485, 49, 152, 6, P.woodLight);
 rect(485, 49, 152, 1, P.woodDark);
 rect(485, 50, 152, 1, P.wood);
-for (let j = 0; j < 5; j++) ellipse(502 + 29 * j, 53, 8, 1, P.wood);
+for (let j = 0; j < 5; j++) rect(493 + 29 * j, 53, 18, 1, P.wood);
 panel(484, 55, 154, 7, P.woodLight, P.woodHi, P.wood);
 
 // ---------- chalkboard (480..640, 64..148) ----------
@@ -305,7 +305,7 @@ jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
     // Empty glass above the spice: tinted, a highlight streak on the left, the far edge darker
     if (t > -0.7 && t < -0.5) return P.glassHi;
     return t > 0.8 ? P.jarEdge : '~' + P.jar;
-  }, '#2f2927', true, true);
+  }, '#2f2927', true, false); // no cast shadow: it would land on the rack's back wall; the shelf has their shadows
 }));
 
 const BRASS = ['#fff4c2', '#f6d36b', '#e2ac3c', '#b97c23', '#7f4f14'];
