@@ -1,6 +1,6 @@
 # Buffet Battle
 
-An async autobattler where everyday foods fight on a dinner plate. Design: [DESIGN.md](DESIGN.md).
+An async autobattler where everyday foods fight on a dinner plate. Play at **https://buffetbattle.com**. Design: [DESIGN.md](DESIGN.md).
 
 ## Run it
 

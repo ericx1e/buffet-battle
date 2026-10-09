@@ -1,5 +1,9 @@
-# Every push to main: test and deploy the API (Cloudflare Worker + D1 migrations), then test, build and publish the
-# game to GitHub Pages, pointed at that API. The API goes first so the live game never runs ahead of its server.
+# Every push to main:
+#   api:      test the API, apply D1 migrations, deploy the Worker (api.buffetbattle.com) and check it's on this version;
+#   site:     test and build the game against it and deploy it to buffetbattle.com (static files on Cloudflare), with
+#             the www redirect;
+#   redirect: GitHub Pages, where the game used to live, sends visitors on to buffetbattle.com.
+# The API goes first so the live game never runs ahead of its server.
 name: Deploy
 
 on:
@@ -17,7 +21,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  API_URL: https://buffet-battle-api.ericxie6.workers.dev
+  API_URL: https://api.buffetbattle.com
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
 jobs:
   api:
@@ -25,9 +31,6 @@ jobs:
     defaults:
       run:
         working-directory: server
-    env:
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,7 +53,7 @@ jobs:
           done
           echo "API reports '$got', expected '$expected'" && exit 1
 
-  build:
+  site:
     needs: api
     runs-on: ubuntu-latest
     steps:
@@ -59,6 +62,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run build
@@ -66,16 +72,20 @@ jobs:
           VITE_API_URL: ${{ env.API_URL }}
           # Cloudflare Web Analytics on the game page: the beacon token, a repository variable (empty: no analytics).
           VITE_CF_BEACON: ${{ vars.CF_BEACON_TOKEN }}
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
+      - run: npm ci --prefix server
+      - run: server/node_modules/.bin/wrangler deploy --config site/wrangler.jsonc
+      - run: server/node_modules/.bin/wrangler deploy --config site/www/wrangler.jsonc
 
-  deploy:
-    needs: build
+  redirect:
+    needs: site
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/redirect
       - id: deployment
         uses: actions/deploy-pages@v4

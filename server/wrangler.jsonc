@@ -6,6 +6,9 @@
   "compatibility_date": "2026-10-01",
   "account_id": "a5efc761e677570420b934bb2e955d89",
   "observability": { "enabled": true },
+  // api.buffetbattle.com, and the original workers.dev address, which keeps working.
+  "routes": [{ "pattern": "api.buffetbattle.com", "custom_domain": true }],
+  "workers_dev": true,
   "d1_databases": [
     {
       "binding": "DB",
@@ -21,6 +24,6 @@
   ],
   "vars": {
     // Sites allowed to call the API from a browser, besides localhost.
-    "ALLOWED_ORIGINS": "https://ericx1e.github.io"
+    "ALLOWED_ORIGINS": "https://buffetbattle.com,https://www.buffetbattle.com,https://ericx1e.github.io"
   }
 }

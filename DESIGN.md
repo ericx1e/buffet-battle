@@ -787,6 +787,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
 
 ### Deploy
 
+- Addresses (October 2026): the game at **https://buffetbattle.com** (static files on Cloudflare, Worker `buffet-battle-site`, `site/wrangler.jsonc`), `www.` redirecting to it (`site/www`), the API at **https://api.buffetbattle.com** (also still at its workers.dev address), the dev site at buffetbattle.com/admin. The domain is registered and its DNS kept on Cloudflare; Cloudflare makes the DNS records and certificates for the Workers' custom domains. The old address, ericx1e.github.io/buffet-battle, is a GitHub Pages redirect (`site/redirect`). Players' saves are kept per address, so a chef who signed up on the old one starts again here.
 - GitHub Actions: on a push to main, after the tests:
   - Pages builds the client with `VITE_API_URL` set;
   - a second job applies the D1 migrations and deploys the Worker with `wrangler deploy`.

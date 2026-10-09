@@ -1,0 +1,10 @@
+// www.buffetbattle.com: sends every request to the same page on buffetbattle.com.
+{
+  "$schema": "../../server/node_modules/wrangler/config-schema.json",
+  "name": "buffet-battle-www",
+  "main": "index.js",
+  "compatibility_date": "2026-10-01",
+  "account_id": "a5efc761e677570420b934bb2e955d89",
+  "workers_dev": false,
+  "routes": [{ "pattern": "www.buffetbattle.com", "custom_domain": true }]
+}

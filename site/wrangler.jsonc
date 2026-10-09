@@ -1,0 +1,11 @@
+// The game's site at buffetbattle.com: the built game (dist/) served as static files by Cloudflare. Static files are
+// served without running a Worker, so they're free and unlimited. Deployed by the workflow after the build.
+{
+  "$schema": "../server/node_modules/wrangler/config-schema.json",
+  "name": "buffet-battle-site",
+  "compatibility_date": "2026-10-01",
+  "account_id": "a5efc761e677570420b934bb2e955d89",
+  "assets": { "directory": "../dist" },
+  "workers_dev": false,
+  "routes": [{ "pattern": "buffetbattle.com", "custom_domain": true }]
+}
