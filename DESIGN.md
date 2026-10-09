@@ -667,7 +667,9 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
    | special | `buySpecial` |
    | pick | `pickPack` |
 
-   The log is saved in `localStorage` with the run, so a refresh keeps the day.
+   The log is saved in `localStorage` with the run, so a refresh keeps the day. Only actions that worked are logged; a failed action changes nothing (tested).
+
+   This is built: `src/sim/actions.ts` has the actions, `applyAction`, `replayDay(morning, actions)` and `plateHash`. The bot plays through the same actions, and in development the client replays each day at Serve and warns if the plate differs, which would mean some change skipped `dispatch`.
 3. **Serve:** `POST /runs/:id/serve` with `{ day, version, actions, plateHash }`. The server:
    1. loads the stored state and checks the day and the version match;
    2. replays the actions with the same `run.ts`, rejecting the day if any action fails or if `serveBlocker` refuses;
@@ -742,7 +744,9 @@ CREATE INDEX battles_run ON battles (run_id);
 2. Not the player's own ghosts, and not an opponent already fought this run.
 3. Nearest record: the smallest `|wins - mine| + |lives - mine|`.
 4. Most recent first. From the best 20, pick one at random.
-5. Nothing qualifies, or a 50% coin flip while the pool is small: a bot. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today. Bot plates aren't stored; their seed is enough to rebuild them.
+5. A bot instead, when the pool is thin: always with fewer than 10 ghosts that qualify, never with 100 or more, and in between a chance that falls evenly from 100% to 0%. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today. Bot plates aren't stored; their seed is enough to rebuild them.
+
+Bot opponents are labelled as bots in battle, so a loss to one doesn't read as a loss to a person. Battles against bots are kept out of the real-play balance report.
 
 **Pruning:** a daily scheduled run of the Worker keeps the newest 500 ghosts per (version, day), plus every ghost a stored battle points to.
 
@@ -778,11 +782,14 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
   - Pages builds the client with `VITE_API_URL` set;
   - a second job applies the D1 migrations and deploys the Worker with `wrangler deploy`.
 - **Setup by the owner, once:** a Cloudflare account, a D1 database, and an API token saved as the `CLOUDFLARE_API_TOKEN` repository secret.
+  - Done October 2026: the account, the workers.dev subdomain `ericxie6` (the API will be `buffet-battle-api.ericxie6.workers.dev`) and the D1 database `buffet-battle` (id `178d21f5-dced-4968-a7a3-966b73eefc3f`).
+  - Still to do at deploy: the API token and the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets.
+  - Deploys go through GitHub Actions rather than Cloudflare's own Git connection, so a push only deploys after the tests pass.
 - CORS allows only the Pages origin and localhost.
 
 ### Build order
 
-1. **Action log (client only):** route every kitchen change through `dispatch`. Test that replaying a day's log on the morning state rebuilds the same state and plate, for many bot-played days.
+1. **Action log (client only), done:** route every kitchen change through `dispatch`. Test that replaying a day's log on the morning state rebuilds the same state and plate, for many bot-played days.
 2. **Worker skeleton:**
    - `server/` with wrangler, the D1 schema as migration 0001;
    - players and runs endpoints;
@@ -798,7 +805,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
 
 ### Bots
 
-- Before the pool fills (at launch, and after every patch), bots fill in. A bot plays Prep with simple heuristics: buy the highest tier affordable, merge copies, put high-HP units in front.
+- Bots stay with real players: before the pool fills (at launch, and after every patch) and on thin days (late days, where few runs reach), bots fill in, less often as the pool grows (see Matchmaking). A bot plays Prep with simple heuristics: buy the highest tier affordable, merge copies, put high-HP units in front.
 - A bot opponent's gold is adjusted by day (`ghostGold` in bot.ts). A bot spends everything and never plans, so on its own it is too strong early (a player may be saving for interest) and too weak late (a player's plate has grown and found its synergies).
   - It gets 3 gold less on day 1 and 1 less on day 2, then 1 to 5 more a day from day 6.
   - Against a plain bot it wins about 30% on days 1-4, about 50% on days 7-8 and 60-80% from day 10 (`npx tsx tools/ghostcheck.ts`).

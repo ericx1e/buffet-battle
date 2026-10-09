@@ -1,4 +1,5 @@
 import './style.css';
+import { type Action, applyAction, plateHash, replayDay } from '../sim/actions';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
 import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
@@ -13,8 +14,6 @@ import {
   START_LIVES,
   turnConfig,
   type SpecialOffer,
-  buySpecial,
-  buyUnit,
   clonePlate,
   endDay,
   finishBattle,
@@ -28,20 +27,15 @@ import {
   isOver,
   marketOdds,
   migrateRun,
-  moveUnit,
   newRun,
   nextSeed,
   offerCost,
-  pickPack,
-  reroll,
   rerollCost,
   sellPrice,
-  sellUnit,
   serveBlocker,
   specialCost,
-  useItem,
 } from '../sim/run';
-import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
+import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
@@ -80,6 +74,8 @@ interface App {
   inspect?: { side: 0 | 1; slot: number };
   /** Bumped on every restock so the new dishes animate in even where the old one had the same food. */
   marketGen: number;
+  /** Today: the run as it stood this morning and every action since, which the server replays at Serve. */
+  day?: { morning: RunState; log: Action[] };
 }
 
 const SAVE_KEY = 'buffetbattle.run';
@@ -130,8 +126,10 @@ const app: App = loadApp() ?? freshApp();
 
 function freshApp(): App {
   const seed = (Date.now() ^ (Math.random() * 2 ** 32)) >>> 0;
+  const run = newRun(seed);
   return {
-    run: newRun(seed),
+    run,
+    day: startOfDay(run),
     runId: seed.toString(36),
     selected: null,
     message: 'Drag a dish from the buffet onto your plate. Front row (right) attacks; back row (left) supports.',
@@ -159,6 +157,7 @@ function loadApp(): App | null {
     if (battle && battle.result.frames.some((f) => f.plates.some((p) => p.some((u) => u && !isUnit(u.defId))))) {
       finishBattle(run, battle.result.outcome);
       saved.battle = undefined;
+      saved.day = startOfDay(run);
     }
     return { ...saved, run, selected: null, message: 'Welcome back, chef.', frame: 0, speed: 1, marketGen: 0 };
   } catch {
@@ -168,14 +167,33 @@ function loadApp(): App | null {
 
 function save() {
   try {
-    const { run, runId, battle } = app;
-    localStorage.setItem(SAVE_KEY, JSON.stringify({ run, runId, battle }));
+    const { run, runId, battle, day } = app;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ run, runId, battle, day }));
   } catch {
     // Storage unavailable: progress just isn't kept across reloads.
   }
 }
 
 // ---------- actions ----------
+
+function startOfDay(run: RunState): App['day'] {
+  return { morning: structuredClone({ ...run, growth: [] }), log: [] };
+}
+
+/** Every change to the run goes through here: applied by run.ts, and logged for the day when it worked. */
+function dispatch(a: Action): ActionResult {
+  const result = applyAction(app.run, a);
+  if (result.ok) app.day?.log.push(a);
+  return result;
+}
+
+/** In development, a day that doesn't replay to the plate being served means some change skipped dispatch. */
+function checkReplay(plate: Plate) {
+  if (!import.meta.env.DEV || !app.day) return;
+  const replay = replayDay(app.day.morning, app.day.log);
+  if (!replay.ok) console.warn('Day replay refused at action', replay.index, replay.error, app.day);
+  else if (plateHash(replay.plate) !== plateHash(plate)) console.warn('Day replay gives a different plate', replay.plate, plate);
+}
 
 function report(result: ActionResult, sound?: Sfx) {
   if (!result.ok) sfx('deny');
@@ -401,18 +419,18 @@ function onDropSlot(loc: Loc) {
       const into = getUnit(run, loc);
       // Into the fridge: you buy it, and it waits there (the fridge only holds foods you own).
       if (loc.area === 'fridge' && !into) {
-        const result = buyUnit(run, sel.src, loc);
+        const result = dispatch({ t: 'buy', src: sel.src, to: loc });
         if (result.ok) sfx('freeze', 120);
         return report(result, 'buy');
       }
-      return report(buyUnit(run, sel.src, loc), into?.defId === offer.defId ? 'merge' : 'buy');
+      return report(dispatch({ t: 'buy', src: sel.src, to: loc }), into?.defId === offer.defId ? 'merge' : 'buy');
     }
     if (offer.itemId === 'seasoning') {
       if (!getUnit(run, loc)) return report({ ok: false, error: 'Use items on a unit.' });
       app.seasoning = { src: sel.src, loc };
       return render();
     }
-    return report(useItem(run, sel.src, loc), 'item');
+    return report(dispatch({ t: 'item', src: sel.src, at: loc }), 'item');
   }
 
   if (sel?.kind === 'unit') {
@@ -422,7 +440,7 @@ function onDropSlot(loc: Loc) {
     }
     const moving = getUnit(run, sel.loc);
     const into = getUnit(run, loc);
-    return report(moveUnit(run, sel.loc, loc), into && into.defId === moving?.defId ? 'merge' : loc.area === 'fridge' ? 'freeze' : 'place');
+    return report(dispatch({ t: 'move', from: sel.loc, to: loc }), into && into.defId === moving?.defId ? 'merge' : loc.area === 'fridge' ? 'freeze' : 'place');
   }
 
   if (sel?.kind === 'pick') return pickOnto(sel.index, loc);
@@ -443,18 +461,18 @@ function pickOnto(index: number, loc: Loc) {
   if (!pack) return render();
   if (pack.kind === 'spice') {
     if (!getUnit(run, loc) && !itemDef(pack.items[index]).anywhere) return report({ ok: false, error: 'Drop it onto one of your foods.' });
-    const picked = pickPack(run, index);
+    const picked = dispatch({ t: 'pick', index });
     if (!picked.ok) return report(picked);
     const name = itemDef(pack.items[index]).name;
     const target = getUnit(run, loc);
-    const used = useItem(run, { area: 'special', index: 0 }, loc);
+    const used = dispatch({ t: 'item', src: { area: 'special', index: 0 }, at: loc });
     if (!used.ok) return report({ ok: true, message: `${used.error} ${name} waits in the special cubby, free.` }, 'place');
     return report({ ...used, message: used.message ?? `${name} on ${target ? unitDef(target.defId).name : 'your plate'}.` }, 'item');
   }
   const spot = run.overflow.findIndex((u) => !u); // where pickPack puts it
-  const picked = pickPack(run, index);
+  const picked = dispatch({ t: 'pick', index });
   if (!picked.ok || loc.area === 'overflow') return report(picked);
-  const moved = moveUnit(run, { area: 'overflow', index: spot }, loc);
+  const moved = dispatch({ t: 'move', from: { area: 'overflow', index: spot }, to: loc });
   const food = unitDef(pack.units[index]).name;
   if (!moved.ok) return report({ ok: true, message: `${moved.error} ${food} waits on the counter tray.` }, 'place');
   return report({ ...moved, message: moved.message ?? `${food}, fresh from the farm.` }, 'place');
@@ -464,7 +482,7 @@ function pickOnto(index: number, loc: Loc) {
 function openSpecial() {
   const { run } = app;
   const s = run.special;
-  const result = buySpecial(run);
+  const result = dispatch({ t: 'special' });
   if (result.ok && s?.kind === 'premium') app.marketGen++;
   if (result.ok && (s?.kind === 'spicePack' || s?.kind === 'farmPack')) {
     report({ ok: true, message: 'Pick one: drag it out of the box onto your plate (the rest go back).' }, 'buy');
@@ -477,7 +495,7 @@ const centerOf = ([x, y, w, h]: Rect): [number, number] => [x + w / 2, y + h / 2
 
 function sellSelected() {
   if (app.selected?.kind !== 'unit') return;
-  const result = sellUnit(app.run, app.selected.loc);
+  const result = dispatch({ t: 'sell', at: app.selected.loc });
   report(result, 'sell');
   if (!result.ok) return;
   for (let i = 0; i < 3; i++) sfx('coin', 120 + i * 70 + 300);
@@ -491,7 +509,7 @@ function onAction(action: string, el: HTMLElement) {
   const { run } = app;
   switch (action) {
     case 'reroll': {
-      const result = reroll(run);
+      const result = dispatch({ t: 'refill' });
       if (result.ok) app.marketGen++;
       return report(result, 'reroll');
     }
@@ -502,7 +520,7 @@ function onAction(action: string, el: HTMLElement) {
     case 'season': {
       const pending = app.seasoning;
       app.seasoning = undefined;
-      if (pending) report(useItem(run, pending.src, pending.loc, el.dataset.flavor as Flavor), 'item');
+      if (pending) report(dispatch({ t: 'item', src: pending.src, at: pending.loc, flavor: el.dataset.flavor as Flavor }), 'item');
       return;
     }
     case 'cancel-season':
@@ -573,6 +591,7 @@ function startBattle() {
   const { run } = app;
   if (app.battle || run.plate.every((u) => !u)) return;
   const mine = clonePlate(run.plate); // the day was already ended when the bell rang
+  checkReplay(mine);
   saveGhost(app.runId, run.turn, mine, run.courses, run.lives);
   const opponent = pickOpponent(app.runId, run.turn, nextSeed(run), run.courses, run.lives);
   const result = simulateBattle(mine, opponent.plate, nextSeed(run));
@@ -589,6 +608,7 @@ function endBattle() {
   if (!battle) return;
   finishBattle(app.run, battle.result.outcome);
   app.battle = undefined;
+  app.day = startOfDay(app.run);
   const o = battle.result.outcome;
   app.message = o === 'win' ? `${pix('trophy')} Course won! Back to the kitchen.` : o === 'loss'
     ? (app.run.turn - 1 >= 3 ? `${pix('lifeOff')} You lost a life.` : 'Lost, but the first two days cost no lives.') : 'A draw. Nothing lost.';
