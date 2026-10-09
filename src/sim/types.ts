@@ -155,8 +155,8 @@ export interface AbilityDef {
   perLevel3?: boolean;
   /** Kitchen: fires on at most this many days over the run, by level (Cheese ages for 4/6/10 days). */
   days?: [number, number, number];
-  /** Kitchen: double the amount next to a friend of this flavor. */
-  doubleNextTo?: Flavor;
+  /** Kitchen: +1 to the amount next to a friend of this flavor. */
+  moreNextTo?: Flavor;
 }
 
 /**
@@ -221,8 +221,8 @@ export interface UnitDef {
   lives?: number;
 }
 
-export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware' | 'bouillon' | 'chopsticks';
-export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix' | 'takeout';
+export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware' | 'bouillon' | 'chopsticks' | 'hotSauce';
+export type ItemId = HeldItemId | 'butter' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix' | 'takeout';
 
 export interface ItemDef {
   id: ItemId;

@@ -91,7 +91,7 @@ export const UNITS: UnitDef[] = [
     text: 'Start of battle: the enemy across is Chilled {v}.',
     cooked: { text: 'Start of battle: adjacent friends gain +1/+2.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', hp: 2, values: [1, 1, 1] }] },
     abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'enemyInLane' }] },
-  { id: 'dumplings', name: 'Dumplings', cookedName: 'Dim Sum Basket', emoji: '🥟', tier: 2, flavor: 'savory', attack: 4, hp: 8, values: [1, 2, 3],
+  { id: 'dumplings', name: 'Dumplings', cookedName: 'Dim Sum Basket', emoji: '🥟', tier: 2, flavor: 'savory', attack: 4, hp: 8, values: [2, 3, 4],
     text: 'Start of day: your first {v} refills are free.',
     cooked: { text: 'Refill: gain +1/+1.', abilities: [{ trigger: 'reroll', effect: 'buff', values: [1, 1, 1] }] },
     abilities: [{ trigger: 'startTurn', effect: 'freeReroll' }] },
@@ -135,9 +135,9 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Friend summoned: it gains 3 Crust.', abilities: [{ trigger: 'friendSummoned', effect: 'crust', target: 'summoned', values: [3, 3, 3] }] },
     abilities: [{ trigger: 'friendSummoned', effect: 'buff', target: 'summoned', hp: 0 }] },
   { id: 'cheese', name: 'Cheese', cookedName: 'Fondue', emoji: '🧀', tier: 3, flavor: 'savory', attack: 3, hp: 6, values: [1, 2, 3],
-    text: 'Ages: end of day, +{v} HP, double next to a Savory friend.',
+    text: 'Ages: end of day, +{v} HP, +1 more next to a Savory friend.',
     cooked: { text: 'Start of battle: adjacent friends gain +2/+2.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', values: [2, 2, 2] }] },
-    abilities: [{ trigger: 'endTurn', effect: 'buff', attack: 0, doubleNextTo: 'savory' }] },
+    abilities: [{ trigger: 'endTurn', effect: 'buff', attack: 0, moreNextTo: 'savory' }] },
   { id: 'wasabi', name: 'Wasabi', cookedName: 'Wasabi Peas', emoji: '🌿', tier: 3, flavor: 'spicy', attack: 5, hp: 9, values: [3, 5, 7],
     text: 'First attack deals +{v} damage.',
     cooked: { text: 'Start of battle: deal 6 damage to the enemy across.', abilities: [{ trigger: 'startOfBattle', effect: 'damage', target: 'enemyInLane', values: [6, 6, 6] }] },
@@ -170,20 +170,20 @@ export const UNITS: UnitDef[] = [
     abilities: [] },
 
   { id: 'yogurt', name: 'Yogurt', cookedName: 'Frozen Yogurt', emoji: '🥛', tier: 3, flavor: 'sour', attack: 3, hp: 7, values: [2, 3, 4],
-    text: 'Cultures: start of day, +{v} HP, double next to a Sour friend.',
+    text: 'Cultures: start of day, +{v} HP, +1 more next to a Sour friend.',
     cooked: { text: 'Start of battle: the enemy across is Chilled 2.', abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'enemyInLane', values: [2, 2, 2] }] },
-    abilities: [{ trigger: 'startTurn', effect: 'buff', attack: 0, doubleNextTo: 'sour' }] },
+    abilities: [{ trigger: 'startTurn', effect: 'buff', attack: 0, moreNextTo: 'sour' }] },
   { id: 'chiliOil', name: 'Chili Oil', cookedName: 'Chili Crisp', emoji: '🫙', tier: 3, flavor: 'spicy', attack: 4, hp: 7, values: [1, 2, 3],
-    text: 'Infuses: start of day, +{v} attack, double next to a Spicy friend.',
+    text: 'Infuses: start of day, +{v} attack, +1 more next to a Spicy friend.',
     cooked: { text: 'Start of battle: Spicy friends gain +3 attack.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', onlyFlavor: 'spicy', hp: 0, values: [3, 3, 3] }] },
-    abilities: [{ trigger: 'startTurn', effect: 'buff', hp: 0, doubleNextTo: 'spicy' }] },
+    abilities: [{ trigger: 'startTurn', effect: 'buff', hp: 0, moreNextTo: 'spicy' }] },
   { id: 'mapleSyrup', name: 'Maple Syrup', cookedName: 'Maple Taffy', emoji: '🍁', tier: 3, flavor: 'sweet', attack: 4, hp: 7, values: [2, 3, 4],
     text: 'End of day: 2 random friends gain +{v} HP.',
     cooked: { text: 'Start of battle: your friends gain +2 attack.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', hp: 0, values: [2, 2, 2] }] },
     abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'randomFriends', count: 2, attack: 0 }] },
   { id: 'peppercorn', name: 'Peppercorns', cookedName: 'Pepper Steak Rub', emoji: '🌶️', tier: 3, flavor: 'spicy', attack: 4, hp: 7, values: [3, 4, 5],
-    attackPattern: 'spray', throwDamage: 2,
-    text: 'Start of battle, {v} peppercorns hit random enemies for 2.',
+    attackPattern: 'spray',
+    text: 'Start of battle, {v} peppercorns hit random enemies for half its attack.',
     cooked: { text: 'Start of battle: every enemy Burns 2.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'allEnemies', values: [2, 2, 2] }] },
     abilities: [] },
   { id: 'porkCrackling', name: 'Pork Crackling', cookedName: 'Chicharrón', emoji: '🥓', tier: 3, flavor: 'salty', attack: 4, hp: 11, values: [2, 3, 4],
@@ -195,27 +195,6 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Friend summoned: it gains +2/+2.', abilities: [{ trigger: 'friendSummoned', effect: 'buff', target: 'summoned', values: [2, 2, 2] }] },
     abilities: [{ trigger: 'friendSummoned', effect: 'burn', target: 'enemyInLane' }] },
 
-  // Rich foods: one flavor, counted several times over.
-  { id: 'curry', name: 'Curry', cookedName: 'Katsu Curry', emoji: '🍛', tier: 3, flavor: 'spicy', attack: 4, hp: 8, values: [2, 3, 4], rich: true,
-    text: 'Rich: counts as {v} Spicy foods for flavors.',
-    cooked: { text: 'Start of battle: the enemy across Burns 3.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane', values: [3, 3, 3] }] },
-    abilities: [] },
-  { id: 'fudge', name: 'Fudge', cookedName: 'Rocky Road', emoji: '🍫', tier: 3, flavor: 'sweet', attack: 3, hp: 9, values: [2, 3, 4], rich: true,
-    text: 'Rich: counts as {v} Sweet foods for flavors.',
-    cooked: { text: 'Start of battle: adjacent friends gain +3 HP.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', attack: 0, values: [3, 3, 3] }] },
-    abilities: [] },
-  { id: 'lime', name: 'Lime', cookedName: 'Key Lime Pie', emoji: '🍋', tier: 3, flavor: 'sour', attack: 4, hp: 8, values: [2, 3, 4], rich: true,
-    text: 'Rich: counts as {v} Sour foods for flavors.',
-    cooked: { text: 'Start of battle: the enemy across Rots 2.', abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane', values: [2, 2, 2] }] },
-    abilities: [] },
-  { id: 'onigiri', name: 'Rice Ball', cookedName: 'Yaki Onigiri', emoji: '🍙', tier: 3, flavor: 'salty', attack: 3, hp: 9, values: [2, 3, 4], rich: true,
-    text: 'Rich: counts as {v} Salty foods for flavors.',
-    cooked: { text: 'Start of battle: adjacent friends gain 3 Crust.', abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'adjacentFriends', values: [3, 3, 3] }] },
-    abilities: [] },
-  { id: 'miso', name: 'Miso', cookedName: 'Miso Soup', emoji: '🥣', tier: 3, flavor: 'savory', attack: 3, hp: 9, values: [2, 3, 4], rich: true,
-    text: 'Rich: counts as {v} Savory foods for flavors.',
-    cooked: { text: 'Start of battle: adjacent friends gain +1/+2.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', hp: 2, values: [1, 1, 1] }] },
-    abilities: [] },
   // Tier 4 (4 gold)
   { id: 'mushroom', name: 'Mushroom', cookedName: 'Risotto', emoji: '🍄', tier: 4, flavor: 'savory', attack: 4, hp: 11, values: [2, 3, 4],
     text: 'Every 2 turns: summon a {v}/{v} Spore.',
@@ -265,6 +244,27 @@ export const UNITS: UnitDef[] = [
     text: 'Interest pays {v}x.',
     cooked: { text: 'End of day: +2 gold tomorrow.', abilities: [{ trigger: 'endTurn', effect: 'gold', values: [2, 2, 2] }] },
     abilities: [] },
+  // Rich foods: one flavor, counted several times over.
+  { id: 'curry', name: 'Curry', cookedName: 'Katsu Curry', emoji: '🍛', tier: 4, flavor: 'spicy', attack: 5, hp: 9, values: [2, 3, 4], rich: true,
+    text: 'Rich: counts as {v} Spicy foods for flavors.',
+    cooked: { text: 'Start of battle: the enemy across Burns 3.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane', values: [3, 3, 3] }] },
+    abilities: [] },
+  { id: 'fudge', name: 'Fudge', cookedName: 'Rocky Road', emoji: '🍫', tier: 4, flavor: 'sweet', attack: 4, hp: 11, values: [2, 3, 4], rich: true,
+    text: 'Rich: counts as {v} Sweet foods for flavors.',
+    cooked: { text: 'Start of battle: adjacent friends gain +3 HP.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', attack: 0, values: [3, 3, 3] }] },
+    abilities: [] },
+  { id: 'lime', name: 'Lime', cookedName: 'Key Lime Pie', emoji: '🍋', tier: 4, flavor: 'sour', attack: 5, hp: 9, values: [2, 3, 4], rich: true,
+    text: 'Rich: counts as {v} Sour foods for flavors.',
+    cooked: { text: 'Start of battle: the enemy across Rots 2.', abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane', values: [2, 2, 2] }] },
+    abilities: [] },
+  { id: 'onigiri', name: 'Rice Ball', cookedName: 'Yaki Onigiri', emoji: '🍙', tier: 4, flavor: 'salty', attack: 4, hp: 11, values: [2, 3, 4], rich: true,
+    text: 'Rich: counts as {v} Salty foods for flavors.',
+    cooked: { text: 'Start of battle: adjacent friends gain 3 Crust.', abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'adjacentFriends', values: [3, 3, 3] }] },
+    abilities: [] },
+  { id: 'miso', name: 'Miso', cookedName: 'Miso Soup', emoji: '🥣', tier: 4, flavor: 'savory', attack: 4, hp: 11, values: [2, 3, 4], rich: true,
+    text: 'Rich: counts as {v} Savory foods for flavors.',
+    cooked: { text: 'Start of battle: adjacent friends gain +1/+2.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', hp: 2, values: [1, 1, 1] }] },
+    abilities: [] },
   // Tier 5 (5 gold)
   { id: 'steak', name: 'Steak', cookedName: 'Steak Frites', emoji: '🥩', tier: 5, flavor: 'savory', attack: 7, hp: 13, values: [2, 3, 4],
     text: 'Friend summoned: give it +{v}/+{v}.',
@@ -276,9 +276,9 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Start of battle: all enemies Burn 3.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'allEnemies', values: [3, 3, 3] }] },
     abilities: [] },
   { id: 'pineapple', name: 'Pineapple', cookedName: 'Pina Colada', emoji: '🍍', tier: 5, flavor: 'sweet', attack: 6, hp: 10, values: [1, 2, 3],
-    text: 'Hit: adjacent friends gain +{v}/+{v}.',
+    text: 'Hit: your friends gain +{v}/+{v}.',
     cooked: { text: 'Every turn: your friends gain +1/+1.', abilities: [{ trigger: 'round', effect: 'buff', target: 'allFriends', values: [1, 1, 1] }] },
-    abilities: [{ trigger: 'hit', effect: 'buff', target: 'adjacentFriends', max: 3 }] },
+    abilities: [{ trigger: 'hit', effect: 'buff', target: 'allFriends', max: 2 }] },
   { id: 'durian', name: 'Durian', cookedName: 'Durian Crepe', emoji: '🦔', tier: 5, flavor: 'sour', attack: 6, hp: 12, values: [1, 2, 3],
     text: 'Hit: the enemy front row Rots {v}.',
     cooked: { text: 'Start of battle: all enemies Rot 2.', abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'allEnemies', values: [2, 2, 2] }] },
@@ -294,17 +294,17 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Start of battle: attacks twice on its first 3 attacks.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [3, 3, 3] }] },
     abilities: [] },
 
-  { id: 'takoyaki', name: 'Takoyaki', cookedName: 'Takoyaki Boat', emoji: '🐙', tier: 5, flavor: 'savory', attack: 4, hp: 14, values: [2, 3, 4],
-    attackPattern: 'volley', throwDamage: 3,
-    text: 'Every turn, from any row, instead of attacking: throws {v} balls at random enemies for 3.',
+  { id: 'takoyaki', name: 'Takoyaki', cookedName: 'Takoyaki Boat', emoji: '🐙', tier: 5, flavor: 'savory', attack: 4, hp: 14, values: [1, 2, 3],
+    attackPattern: 'volley',
+    text: 'Every turn, from any row, instead of attacking: throws {v} balls at random enemies for its attack.',
     cooked: { text: 'Start of battle: the enemy front row Burns 2.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyFrontRow', values: [2, 2, 2] }] },
     abilities: [] },
   // Tier 6 (5 gold)
-  { id: 'pizza', name: 'Pizza', cookedName: 'Deep Dish', emoji: '🍕', tier: 6, flavor: 'savory', attack: 7, hp: 13, values: [1, 2, 3],
-    text: 'Start of battle: adjacent friends gain +{v} HP per flavor on your plate.',
-    cooked: { text: 'Start of battle: your friends gain +1/+1 per flavor on your plate.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', perDistinctFlavor: true, values: [1, 1, 1] }] },
-    abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'adjacentFriends', perDistinctFlavor: true, attack: 0 }] },
-  { id: 'hotPot', name: 'Hot Pot', cookedName: 'Mala Hot Pot', emoji: '🍲', tier: 6, flavor: 'spicy', attack: 6, hp: 15, values: [1, 2, 3],
+  { id: 'pizza', name: 'Pizza', cookedName: 'Deep Dish', emoji: '🍕', tier: 6, flavor: 'savory', attack: 5, hp: 11, values: [1, 2, 3],
+    text: 'Start of battle: your friends gain +{v} HP per flavor on your plate.',
+    cooked: { text: 'Start of battle: your friends gain +1 attack per flavor on your plate.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', perDistinctFlavor: true, hp: 0, values: [1, 1, 1] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', perDistinctFlavor: true, attack: 0 }] },
+  { id: 'hotPot', name: 'Hot Pot', cookedName: 'Mala Hot Pot', emoji: '🍲', tier: 6, flavor: 'spicy', attack: 5, hp: 13, values: [1, 2, 3],
     text: 'Simmers: every turn, all enemies Burn {v}.',
     cooked: { text: 'Start of battle: all enemies Burn 4.', abilities: [{ trigger: 'startOfBattle', effect: 'burn', target: 'allEnemies', values: [4, 4, 4] }] },
     abilities: [{ trigger: 'round', effect: 'burn', target: 'allEnemies' }] },
@@ -332,7 +332,7 @@ export const UNITS: UnitDef[] = [
     abilities: [] },
   { id: 'smoothie', name: 'Smoothie', cookedName: 'Smoothie Bowl', emoji: '🥤', tier: 6, flavor: 'sweet', flavor2: 'sour', attack: 6, hp: 12, values: [1, 2, 3],
     aura: 'rally',
-    text: 'Adjacent friends gain +{v} attack when their ability fires.',
+    text: 'Your friends gain +{v} attack when their ability fires.',
     cooked: { text: 'Start of battle: your friends gain +2 attack.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', hp: 0, values: [2, 2, 2] }] },
     abilities: [] },
   { id: 'roastTurkey', name: 'Roast Turkey', cookedName: 'Holiday Feast', emoji: '🦃', tier: 6, flavor: 'savory', attack: 5, hp: 9, values: [1, 2, 3],
@@ -353,11 +353,11 @@ export const UNITS: UnitDef[] = [
     text: 'Counts as every flavor. Adjacent friends count twice.',
     cooked: { text: 'Every friend counts twice toward flavor bonuses.', abilities: [] },
     abilities: [] },
-  { id: 'wagyu', name: 'Wagyu', cookedName: 'Wagyu Sukiyaki', emoji: '🥩', tier: 6, flavor: 'salty', flavor2: 'sweet', attack: 7, hp: 22, values: [4, 5, 6],
+  { id: 'wagyu', name: 'Wagyu', cookedName: 'Wagyu Sukiyaki', emoji: '🥩', tier: 6, flavor: 'salty', flavor2: 'sweet', attack: 7, hp: 22, values: [2, 3, 4],
     rarity: 'mythic', art: 'wagyu', aura: 'baste',
-    text: 'Adjacent friends get double Crust and HP. Start of battle: they gain {v} Crust.',
-    cooked: { text: 'Every friend gets double from Crust and HP gains.', abilities: [] },
-    abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'adjacentFriends' }] },
+    text: 'Your friends get double Crust and HP. Start of battle: they gain {v} Crust.',
+    cooked: { text: 'Start of battle: your friends gain +3 HP.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', attack: 0, values: [3, 3, 3] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'allFriends' }] },
   { id: 'blackGarlic', name: 'Black Garlic', cookedName: 'Black Garlic Ramen', emoji: '🧄', tier: 6, flavor: 'sour', flavor2: 'spicy', attack: 6, hp: 15, values: [1, 2, 3],
     rarity: 'mythic', aura: 'ferment',
     text: 'Enemies in its lane take double Burn and Rot. Start of battle: they Rot {v}.',
@@ -380,15 +380,15 @@ export const UNITS: UnitDef[] = [
 ];
 
 export const ITEMS: ItemDef[] = [
-  { id: 'hotSauce', name: 'Hot Sauce', emoji: '🔥', tier: 1, cost: 1, held: false, text: '+5 attack for the next battle only.' },
+  { id: 'hotSauce', name: 'Hot Sauce', emoji: '🔥', tier: 1, cost: 2, held: true, text: 'Held: +1 attack every turn in battle.' },
   { id: 'butter', name: 'Butter', emoji: '🧈', tier: 1, cost: 2, held: false, text: '+2/+2 permanently.' },
   { id: 'sprinkles', name: 'Sprinkles', emoji: '🌈', tier: 1, cost: 2, held: false, anywhere: true, text: '3 random foods on your plate +1/+1 permanently.' },
   { id: 'oliveOil', name: 'Olive Oil', emoji: '🫒', tier: 1, cost: 2, held: false, text: '+1/+1 and +3 sell value, permanently.' },
-  { id: 'flavorPacket', name: 'Flavor Packet', emoji: '🧂', tier: 1, cost: 2, held: false, text: 'The food gains a random flavor it doesn\'t have (up to 3 flavors).' },
+  { id: 'flavorPacket', name: 'Flavor Packet', emoji: '🧂', tier: 3, cost: 3, held: false, text: 'The food gains a random flavor it doesn\'t have (up to 3 flavors).' },
   { id: 'boneBroth', name: 'Bone Broth', emoji: '🍵', tier: 2, cost: 2, held: false, text: '+6 HP permanently.' },
   { id: 'saltShaker', name: 'Salt Shaker', emoji: '🧂', tier: 2, cost: 3, held: true, text: 'Held: gain 5 Crust at Start of battle.' },
   { id: 'toothpick', name: 'Toothpick', emoji: '🥢', tier: 2, cost: 3, held: true, text: "Held: this food's attacks ignore Crust." },
-  { id: 'bouillon', name: 'Bouillon Cube', emoji: '🟫', tier: 2, cost: 3, held: true, text: 'Held: this food counts twice for flavors.' },
+  { id: 'bouillon', name: 'Bouillon Cube', emoji: '🟫', tier: 3, cost: 3, held: true, text: 'Held: this food counts as one more food of its flavors.' },
   { id: 'partyMix', name: 'Party Mix', emoji: '🥜', tier: 3, cost: 3, held: false, anywhere: true, text: '4 random foods on your plate +2/+2 permanently.' },
   { id: 'seasoning', name: 'Seasoning Blend', emoji: '🫚', tier: 3, cost: 2, held: false, text: "Change the food's flavor." },
   { id: 'tupperware', name: 'Tupperware', emoji: '🥡', tier: 3, cost: 3, held: true, text: 'Held: the first hit on this food each battle is fully blocked.' },
@@ -492,7 +492,7 @@ export function flavorsOf(u: { defId: string; flavorOverride?: Flavor; extraFlav
 /**
  * Foods of each flavor on a plate, for the flavor bonuses. Each DIFFERENT food counts once for every flavor it has
  * (all five for Saffron): a second Chili Pepper adds nothing, so a bonus asks for variety, not copies. A rich food
- * (Curry...) counts as its level number of foods, a Bouillon Cube doubles what its food counts, and a food next to a
+ * (Curry...) counts as its level number of foods, a Bouillon Cube adds one, and a food next to a
  * Saffron (every food, once Saffron is cooked) counts twice. The kitchen and the battle both count with this, from
  * where the foods were placed.
  */
@@ -504,8 +504,8 @@ export function flavorTally(plate: Plate): Map<Flavor, number> {
     if (!u || unitDef(u.defId).token) return;
     const def = unitDef(u.defId);
     const rich = def.rich ? def.values[levelOf(u.copies) - 1] : 1;
-    const held = u.item === 'bouillon' ? 2 : 1;
-    const weight = rich * held * (infusers.some((f) => f.slot !== slot && (f.cooked || isAdjacent(f.slot, slot))) ? 2 : 1);
+    const held = u.item === 'bouillon' ? 1 : 0;
+    const weight = (rich + held) * (infusers.some((f) => f.slot !== slot && (f.cooked || isAdjacent(f.slot, slot))) ? 2 : 1);
     for (const fl of unitDef(u.defId).allFlavors ? FLAVORS : flavorsOf(u)) {
       const key = `${u.defId}|${fl}`;
       best.set(key, Math.max(best.get(key) ?? 0, weight));
@@ -533,14 +533,14 @@ export function linkedSlots(def: UnitDef, slot: number, level: Level = 1): numbe
   const out = new Set<number>();
   for (const ab of abilitiesOf(def, level)) {
     const t = ab.target;
-    if (t === 'adjacentFriends' || (t === 'aheadElseAdjacent' && !back) || ab.ifAdjacentFlavor) adjacent.forEach((o) => out.add(o));
+    if (t === 'adjacentFriends' || (t === 'aheadElseAdjacent' && !back) || ab.ifAdjacentFlavor || ab.moreNextTo) adjacent.forEach((o) => out.add(o));
     if (back && (t === 'friendAhead' || t === 'friendAheadOrSelf' || t === 'aheadElseAdjacent')) out.add(ahead);
     if (back && (ab.trigger === 'friendAheadHit' || ab.trigger === 'friendAheadAttacks')) out.add(ahead);
     if (!back && t === 'friendBehind') out.add(behind);
     if (t === 'laneFriends') out.add(back ? ahead : behind);
   }
   if (back && def.aura === 'echo') out.add(ahead);
-  if (def.aura === 'rally' || def.aura === 'infuse' || def.aura === 'baste') adjacent.forEach((o) => out.add(o));
+  if (def.aura === 'infuse') adjacent.forEach((o) => out.add(o));
   if (def.aura === 'cook') out.add(back ? ahead : behind);
   return [...out];
 }

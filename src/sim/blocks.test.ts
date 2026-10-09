@@ -61,7 +61,7 @@ describe('mythic rules', () => {
     expect(attackAt(6, 0)).toEqual({ attack: 1 + 3 + 10, level: 3 });
   });
 
-  it('baste: adjacent friends get double Crust and healing; cooked, every friend does', () => {
+  it('baste: every friend gets double Crust and healing, wherever it stands', () => {
     const baster = food('t_baster', 1, 60, [], { aura: 'baste' });
     const cruster = food('t_cruster', 1, 60, [{ trigger: 'startOfBattle', effect: 'crust', target: 'self' }], {}, 3);
     // Slot 0 is next to the baster in slot 1; slot 5 (behind slot 2) is not.
@@ -70,8 +70,7 @@ describe('mythic rules', () => {
       return Math.max(...r.frames.map((f) => f.plates[0][slot]?.crust ?? 0));
     };
     expect(crustAt(1, 0)).toBe(6);
-    expect(crustAt(1, 5)).toBe(3);
-    expect(crustAt(6, 5)).toBe(6);
+    expect(crustAt(1, 5)).toBe(6);
   });
 
   it('ferment: Burn and Rot deal double damage in its lane only; cooked, in every lane', () => {
@@ -301,8 +300,8 @@ describe('projectiles and patterns', () => {
     expect(lostTurn1(r)[3]).toBe(1); // half of 2
   });
 
-  it('a volley throws its level number of balls, each at a different random enemy for its flat damage', () => {
-    const baller = food('t_volley3', 1, 60, [], { attackPattern: 'volley', throwDamage: 3, values: [2, 2, 2] });
+  it('a volley throws its level number of balls, each at a different random enemy for its attack', () => {
+    const baller = food('t_volley3', 3, 60, [], { attackPattern: 'volley', values: [2, 2, 2] });
     const r = simulateBattle(plate(null, null, null, inst(baller)), plate(inst(wall), inst(wall), inst(wall)), 1);
     const balls = r.frames.filter((f) => f.round === 1 && f.text.includes('t_volley3 throws at'));
     expect(balls.length).toBe(2);

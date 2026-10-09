@@ -579,7 +579,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
     if (ab.perFriend) amount += run.plate.filter((o) => o && o !== unit && flavorsOf(o).includes(ab.perFriend!)).length;
     if (ab.perInterest) amount *= run.lastInterest;
     if (ab.perLevel3) amount += run.plate.filter((o) => o && o !== unit && levelOf(o.copies) === 3).length;
-    if (ab.doubleNextTo && slot !== null && run.plate.some((o, i) => o && o !== unit && isAdjacent(i, slot) && flavorsOf(o).includes(ab.doubleNextTo!))) amount *= 2;
+    if (ab.moreNextTo && slot !== null && run.plate.some((o, i) => o && o !== unit && isAdjacent(i, slot) && flavorsOf(o).includes(ab.moreNextTo!))) amount += 1;
     if (amount <= 0) return;
     const grew = spend;
     switch (ab.effect) {
@@ -677,15 +677,13 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
   if (!unit && !def.anywhere) return fail('Use items on a unit.');
 
   let result: ActionResult = ok();
+  let taken = false;
   switch (def.id) {
     case 'butter':
       unit!.attack += 2;
       unit!.hp += 2;
       run.growth.push({ uid: unit!.uid, attack: 2, hp: 2, source: def.name });
       afterHpGain(run, unit!);
-      break;
-    case 'hotSauce':
-      unit!.tempAttack = (unit!.tempAttack ?? 0) + 5;
       break;
     case 'oliveOil':
       unit!.attack += 1;
@@ -710,6 +708,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'tupperware':
     case 'bouillon':
     case 'chopsticks':
+    case 'hotSauce':
       unit!.item = def.id;
       break;
     case 'takeout': {
@@ -728,6 +727,9 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       break;
     case 'microwave': {
       if (unit!.copies >= 6) return fail('Already cooked.');
+      // Out of its cubby first: a level-up's bonus dish may land there (see addBonusUnit).
+      takeOffer(run, src);
+      taken = true;
       const copy: UnitInstance = { ...unit!, copies: 1, sellBonus: undefined, extraFlavors: undefined, gains: undefined };
       result = merge(run, unit!, copy);
       break;
@@ -755,7 +757,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       break;
   }
   run.gold -= cost;
-  takeOffer(run, src);
+  if (!taken) takeOffer(run, src);
   return result;
 }
 

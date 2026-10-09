@@ -140,7 +140,7 @@ describe('flavor synergy in abilities', () => {
     run.plate[5] = unit('cheese');
     serve(run);
     const v = unitDef('cheese').values[0];
-    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + 2 * v); // doubled next to Potato
+    expect(run.plate[0]!.hp).toBe(unitDef('cheese').hp + v + 1); // 1 more next to Potato
     expect(run.plate[5]!.hp).toBe(unitDef('cheese').hp + v); // no Savory neighbour
   });
 
@@ -380,7 +380,7 @@ describe('run', () => {
 
   it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {
     const run = newRun(5);
-    run.plate[0] = unit('dumplings', { copies: 3 }); // 2 free a day
+    run.plate[0] = unit('dumplings'); // 2 free a day at level 1
     run.plate[1] = unit('soySauce');
     run.plate[2] = unit('egg');
     finishBattle(run, 'win'); // start of day: the free restocks
@@ -421,12 +421,12 @@ describe('run', () => {
     expect(run.plate[0]!.attack).toBe(unitDef('breadDough').attack);
   });
 
-  it('Yogurt grows twice as fast next to a Sour friend', () => {
+  it('Yogurt grows 1 more next to a Sour friend', () => {
     const run = newRun(5);
     run.plate[0] = unit('yogurt');
     run.plate[1] = unit('lemon');
     finishBattle(run, 'win'); // start of turn
-    expect(run.plate[0]!.hp).toBe(unitDef('yogurt').hp + 2 * unitDef('yogurt').values[0]);
+    expect(run.plate[0]!.hp).toBe(unitDef('yogurt').hp + unitDef('yogurt').values[0] + 1);
     expect(run.plate[0]!.attack).toBe(unitDef('yogurt').attack);
   });
 
@@ -592,5 +592,25 @@ describe('round 5 rules', () => {
       expect(odds.reduce((n, o) => n + o.chance, 0)).toBeCloseTo(1);
       expect(odds[odds.length - 1].chance).toBe(Math.max(...odds.map((o) => o.chance)));
     }
+  });
+});
+
+describe('round 6 rules', () => {
+  it('a Microwave that levels a food up leaves the bonus dish in the buffet, and is gone itself', () => {
+    const run = newRun(7);
+    run.gold = 30;
+    run.plate[0] = unit('egg', { copies: 2 });
+    const i = run.market.length - 1;
+    run.market[i] = { kind: 'item', itemId: 'microwave' };
+    const r = useItem(run, { area: 'market', index: i }, { area: 'plate', index: 0 });
+    expect(r.ok && r.levelUp).toBeTruthy();
+    expect(run.market.some((o) => o?.kind === 'item' && o.itemId === 'microwave')).toBe(false);
+    expect(run.market.some((o) => o?.kind === 'unit' && o.bonus)).toBe(true);
+  });
+
+  it('Hot Sauce (held) gives +1 attack every turn in battle', () => {
+    const r = simulateBattle(plate({ 0: unit('cheese', { attack: 1, hp: 90, item: 'hotSauce' }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }) }), 1);
+    const sauced = r.frames.filter((f) => f.text.includes('Hot Sauce: Cheese +1 attack'));
+    expect(sauced.length).toBeGreaterThan(2);
   });
 });

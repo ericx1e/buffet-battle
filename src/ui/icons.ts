@@ -250,6 +250,13 @@ const ICONS = {
     'cckkk',
     'ckkkk',
   ],
+  heldHotSauce: [
+    '.G.',
+    '.r.',
+    'rrr',
+    'rxr',
+    'rrr',
+  ],
   heldChopsticks: [
     'b...b',
     '.b..b',

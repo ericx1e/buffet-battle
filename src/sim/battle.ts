@@ -144,6 +144,22 @@ function joinLines(lines: string[]): string {
   return [...counts].map(([l, n]) => (n > 1 ? `${l} ×${n}` : l)).join(' · ');
 }
 
+/** The longest caption that fits its two lines; longer ones are split over several frames. */
+const CAPTION_MAX = 170;
+
+/** Groups caption lines (as joinLines does) into captions that each fit, in order. */
+function captionChunks(lines: string[]): string[] {
+  if (lines.length === 0) return [];
+  const parts = joinLines(lines).split(' · ');
+  const out: string[] = [];
+  for (const p of parts) {
+    const last = out[out.length - 1];
+    if (last !== undefined && last.length + 3 + p.length <= CAPTION_MAX) out[out.length - 1] = `${last} · ${p}`;
+    else out.push(p);
+  }
+  return out;
+}
+
 /** Deterministic: the same plates and seed always produce the same result and frames. */
 export function simulateBattle(a: Plate, b: Plate, seed: number): BattleResult {
   return new Battle(a, b, seed).run();
@@ -484,7 +500,8 @@ class Battle {
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
           const n = this.levelValue(u); // shots, lobs, peppercorns and balls thrown
-          const flat = unitDef(u.defId).throwDamage ?? half;
+          // A volley (Takoyaki) throws for its attack; other throws a flat amount, or half its attack (Peppercorns).
+          const flat = pattern === 'volley' ? damage : unitDef(u.defId).throwDamage ?? half;
           const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : 'shoots';
           const land = (t: BattleUnit, dmg: number) => {
             this.hit(t, dmg, u, u.item === 'toothpick');
@@ -567,7 +584,7 @@ class Battle {
         }
       }
       this.snap(`Turn ${this.round} · ${LANE_NAMES[lane]} lane`);
-      if (followUps.length > 0) this.snap(joinLines(followUps));
+      for (const c of captionChunks(followUps)) this.snap(c);
       // A second attack (Coffee Bean, attack-twice) is its own moment: it picks its targets again (the first may be
       // eaten; an escalating attack has grown).
       for (const { attacker, primary, hits, times } of inLane) {
@@ -591,6 +608,13 @@ class Battle {
         const line = this.fire(u, 'round', {});
         if (line) lines.push(line);
       }
+      // Hot Sauce (held): +1 attack every turn.
+      const sauced = this.units(side).filter((u) => u.item === 'hotSauce');
+      for (const u of sauced) {
+        u.attack += 1;
+        this.mark(u, 'buff', 1, 0);
+      }
+      if (sauced.length > 0) lines.push(`Hot Sauce: ${sauced.map((u) => this.name(u)).join(', ')} +1 attack`);
       const front = this.units(side).filter((f) => b.sweetAll || rowOf(f.slot) === 0);
       if (b.sweetHeal > 0) {
         for (const f of front) {
@@ -634,7 +658,7 @@ class Battle {
 
   /** The Wagyu basting this food, if any. */
   private bastedBy(u: BattleUnit): BattleUnit | undefined {
-    return this.units(u.side).find((w) => w !== u && unitDef(w.defId).aura === 'baste' && (w.level === 3 || isAdjacent(w.slot, u.slot)));
+    return this.units(u.side).find((w) => w !== u && unitDef(w.defId).aura === 'baste');
   }
 
   /** Black Garlic on the other side: this food's lane (every lane, once cooked) takes double Burn and Rot damage. */
@@ -674,7 +698,7 @@ class Battle {
             if (l2) lines.push(l2);
           }
         }
-        if (lines.length > 0) this.snap(joinLines(lines));
+        for (const c of captionChunks(lines)) this.snap(c);
         continue;
       }
       // Reactions, one food at a time, each its own frame (Steak feeding a summon, Pork Crackling biting back...).
@@ -769,7 +793,7 @@ class Battle {
           if (neighbours.length > 0) lines.push(`the Rot spreads from ${this.name(u)}`);
         }
       }
-      if (lines.length > 0) this.snap(joinLines(lines));
+      for (const c of captionChunks(lines)) this.snap(c);
     }
   }
 
@@ -806,13 +830,13 @@ class Battle {
     });
     // Rally aura: a friend next to a rally food gains attack (its level number) when its ability fires, a few times a battle.
     if (lines.length > 0 && this.onPlate(u) && u.rallied < RALLY_CAP) {
-      const rallies = this.adjacent(u).filter((f) => unitDef(f.defId).aura === 'rally');
+      const rallies = this.units(u.side).filter((f) => f !== u && unitDef(f.defId).aura === 'rally');
       if (rallies.length > 0) {
         const gain = Math.max(...rallies.map((f) => this.levelValue(f)));
         u.rallied++;
         u.attack += gain;
         this.mark(u, 'buff', gain, 0);
-        lines.push(`rallied: ${this.name(u)} +${gain} attack`);
+        lines.push(`rallied +${gain}`);
       }
     }
     return lines.length > 0 ? lines.join(' · ') : undefined;

@@ -83,7 +83,7 @@ interface App {
 
 const SAVE_KEY = 'buffetbattle.run';
 /** Pixel icon for each held item, shown in the corner of the food holding it. */
-const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware', bouillon: 'heldBouillon', chopsticks: 'heldChopsticks' } as const;
+const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware', bouillon: 'heldBouillon', chopsticks: 'heldChopsticks', hotSauce: 'heldHotSauce' } as const;
 
 /** A food's attack pattern, if it isn't a plain single-target attack. */
 const patternOf = (defId: string): AttackPattern | null => {
@@ -1047,7 +1047,7 @@ function flavorTip(f: Flavor, n: number): string {
   const rows = FLAVOR_BONUS_LONG[f].map((b, i) => `<p class="tier ${n >= TIER_AT[i] ? 'on' : ''}"><b>${TIER_AT[i]}</b>${b}</p>`).join('');
   const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more different ${f} food${TIER_AT[tier] - n === 1 ? '' : 's'} for the next bonus.${tier >= 2 ? ' Rich foods (Curry, Fudge, Lime, Rice Ball, Miso), Bouillon Cubes, foods with two flavors and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
   const saffron = app.run.plate.some((u) => u && unitDef(u.defId).aura === 'infuse') ? '<p class="dim">Foods next to Saffron count twice.</p>' : '';
-  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once (a rich food as its level number, doubled by a Bouillon Cube): copies don't add more.</p>`);
+  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once (a rich food as its level number, a Bouillon Cube adds one): copies don't add more.</p>`);
 }
 
 function spiceJars(): string {
