@@ -12,7 +12,8 @@
     "balance": "tsx tools/balance.ts",
     "gen:kitchen": "node tools/gen-kitchen.mjs",
     "gen:foods": "node tools/gen-foods.mjs",
-    "gen:battle": "node tools/gen-battle.mjs"
+    "gen:battle": "node tools/gen-battle.mjs",
+    "version": "tsx tools/sim-version.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

@@ -14,6 +14,17 @@ npx tsx tools/mythic-check.ts   # each mythic in each plate slot
 npx tsx tools/ghostcheck.ts     # how bot opponents fare against a plain bot, by day
 npx tsx tools/lift.ts 400       # what each food adds to a fight over a plain body, by stage of the run
 npm run build:single      # the whole game as one page: dist/single/buffet-battle.html
+npm run version           # after changing src/sim: the rules' version hash (a test fails while it is stale)
+```
+
+The API (a Cloudflare Worker with D1) is in `server/`, its own package:
+
+```sh
+cd server
+npm install
+npm run migrate:local    # once: the tables in a local database
+npm run dev              # the API at http://localhost:8787
+npm test                 # API tests, run in the Workers runtime
 ```
 
 ## Play on your phone
@@ -51,10 +62,12 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 | `src/sim/run.ts` | Run state: market, economy (income, interest, prices), merging/cooking, fridge, special cubby and counter tray, items, kitchen triggers, serve |
 | `src/sim/data.ts` | 78 foods (4 mythic), 6 tokens, 16 items. **Design foods here**: stats and abilities as data (guide: "Designing foods" in DESIGN.md) |
 | `src/sim/bot.ts` | Heuristic bot player and ghost generator |
+| `src/sim/actions.ts` | The day's action log: every kitchen change as an action, replayable from the morning's state |
+| `server/` | The API: Cloudflare Worker, D1 schema in `migrations/` |
 | `src/ui/` | Vanilla TypeScript UI: kitchen, side-view battle, drag and drop, sprite loader, local ghost pool |
 | `tools/balance.ts` | Balance report |
 | `tools/gen-foods.mjs` | Draws the 32x32 food, item and special sprites (never overwrites hand-drawn art) |
 
 A shelved **recipes** prototype (cook ingredients into dishes) is kept in [archive/recipes-prototype](archive/recipes-prototype/README.md) as a possible capstone; it is not part of the game.
 
-The prototype has no server yet: your served plates are saved to `localStorage` as ghosts, and later runs fight them (or bot plates) on the same day.
+The game doesn't use the server yet (that's step 4 of the backend plan in DESIGN.md): your served plates are saved to `localStorage` as ghosts, and later runs fight them (or bot plates) on the same day.

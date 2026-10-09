@@ -752,7 +752,7 @@ Bot opponents are labelled as bots in battle, so a loss to one doesn't read as a
 
 ### Versions and patches
 
-- `GAME_VERSION` is a short hash of the food and item data, computed at build time. The client and the Worker are built from the same commit.
+- `GAME_VERSION` (`src/sim/version.ts`) is a short hash of the rules: every non-test file in `src/sim`. `npm run version` rewrites it, and a test fails while it is out of date, so it can't be pushed stale. The client and the Worker are built from the same commit.
 - A Serve from a client on a different version is refused with "the game was updated": the client reloads and resyncs.
 - **Runs in progress carry on under the new rules:** `migrateRun` fills in new fields, and foods that were removed are dropped with a refund of their price.
 - Ghosts are matched only within their version. Right after a patch the pool is empty and bots fill in.
@@ -769,12 +769,12 @@ Bot opponents are labelled as bots in battle, so a loss to one doesn't read as a
 | `POST /runs/:id/abandon` | The New run button |
 | `GET /runs/:id/battles` | The run's battle history: opponent, seed, outcome |
 
-Limits: requests over 64 KB or with more than 500 actions in a day are refused; there are 60 requests a minute per player and 10 new players an hour per IP. Every body is checked against its expected shape before use.
+Limits: requests over 64 KB or with more than 500 actions in a day are refused; there are 60 requests a minute per player and 10 new players an hour per IP. Every body is checked against its expected shape before use. The size limit is built; the rate limits come with the deploy step (Cloudflare's rate limiting binding).
 
 ### Offline and local play
 
 - With no API configured, or the API unreachable, the game falls back to today's local mode: runs and ghosts in `localStorage`, and bots.
-- `npm run dev` runs the client against `wrangler dev`, with a local D1.
+- `cd server && npm run dev` runs the API at http://localhost:8787 on a local D1 (`npm run migrate:local` once first); the client will use it once step 4 is built.
 
 ### Deploy
 
@@ -790,7 +790,7 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
 ### Build order
 
 1. **Action log (client only), done:** route every kitchen change through `dispatch`. Test that replaying a day's log on the morning state rebuilds the same state and plate, for many bot-played days.
-2. **Worker skeleton:**
+2. **Worker skeleton, done:**
    - `server/` with wrangler, the D1 schema as migration 0001;
    - players and runs endpoints;
    - tests with the Workers Vitest pool.
