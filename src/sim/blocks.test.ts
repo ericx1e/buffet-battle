@@ -318,9 +318,9 @@ describe('projectiles and patterns', () => {
 });
 
 describe('Rot and the new triggers', () => {
-  it('Rot stacks only up to 3', () => {
+  it('Rot stacks only up to 4', () => {
     const rotter = food('t_rot5', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }], {}, 5);
-    expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall)), 1), 1, 0, 'rot')).toBe(3);
+    expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall)), 1), 1, 0, 'rot')).toBe(4);
   });
 
   it('friendHealed: a neighbour that gets healed gains attack', () => {
@@ -339,5 +339,41 @@ describe('Rot and the new triggers', () => {
     // Turn 1: the wall's Crust blocks the 3-damage hit, so the hitter takes 2 back, plus the wall's own 1.
     const end1 = [...r.frames].reverse().find((f) => f.round === 1)!;
     expect(60 - end1.plates[1][0]!.hp).toBe(2 + 1);
+  });
+});
+
+describe('round of October 9', () => {
+  it('extra attacks from two sources stack: an attack-twice ability and Chopsticks make three swings', () => {
+    const twice = food('t_twice2', 2, 60, [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [1, 1, 1] }]);
+    const r = simulateBattle(plate(inst(twice, { item: 'chopsticks' })), plate(inst(wall)), 1);
+    const again = (round: number) => r.frames.filter((f) => f.round === round && f.text.includes('t_twice2 attacks again')).length;
+    expect(again(1)).toBe(2); // both sources: three swings
+    expect(again(2)).toBe(1); // only Chopsticks' second attack is left
+    expect(again(3)).toBe(0);
+  });
+
+  it("Spicy's Burn lands on everything an area attack hits, not just its main target", () => {
+    const splasher = food('t_hotsplash', 3, 60, [], { flavor: 'spicy', attackPattern: 'splash' });
+    const spicy = food('t_spicy2', 1, 60, [], { flavor: 'spicy' }); // Spicy x2: spicy attacks Burn
+    const r = simulateBattle(plate(null, inst(splasher), null, null, inst(spicy)), plate(inst(wall), inst(wall), inst(wall)), 1);
+    expect(highest(r, 1, 1, 'burn')).toBeGreaterThan(0); // the main target
+    expect(Math.max(highest(r, 1, 0, 'burn'), highest(r, 1, 2, 'burn'))).toBeGreaterThan(0); // and a splashed one
+  });
+
+  it('Rotting enemies lose attack every turn (Grapefruit); others keep theirs', () => {
+    const rotter = food('t_rotter1', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }]);
+    const fruit = food('t_fruit', 1, 60, [{ trigger: 'round', effect: 'debuff', target: 'rottingEnemies' }], {}, 2);
+    const r = simulateBattle(plate(inst(rotter), null, null, inst(fruit)), plate(inst(wall, { attack: 20 }), inst(wall, { attack: 20 })), 1);
+    const at = (round: number, slot: number) => [...r.frames].reverse().find((f) => f.round === round)!.plates[1][slot]!.attack;
+    expect(at(2, 0)).toBe(20 - 2 * 2); // the Rotting one, two turns in
+    expect(at(2, 1)).toBe(20);
+  });
+
+  it('Crust broken anywhere on your plate: that food gains attack (Crème Brûlée); not the enemy\'s', () => {
+    const brulee = food('t_brulee', 1, 60, [{ trigger: 'plateCrustBreak', effect: 'buff', target: 'thatFriend', hp: 0 }], {}, 3);
+    const crusty = food('t_crusty', 1, 60, [{ trigger: 'startOfBattle', effect: 'crust', target: 'self' }], {}, 2);
+    const r = simulateBattle(plate(inst(crusty), null, null, null, inst(brulee)), plate(inst(crusty, { attack: 5 })), 1);
+    expect(highest(r, 0, 0, 'attack')).toBe(1 + 3); // its Crust broke on turn 1
+    expect(highest(r, 1, 0, 'attack')).toBe(5); // the enemy's broke too, but the brûlée isn't theirs
   });
 });

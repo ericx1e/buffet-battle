@@ -14,6 +14,7 @@ export type Trigger =
   | 'friendFaint' // an adjacent friend is eaten
   | 'anyFriendEaten' // any friend is eaten
   | 'crustBreak' // a hit uses up the last of this food's Crust
+  | 'plateCrustBreak' // a hit uses up the last of the Crust of any food on this plate (`friend` = whose)
   | 'friendHealed' // an adjacent friend is healed (`friend` = who)
   | 'crustBlock' // Crust blocks damage on this food or an adjacent friend (`attacker` = who hit)
   // kitchen
@@ -77,8 +78,9 @@ export type Target =
   | 'lowestHpFriend'
   | 'summoned' // friendSummoned trigger: the food that was just summoned
   | 'level3Friends' // kitchen: a random friend at level 3 (`count` of them)
-  | 'thatFriend' // friendHealed: the friend that was healed
-  | 'statusEnemies'; // enemies that have any status
+  | 'thatFriend' // friendHealed / plateCrustBreak: the friend that was healed, or whose Crust broke
+  | 'statusEnemies' // enemies that have any status
+  | 'rottingEnemies'; // enemies that Rot
 
 export type Effect =
   | 'damage' // deal `amount` damage

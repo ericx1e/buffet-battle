@@ -176,7 +176,9 @@ describe('food data', () => {
 
   it('every team-building pair names real foods, and each food in one has partners', () => {
     for (const p of PAIRS) for (const id of [...p.makes, ...p.uses]) expect(UNITS.some((u) => u.id === id), `${p.what}: ${id}`).toBe(true);
-    expect(partnersOf('fortuneCookie')).toContain('caviar');
+    expect(partnersOf('fortuneCookie')).toContain('mandarin');
+    expect(partnersOf('caviar')).toContain('mandarin');
+    expect(partnersOf('cremeBrulee')).toContain('pretzel');
     expect(partnersOf('spaghetti')).toContain('coffee');
   });
 
@@ -261,7 +263,7 @@ describe('run', () => {
     run.gold = 100;
     finishBattle(run, 'win');
     expect(run.lastInterest).toBe(3); // capped
-    run.plate[0] = unit('caviar', { copies: 6 });
+    run.plate[0] = unit('mandarin', { copies: 6 });
     expect(interestCap(run)).toBe(6);
   });
 
@@ -289,10 +291,10 @@ describe('run', () => {
     expect(run.plate[0]!.sellBonus).toBe(9);
   });
 
-  it('Fortune Cookie turns interest into HP; Caviar raises the cap it feeds on', () => {
+  it('Fortune Cookie turns interest into HP; Mandarin raises the cap it feeds on', () => {
     const run = newRun(5);
     run.plate[0] = unit('fortuneCookie');
-    run.plate[1] = unit('caviar', { copies: 6 }); // cap 3 + 3
+    run.plate[1] = unit('mandarin', { copies: 6 }); // cap 3 + 3
     run.gold = 0;
     finishBattle(run, 'win'); // into turn 2, no interest yet
     run.gold = 100;
@@ -369,13 +371,18 @@ describe('run', () => {
     expect(cakeFrame!.marks.find((m) => m.kind === 'buff')?.hp).toBe(unitDef('cake').values[0]);
   });
 
-  it('Mandarin multiplies interest by its level number', () => {
+  it('Caviar gives a random friend +1/+1 per gold of interest at the start of day', () => {
     const run = newRun(5);
-    run.plate[0] = unit('mandarin');
+    run.plate[0] = unit('caviar');
+    run.plate[1] = unit('egg');
+    run.gold = 0; // no interest into day 2
     finishBattle(run, 'win');
     run.gold = 15;
     finishBattle(run, 'win');
-    expect(run.lastInterest).toBe(3 * 2);
+    expect(run.lastInterest).toBe(3);
+    const gained = run.plate.reduce((n, u) => n + (u ? u.attack - unitDef(u.defId).attack : 0), 0);
+    expect(gained).toBe(3);
+    expect(run.plate.reduce((n, u) => n + (u ? u.hp - unitDef(u.defId).hp : 0), 0)).toBe(3);
   });
 
   it('Dumplings make restocks free, and Soy Sauce feeds on every restock', () => {

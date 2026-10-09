@@ -23,3 +23,30 @@ writeFileSync(new URL('icon-192.png', dir), icon(16, 12)); // 192 px
 writeFileSync(new URL('icon-512.png', dir), icon(16, 32)); // 512 px
 writeFileSync(new URL('apple-touch-icon.png', dir), icon(15, 12)); // 180 px
 console.log('public/icons: icon-192.png, icon-512.png, apple-touch-icon.png');
+
+/**
+ * favicon.ico at the site root (browsers, bookmarks and search results ask for it, and Safari doesn't use SVG
+ * favicons): 16, 32 and 48 px PNGs of the cloche in one .ico, plus a 32 px PNG.
+ */
+function ico(pngs) {
+  const head = Buffer.alloc(6 + 16 * pngs.length);
+  head.writeUInt16LE(0, 0);
+  head.writeUInt16LE(1, 2); // icon
+  head.writeUInt16LE(pngs.length, 4);
+  let offset = head.length;
+  pngs.forEach(({ size, png }, i) => {
+    const e = 6 + 16 * i;
+    head.writeUInt8(size >= 256 ? 0 : size, e);
+    head.writeUInt8(size >= 256 ? 0 : size, e + 1);
+    head.writeUInt16LE(1, e + 4); // colour planes
+    head.writeUInt16LE(32, e + 6); // bits per pixel
+    head.writeUInt32LE(png.length, e + 8);
+    head.writeUInt32LE(offset, e + 12);
+    offset += png.length;
+  });
+  return Buffer.concat([head, ...pngs.map((p) => Buffer.from(p.png))]);
+}
+const root = new URL('../public/', import.meta.url);
+writeFileSync(new URL('favicon.ico', root), ico([16, 32, 48].map((size) => ({ size, png: icon(16, size / 16) }))));
+writeFileSync(new URL('favicon-32.png', root), icon(16, 2));
+console.log('public: favicon.ico (16, 32, 48 px), favicon-32.png');

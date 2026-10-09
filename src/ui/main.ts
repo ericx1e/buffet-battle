@@ -126,7 +126,7 @@ const tipBox = (title: string, body: string) => tip(`<div class="tip-title">${ti
 /** Keywords explained at the bottom of any card or tooltip whose text mentions them. */
 const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[] = [
   { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1. Stacks up to 4.' },
-  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 3. HP gains on a Rotting food are halved.' },
+  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 4. HP gains on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
   { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
@@ -907,8 +907,6 @@ type Rect = number[];
 const at = ([x, y]: number[]) => `left:${x}px;top:${y}px`;
 const box = ([x, y, w, h]: Rect) => `left:${x}px;top:${y}px;width:${w}px;height:${h}px`;
 
-const TOUCH = window.matchMedia('(pointer: coarse)').matches;
-
 /** The room the stage has: the visible part of the window (phones hide some behind toolbars), less safe-area padding. */
 function screenRoom(): [number, number] {
   const vv = window.visualViewport;
@@ -921,11 +919,10 @@ function screenRoom(): [number, number] {
   return [(vv?.width ?? window.innerWidth) - rx - bx, (vv?.height ?? window.innerHeight) - ry - by];
 }
 
+/** The stage fills the window (as large as fits, keeping its shape), on phones and PCs alike. */
 function stageScale(): number {
   const [w, h] = screenRoom();
-  const fit = Math.min(w / LAYOUT.size[0], h / LAYOUT.size[1]);
-  if (fit < 1 || TOUCH) return fit;
-  return Math.floor(fit);
+  return Math.min(w / LAYOUT.size[0], h / LAYOUT.size[1]);
 }
 
 interface UnitData {
@@ -1338,7 +1335,7 @@ function orderTickets(): string {
     const d = t === 1 ? 1 : (() => { for (let x = 1; x < 30; x++) if (turnConfig(x).maxTier >= t) return x; return 0; })();
     return `<p class="${t <= maxTier ? '' : 'dim'}">${rarityName(RARITY_BY_TIER[t])} from day ${d}</p>`;
   }).join('');
-  const rarity = `${gemIcon(RARITY_BY_TIER[maxTier])}${next ? `<span class="t-arrow">›</span>${gemIcon(RARITY_BY_TIER[next])}d${nextDay}` : ' all'}`;
+  const rarity = `${rarityName(RARITY_BY_TIER[maxTier])}${next ? `<span class="t-arrow">›</span>${rarityName(RARITY_BY_TIER[next])} day ${nextDay}` : ', all open'}`;
   const rarityTip = tipBox('Buffet rarities', `<p>Newest in the buffet: ${rarityName(RARITY_BY_TIER[maxTier])}.${next ? ` Next: ${rarityName(RARITY_BY_TIER[next])} on day ${nextDay}.` : ' Every rarity is open.'}</p>${schedule}<p class="dim">${turnConfig(run.turn).unitSlots} food cubbies today.</p>`);
 
   const interest = interestOn(run, run.gold);
@@ -1351,10 +1348,12 @@ function orderTickets(): string {
   const stakesTip = tipBox(freeLoss ? 'A loss today is free' : 'A loss costs a life', `<p>${freeLoss ? 'Losses on days 1 and 2 cost no lives.' : `Lose today and you have ${run.lives - 1} of ${START_LIVES} lives left.`} A win serves a course: ${COURSES_TO_WIN - run.courses} more to win the run.</p>`);
 
   const t = (x: number, w: number, body: string, tip: string, key: string, cls = '') => `<div class="order-ticket ${cls}" style="${box([x, 9, w, 13])}" ${tip} data-vk="ticket:${key}" data-v="${hash(body)}" data-va="hop">${body}</div>`;
+  // The day ticket (drawn in the kitchen art) is the centre of the rail, 298..342: the rarity ticket reaches as far
+  // left of it as the gold and stakes tickets reach right.
   return [
-    t(226, 66, rarity, rarityTip, 'rarity'),
-    t(348, 66, `${pix('coin')}+${tomorrow} next`, goldTip, 'gold'),
-    t(420, 62, stakes, stakesTip, 'stakes', freeLoss ? 'safe' : ''),
+    t(164, 128, rarity, rarityTip, 'rarity'),
+    t(348, 61, `${pix('coin')}+${tomorrow} next`, goldTip, 'gold'),
+    t(415, 61, stakes, stakesTip, 'stakes', freeLoss ? 'safe' : ''),
   ].join('');
 }
 
@@ -1496,7 +1495,7 @@ function renderKitchen() {
         ${spiceJars()}
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
-          ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r) for <b>${cost ? `${cost} gold` : 'nothing'}</b>, as often as you like.</p>${oddsTable()}<p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
+          ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r) for <b>${cost ? `${cost} gold` : 'nothing'}</b>, as often as you like.</p><p class="dim">The odds of each rarity are on the card beside it. The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
         ${marketSlots()}
         ${oddsStrip()}
         ${specialSlot()}
@@ -2395,6 +2394,12 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'm') {
     toggleMute();
     return render();
+  }
+  if (e.key === 'f') {
+    // Fullscreen, on browsers that allow it (the stage refits on resize).
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+    else void document.documentElement.requestFullscreen?.().catch(() => {});
+    return;
   }
   if (app.battle || app.seasoning || isOver(app.run)) return;
   if (e.key === 'r') onAction('reroll', root);

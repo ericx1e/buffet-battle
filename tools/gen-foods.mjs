@@ -418,6 +418,26 @@ const foods = {
     s.rect(12, 22, 9, 1, '#4a6a44');
     for (const [x, y] of [[9, 20], [13, 14], [18, 12], [22, 21]]) s.px(x, y, '#ffffff');
   },
+  cremeBrulee(s) {
+    s.shadow(17, 28, 12, 2);
+    // A fluted white ramekin from the side and a little above, its burnt-sugar top cracked open on one side.
+    const caramel = R('#c97a2a');
+    cylinder(s, 16, 15, 24, 12, 11, 4.2,
+      (t, v) => {
+        const col = cyl(C.white, t);
+        // Fluting: a darker groove every third column, curving with the rim.
+        return Math.round((t + 1) * 9) % 3 === 0 && v > 0.8 ? shade(col, -0.12) : col;
+      },
+      (x, y) => {
+        const dx = x - 16;
+        const dy = y - 15;
+        if (dx * dx / 144 + dy * dy / 17.6 > 0.82) return C.white[1]; // the ramekin's rim
+        if (Math.abs(dy - dx * 0.45 + 1) < 0.6 && dx > -4 && dx < 7) return '#5e2e10'; // the crack
+        if (dx > 2 && dx < 6 && dy > 0 && dy < 3 && dy > dx * 0.45 - 1) return '#f6e6b8'; // custard showing through
+        if (dx < -4 && dy < -1) return caramel[0]; // torch glint
+        return (x * 7 + y * 13) % 11 === 0 ? caramel[3] : dy < 0 ? caramel[1] : caramel[2];
+      });
+  },
   miso(s) {
     s.shadow(17, 29, 12, 2);
     // A lacquered soup bowl from the side and a little above: cloudy miso broth with cubes of tofu and green onion.

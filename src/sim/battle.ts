@@ -49,7 +49,8 @@ interface BattleUnit {
   firstAttackDone: boolean;
   /** Attacks it has made this battle (each swing of an attack-twice counts): what an escalating attack grows with. */
   swings: number;
-  extraAttacks: number;
+  /** Extra swings: one entry per source (Coffee Bean, Chopsticks...), the attacks it has left. They stack: two sources mean three swings. */
+  extraAttacks: number[];
   tupperwareUsed: boolean;
   /** Added to this unit's ability amounts this battle. */
   abilityBonus: number;
@@ -128,7 +129,7 @@ export const OVERTIME_AFTER = 15;
 /** Most a food's attack can grow from rally auras in one battle. */
 export const RALLY_CAP = 3;
 /** Most Rot a food can carry. */
-export const ROT_CAP = 3;
+export const ROT_CAP = 4;
 /** Most Burn a food can carry. */
 export const BURN_CAP = 4;
 const TRIGGER_BUDGET = 1000;
@@ -168,7 +169,7 @@ export function simulateBattle(a: Plate, b: Plate, seed: number): BattleResult {
 interface FireContext {
   source?: BattleUnit; // hit: who hit this food; friendAheadHit: who hit the friend ahead; friendAheadAttacks: who it attacked
   summoned?: BattleUnit; // friendSummoned: who just arrived
-  friend?: BattleUnit; // friendHealed: who was healed
+  friend?: BattleUnit; // friendHealed: who was healed; plateCrustBreak: whose Crust broke
 }
 
 /** What each side's flavor bonuses switched on (see applySynergies). */
@@ -241,7 +242,7 @@ class Battle {
     return {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
-      extraAttacks: 0, tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
+      extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
       burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false,
     };
   }
@@ -369,7 +370,7 @@ class Battle {
       }
 
       for (const u of this.units(side)) if (u.item === 'saltShaker') this.giveCrust(u, 5);
-      for (const u of this.units(side)) if (u.item === 'chopsticks') u.extraAttacks += 2;
+      for (const u of this.units(side)) if (u.item === 'chopsticks') u.extraAttacks.push(2);
       if (lines.length > 0) this.snap(`${side === 0 ? 'Your' : 'Enemy'} flavors: ${lines.join(' · ')}`);
       else if (this.marks.length > 0) this.snap('Salt Shakers: +5 Crust');
     }
@@ -467,11 +468,9 @@ class Battle {
       attacker.firstAttackDone = true;
     }
     if (attacker.rot > 0 && this.bonus[(1 - attacker.side) as Side].rotWeakens) damage = Math.max(1, damage - 1);
-    let times = 1;
-    if (attacker.extraAttacks > 0) {
-      attacker.extraAttacks--;
-      times = 2;
-    }
+    // Every source of extra attacks still going adds a swing to this attack.
+    const times = 1 + attacker.extraAttacks.length;
+    attacker.extraAttacks = attacker.extraAttacks.map((n) => n - 1).filter((n) => n > 0);
     return [damage, times];
   }
 
@@ -566,10 +565,11 @@ class Battle {
         const def = unitDef(attacker.defId);
         const harder = def.hitsHarder ? def.values[attacker.level - 1] + attacker.abilityBonus : 0;
         this.mark(attacker, 'attack', 1);
-        for (const [t, dmg, main] of hits) {
+        for (const [t, dmg] of hits) {
           const bonus = def.hitsHarder && t[def.hitsHarder] > 0 ? harder : 0;
           this.hit(t, dmg + bonus, attacker, attacker.item === 'toothpick');
-          if (main && burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
+          // Spicy burns everything the attack hits (splash, pierce, fork...), as throws do.
+          if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
         }
         attacker.swings++;
       };
@@ -936,7 +936,7 @@ class Battle {
         return `${name} cleanses ${names(targets)}`;
       case 'extraAttacks':
         for (const t of targets) {
-          t.extraAttacks += amountFor(t);
+          t.extraAttacks.push(amountFor(t));
           this.mark(t, 'buff');
         }
         return `${name}: ${names(targets)} attacks twice x${amountFor(targets[0])}`;
@@ -986,6 +986,8 @@ class Battle {
         return this.units(enemy);
       case 'statusEnemies':
         return this.units(enemy).filter((t) => t.burn + t.rot + t.chill > 0);
+      case 'rottingEnemies':
+        return this.units(enemy).filter((t) => t.rot > 0);
       case 'crustedFriends':
         return this.units(u.side).filter((t) => t !== u && t.crust > 0);
       case 'randomBackEnemy': {
@@ -1061,7 +1063,10 @@ class Battle {
       target.crust -= absorbed;
       rest -= absorbed;
       if (absorbed > 0) this.mark(target, 'crust', -absorbed);
-      if (absorbed > 0 && target.crust === 0) this.later.push({ unit: target, trigger: 'crustBreak', ctx: { source: foe } });
+      if (absorbed > 0 && target.crust === 0) {
+        this.later.push({ unit: target, trigger: 'crustBreak', ctx: { source: foe } });
+        for (const f of this.units(target.side)) this.later.push({ unit: f, trigger: 'plateCrustBreak', ctx: { source: foe, friend: target } });
+      }
       if (absorbed > 0 && foe && !reaction) {
         if (this.bonus[target.side].thorns) this.hit(foe, absorbed, target, false, true); // Salty x8
         for (const f of [target, ...this.adjacent(target)]) this.later.push({ unit: f, trigger: 'crustBlock', ctx: { source: foe } });
