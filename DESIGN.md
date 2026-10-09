@@ -469,7 +469,7 @@ Set on the food itself rather than on an ability. Auras are gentle and gated on 
 
 | Trait | Effect |
 | --- | --- |
-| `aura: 'echo'` | The friend ahead's abilities trigger +1/2/3 extra times by level (Bento Box) |
+| `aura: 'echo'` | The friend ahead's abilities trigger +1/2/3 extra times by level, in battle and the kitchen (an echo uses no growth days); a friend ahead with no abilities, only an attack pattern, attacks twice on its first 1/2/3 attacks (Bento Box) |
 | `aura: 'rally'` | Every friend gains +1/2/3 attack whenever its ability fires, at most 3 times a battle each. No food uses it now: Smoothie had it and was too hard to read (October 2026) |
 | `aura: 'cook'` / `'infuse'` / `'baste'` / `'ferment'` | The mythic rules (see Mythics) |
 | `aura: 'soothe'` | Every HP gain on your plate is +1/2/3 by level (Birthday Cake) |
@@ -565,7 +565,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Birthday Cake | Sweet | 5/15 | 5 | Every HP gain on your plate is +1/2/3. *(aura: soothe)* | **Wedding Cake**: Start of battle: your friends gain +2/+4. |
 | 6 | Kimchi | Sour + Spicy | 4/8 | 5 | Start of battle: the enemy front row Rots 1/2/3 and Burns 1/2/3. | **Kimchi Jjigae**: Every turn: all enemies Rot 1 and Burn 1. |
 | 6 | Ramen | Salty | 7/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
-| 6 | Bento Box | Savory + Salty | 6/16 | 5 | The friend ahead's abilities trigger +1/2/3 times. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
+| 6 | Bento Box | Savory + Salty | 6/16 | 5 | The friend ahead's abilities trigger +1/2/3 times, in battle and the kitchen. A friend ahead that only attacks attacks twice on its first 1/2/3 attacks. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
 | 6 | Smoothie | Sweet + Sour | 6/12 | 5 | Every 2 turns: your friends gain +1/+1, +2/+2 or +3/+3. | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
 | 6 | Roast Turkey | Savory | 4/8 | 5 | End of day: 3 random friends gain +1/+1, +2/+2 or +3/+3. | **Holiday Feast**: End of day: all your foods gain +1/+2. |
 | Mythic | Golden Truffle | Savory | 6/16 | 10 | In battle, the friend in its lane is cooked. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |

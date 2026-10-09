@@ -636,6 +636,28 @@ describe('round 5 rules', () => {
     expect(burns.length).toBeGreaterThan(2);
   });
 
+  it('Bento Box echoes the friend ahead in the kitchen too, without using up its growth days', () => {
+    const grow = (behind: string) => {
+      const run = newRun(3);
+      run.plate[0] = unit('breadDough');
+      run.plate[3] = unit(behind);
+      endDay(run);
+      return { hp: run.plate[0]!.hp - unitDef('breadDough').hp, days: run.plate[0]!.gains };
+    };
+    expect(grow('cheese').hp).toBe(3);
+    const echoed = grow('bento');
+    expect(echoed.hp).toBe(6);
+    expect(echoed.days).toEqual(grow('cheese').days);
+  });
+
+  it('Bento Box makes a friend ahead that only attacks (a pattern) attack twice early on', () => {
+    const dealt = (behind: string) => {
+      const r = simulateBattle(plate({ 0: unit('kebab', { hp: 99 }), 3: unit(behind) }), plate({ 0: unit('cheese', { hp: 200, attack: 1 }) }), 1);
+      return r.frames.filter((f) => f.round === 1).flatMap((f) => f.marks).filter((m) => m.side === 1 && m.kind === 'hit').reduce((s, m) => s + (m.amount ?? 0), 0);
+    };
+    expect(dealt('bento')).toBe(2 * dealt('cheese'));
+  });
+
   it('a mythic copy is a whole level: two make level 2, three are cooked; it sells by mythics in it', () => {
     const run = newRun(5);
     run.gold = 100;

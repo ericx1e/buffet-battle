@@ -336,7 +336,7 @@ export const UNITS: UnitDef[] = [
     abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'frontRowFriends', forFlavor: { flavor: 'savory', mult: 2 } }] },
   { id: 'bento', name: 'Bento Box', cookedName: 'Jubako', emoji: '🍱', tier: 6, flavor: 'savory', flavor2: 'salty', attack: 6, hp: 16, values: [1, 2, 3],
     aura: 'echo',
-    text: "The friend ahead's abilities trigger +{v} times.",
+    text: "The friend ahead's abilities trigger +{v} times, in battle and the kitchen. A friend ahead that only attacks attacks twice on its first {v} attacks.",
     cooked: { text: 'Start of battle: your friends gain +3/+3.', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'allFriends', values: [3, 3, 3] }] },
     abilities: [] },
   { id: 'smoothie', name: 'Smoothie', cookedName: 'Smoothie Bowl', emoji: '🥤', tier: 6, flavor: 'sweet', flavor2: 'sour', attack: 6, hp: 12, values: [1, 2, 3],

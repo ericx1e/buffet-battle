@@ -2,6 +2,7 @@ import type { Outcome } from './battle';
 import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
 import { Rng } from './rng';
 import {
+  type AbilityDef,
   FLAVORS,
   type Flavor,
   type ItemId,
@@ -590,13 +591,17 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
   const def = unitDef(unit.defId);
   const level = levelOf(unit.copies);
   const parts: string[] = [];
-  abilitiesOf(def, level).forEach((ab, index) => {
+  // Bento Box behind a front-row food: what fired goes off again, its level number of times (an echo uses up no
+  // growth days of its own).
+  const echoes = echoesOn(run, slot);
+  const fired = new Set<number>();
+  const fireAbility = (ab: AbilityDef, index: number, echo: boolean) => {
     if (ab.trigger !== trigger) return;
     // Day-gated growth: it has a set number of days in it (more at higher levels).
     const days = ab.days?.[level - 1];
-    if (days !== undefined && (unit.gains?.[index] ?? 0) >= days) return;
+    if (!echo && days !== undefined && (unit.gains?.[index] ?? 0) >= days) return;
     const spend = () => {
-      if (days !== undefined) unit.gains = { ...unit.gains, [index]: (unit.gains?.[index] ?? 0) + 1 };
+      if (!echo && days !== undefined) unit.gains = { ...unit.gains, [index]: (unit.gains?.[index] ?? 0) + 1 };
     };
     if (ab.ifNoReroll && run.rerolledThisTurn) return;
     if (ab.ifInterest && run.lastInterest <= 0) return;
@@ -679,8 +684,24 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         return;
       }
     }
-  });
+  };
+  for (let pass = 0; pass <= echoes; pass++) {
+    abilitiesOf(def, level).forEach((ab, index) => {
+      if (pass > 0 && !fired.has(index)) return;
+      const before = parts.length;
+      fireAbility(ab, index, pass > 0);
+      if (parts.length > before) fired.add(index);
+    });
+  }
   return parts.join(', ');
+}
+
+/** How many extra times a food's abilities go off: a Bento Box behind a front-row food echoes it (its level number). */
+function echoesOn(run: RunState, slot: number | null): number {
+  if (slot === null || rowOf(slot) !== 0) return 0;
+  const behind = run.plate[slotAt(laneOf(slot), 1)];
+  if (!behind || unitDef(behind.defId).aura !== 'echo') return 0;
+  return unitDef(behind.defId).values[levelOf(behind.copies) - 1];
 }
 
 /** Gold for selling a food: half what its copies cost (rounded down, at least 1), plus sell value it gained. */

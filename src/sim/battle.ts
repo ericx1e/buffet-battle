@@ -369,6 +369,13 @@ class Battle {
 
       for (const u of this.units(side)) if (u.item === 'saltShaker') this.giveCrust(u, 5);
       for (const u of this.units(side)) if (u.item === 'chopsticks') u.extraAttacks.push(2);
+      // Bento Box behind a food whose job is its attack (a pattern or a throw, no abilities to echo): it attacks
+      // twice on its first attacks instead, the Bento's level number of them.
+      for (const u of this.units(side)) {
+        const behind = rowOf(u.slot) === 0 ? this.plates[side][slotAt(laneOf(u.slot), 1)] : null;
+        const def = unitDef(u.defId);
+        if (behind && unitDef(behind.defId).aura === 'echo' && def.abilities.length === 0 && def.attackPattern) u.extraAttacks.push(this.levelValue(behind));
+      }
       if (lines.length > 0) this.snap(`${side === 0 ? 'Your' : 'Enemy'} flavors: ${lines.join(' · ')}`);
       else if (this.marks.length > 0) this.snap('Salt Shakers: +5 Crust');
     }
