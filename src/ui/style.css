@@ -210,6 +210,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .page .dim { color: #8a7568; font-size: 10px; }
 
 .pg-title { font: 400 10px/11px var(--pixel); margin-bottom: 3px; }
+.season-now { font: 400 10px/11px var(--pixel); color: #6e4a30; text-transform: capitalize; }
 .pg-art { width: 32px; height: 32px; margin: 0 auto 3px; display: grid; place-items: center; }
 .pg-art .sprite { width: 32px; height: 32px; }
 .pg-art .emoji { font-size: 24px; line-height: 1; }
@@ -576,7 +577,7 @@ body[data-screen='battle'] {
 /* ---------- stat badges (src/ui/icons.ts statBadge): a pixel medallion, heart or shield with the number on it ---------- */
 .stat-badge { position: relative; display: inline-flex; flex: none; }
 .stat-badge > b {
-  position: absolute; inset: 0; display: grid; place-items: center;
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font: 400 10px/1 var(--pixel); color: #fff; pointer-events: none;
   text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14;
 }

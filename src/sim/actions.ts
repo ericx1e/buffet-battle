@@ -10,6 +10,7 @@ import {
   buyUnit,
   moveUnit,
   pickPack,
+  skipPack,
   reroll,
   sellUnit,
   serve,
@@ -25,7 +26,8 @@ export type Action =
   | { t: 'refill' }
   | { t: 'item'; src: OfferSource; at: Loc; flavor?: Flavor }
   | { t: 'special' }
-  | { t: 'pick'; index: number };
+  | { t: 'pick'; index: number }
+  | { t: 'skip' };
 
 /** Applies one action to the run. Garbage in (a tampered log) is a failed action, never a crash. */
 export function applyAction(run: RunState, a: Action): ActionResult {
@@ -45,6 +47,8 @@ export function applyAction(run: RunState, a: Action): ActionResult {
         return buySpecial(run);
       case 'pick':
         return pickPack(run, a.index);
+      case 'skip':
+        return skipPack(run);
     }
   } catch {
     // Fall through: an action that throws is refused.

@@ -101,6 +101,8 @@ The last teal cubby holds one special offer each day. Refilling doesn't change i
 | --- | --- | --- | --- |
 | Spice Pack | Any day | 3 | Open it and keep 1 of 3 consumables, drawn from up to a tier ahead of the market. The pick is used right away (drag it onto a food) or waits in the cubby, free |
 | Farm Box | Day 2+ | 5 | Open it and keep 1 of 3 foods from the current tier band, up to one tier above the market |
+
+An open Spice Pack or Farm Box can be skipped (the button under it) when nothing in it is worth keeping or there is no room for it; the gold is spent.
 | Pair | Any day | About 1.5x one food's price (3→5, 4→6, 5→8) | 2 copies of one unlocked food, delivered to the counter tray |
 | Premium Refill | Day 3+ | 3 | Refills the market with only next-tier foods (drag onto the refill sign or the tray) |
 | Mythic Delivery | Day 10+, 10% of days, at most once a run | 10 | One mythic food, dragged straight onto the plate |
@@ -198,9 +200,9 @@ The battle is shown from the side: your plate on the left facing right, the enem
 3. **Each turn (up to 40):**
     1. Every front-row food attacks, following its attack pattern (below). Its main target is the enemy in its lane; **if that lane is empty, it attacks the nearest lane that has food** (the middle lane on ties). All attacks land at the same time. A Chilled food skips its attack and loses 1 Chill.
     2. The struck food takes the hit: Tupperware may block it, Crust blocks what it can, the rest comes off its HP, and its on-hit ability triggers. The food behind it can react (`friendAheadHit`), and the food behind each attacker can follow up (`friendAheadAttacks`).
-    3. Foods at 0 HP are eaten (a fork comes down), then their "eaten" abilities fire, and their neighbours' `friendFaint` abilities.
+    3. Foods at 0 HP are eaten (a fork comes down), then their "eaten" abilities fire, and their neighbours' `friendFaint` abilities. A summon that found the plate full while a friend was being eaten (an Egg cracked by the hit that eats it, say) arrives now, in the room the eaten left.
     4. End of turn: "every N turns" abilities, turn abilities, Sweet HP and Salty Crust.
-    5. Statuses tick: Burn and Rot deal their damage (ignoring Crust; not a hit). Burn then fades by 1.
+    5. Statuses tick: Burn and Rot deal their damage (ignoring Crust; not a hit). Burn then halves (rounded down).
     6. **Overtime (from turn 16):** the food is going cold. Every food loses 1 HP in turn 16, 2 in turn 17, 3 in turn 18 and so on. This ignores Crust and Tupperware and isn't a hit, so stalemates end with food eaten rather than on a timer.
 4. A plate with no food left loses; both empty at once is a draw. The turn cap (40) is only a safety net: the plate with more total HP left wins.
 
@@ -232,8 +234,8 @@ Most foods hit the enemy across. A few attack in their own shape; secondary targ
 
 | Status | Source | Effect |
 | --- | --- | --- |
-| Burn | Spicy | Deals its stacks as damage at the end of each turn, then fades by 1 (Spicy x6: it never fades), up to 6 stacks: burst, where Rot is slow and lasting |
-| Rot | Sour | Deals its stacks as damage at the end of each turn and never fades, up to 4 stacks; HP gains on a Rotting food are halved |
+| Burn | Spicy | Deals its stacks as damage at the end of each turn, then halves (Spicy x6: it fades by only 1). No cap: it settles near twice what is added each turn, a burst where Rot is slow and lasting |
+| Rot | Sour | Deals its stacks as damage at the end of each turn and never fades. No cap: it only builds from foods that keep applying it. HP gains on a Rotting food are halved |
 | Chill | Ice Cream | Skips its next attack per stack |
 
 Sweet x4 cleanses 1 Burn and 1 Rot from the front row each turn.
@@ -247,13 +249,13 @@ Sweet x4 cleanses 1 Burn and 1 Rot from the front row each turn.
 
 ## Flavors and synergies
 
-Every food has one of 5 flavors; some count as two (Kimchi, Blue Cheese, Sweet & Sour Pork, Bento Box, Smoothie) and Saffron counts as all of them. Tofu gains a random new flavor each level up, and the Flavor Packet gives any food one (up to 3 flavors per food). Fielding 2, 4, 6 or 8 **different** foods of a flavor grants a team bonus (copies of one food count once, so a bonus asks for variety, not duplicates; the best-placed copy counts, e.g. the one next to Saffron); each tier adds to the one before, so a vertical plate is a real build, while 2-of-each splashes stay useful. A plate has 6 spots, so 8 takes planning: foods that count as two flavors, Saffron (which doubles its neighbours), Tofu and Flavor Packets. Each 8 changes a rule rather than adding numbers.
+Every food has one of 5 flavors; some count as two (Kimchi, Blue Cheese, Sweet & Sour Pork, Bento Box, Smoothie) and Saffron counts as all of them. Tofu gains a random new flavor each level up, the Flavor Packet gives any food a random one and the Seasoning Blend one you pick (up to 3 flavors per food; a food never loses a flavor). Fielding 2, 4, 6 or 8 **different** foods of a flavor grants a team bonus (copies of one food count once, so a bonus asks for variety, not duplicates; the best-placed copy counts, e.g. the one next to Saffron); each tier adds to the one before, so a vertical plate is a real build, while 2-of-each splashes stay useful. A plate has 6 spots, so 8 takes planning: foods that count as two flavors, Saffron (which doubles its neighbours), Tofu and Flavor Packets. Each 8 changes a rule rather than adding numbers.
 
 | Flavor | Identity | 2 on plate | 4 on plate | 6 on plate | 8 on plate |
 | --- | --- | --- | --- | --- | --- |
-| Spicy | Burn | Spicy foods' attacks Burn their target 1 | Burn 2 | Burn never fades | Burning enemies take +2 from every hit |
+| Spicy | Burn | Spicy foods' attacks Burn their target 1 | Burn 2 | Burn fades by 1 instead of halving | Burning enemies take +2 from every hit |
 | Sweet | Sustain | Front row gains 1 HP each turn | 2 HP, and cleanses 1 Burn and Rot | The back row gets it too | Sugar rush: each friend survives being eaten once, at 1 HP |
-| Sour | Rot | Enemy front row Rots 1 | Every enemy Rots 1 | Rotting enemies deal 1 less damage | Rot spreads to neighbours when a Rotting enemy is eaten |
+| Sour | Rot | Enemy front row Rots 1 | Every enemy Rots 1 | Rotting enemies deal 1 less damage | Half its Rot spreads to each neighbour when a Rotting enemy is eaten |
 | Salty | Crust | Front-row friends gain 2 Crust | 4 Crust | The front row regains 2 Crust every turn | Crust bites back: damage it blocks is dealt to the attacker |
 | Savory | Summons and growth | Summoned friends +1/+1 | +2/+2, and when a friend is eaten its neighbours gain +1/+1 | Eaten friends leave a 2/2 Crumb | Feast: when a friend is eaten, every friend gains +2/+2 |
 
@@ -533,7 +535,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Pork Crackling | Salty | 4/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 5/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
 | 4 | Crème Brûlée | Sweet | 3/7 | 4 | Crust broken on your plate: that food gains +1/2/3 attack. | **Torched Brûlée**: Start of battle: your front row gains 3 Crust. |
-| 4 | Pomegranate | Sour | 4/9 | 4 | Every turn, from any row, instead of attacking: its seeds burst at 2/3/4 random enemies for half its attack. *(scatter attack)* | **Grenadine**: Start of battle: a random back-row enemy Rots 3. |
+| 4 | Pomegranate | Sour | 4/8 | 4 | Every turn, from any row, instead of attacking: its seeds burst at 2/3/4 random enemies for half its attack. *(scatter attack)* | **Grenadine**: Start of battle: a random back-row enemy Rots 3. |
 | 4 | Mushroom | Savory | 4/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 5/8 | 4 | Start of battle: the friend ahead (or itself) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 4/16 | 4 | Eaten, and every 2nd time hit: summon a 2/2, 3/3 or 4/4 Slice. | **Fruit Salad**: Eaten: summon two more 4/4 Slices. |
@@ -564,7 +566,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Ramen | Salty | 7/18 | 5 | Start of battle: front-row friends gain 2/3/4 Crust, double if Savory. | **Tonkotsu Ramen**: Start of battle: your friends gain 6 Crust. Every 2 turns: 3 more. |
 | 6 | Bento Box | Savory + Salty | 6/16 | 5 | The friend ahead's abilities trigger +1/2/3 times. *(aura: echo)* | **Jubako**: Start of battle: your friends gain +3/+3. |
 | 6 | Smoothie | Sweet + Sour | 6/12 | 5 | Every 2 turns: your friends gain +1/+1, +2/+2 or +3/+3. | **Smoothie Bowl**: Start of battle: your friends gain +2 attack. |
-| 6 | Roast Turkey | Savory | 5/9 | 5 | End of day: 3 random friends gain +1/+1, +2/+2 or +3/+3. | **Holiday Feast**: End of day: all your foods gain +1/+2. |
+| 6 | Roast Turkey | Savory | 4/8 | 5 | End of day: 3 random friends gain +1/+1, +2/+2 or +3/+3. | **Holiday Feast**: End of day: all your foods gain +1/+2. |
 | Mythic | Golden Truffle | Savory | 6/16 | 10 | In battle, the friend in its lane is cooked. *(aura: cook)* | **Truffle Feast**: Every friend is cooked in battle. |
 | Mythic | Saffron | All | 6/14 | 10 | Counts as every flavor. Adjacent friends count twice. *(aura: infuse)* | **Saffron Paella**: Every friend counts twice toward flavor bonuses. |
 | Mythic | Wagyu | Salty + Sweet | 7/22 | 10 | Your friends get double Crust and HP. Start of battle: they gain 2/3/4 Crust. *(aura: baste)* | **Wagyu Sukiyaki**: Start of battle: your friends gain +3 HP. |
@@ -593,24 +595,24 @@ Items are condiments and kitchen tools. One-use items apply when dropped on a fo
 
 | Item | Unlocks at tier | Cost | Effect |
 | --- | --- | --- | --- |
-| Hot Sauce | 1 | 2 | Held: +1 attack every turn in battle. |
-| Butter | 1 | 2 | +2/+2 permanently. |
-| Sprinkles | 1 | 2 | 3 random foods on your plate +1/+1 permanently. |
-| Olive Oil | 1 | 2 | +1/+1 and +3 sell value, permanently. |
-| Flavor Packet | 3 | 3 | The food gains a random flavor it doesn't have (up to 3 flavors). |
-| Bone Broth | 2 | 2 | +6 HP permanently. |
+| Hot Sauce | 1 | 2 | Held: +1 attack every turn in battle, and +2 HP for good at the end of each day. |
+| Butter | 1 | 2 | +1/+2 permanently. |
+| Sprinkles | 1 | 2 | 2 random foods on your plate +1/+1 permanently. |
+| Olive Oil | 1 | 2 | +1 HP and +3 sell value, permanently. |
+| Flavor Packet | 2 | 2 | The food gains a random flavor it doesn't have (up to 3 flavors). |
+| Bone Broth | 2 | 2 | +4 HP permanently. |
 | Salt Shaker | 2 | 3 | Held: gain 5 Crust at Start of battle. |
 | Toothpick | 2 | 3 | Held: this food's attacks ignore Crust. |
 | Bouillon Cube | 3 | 3 | Held: this food counts as one more food of its flavors. |
-| Party Mix | 3 | 3 | 4 random foods on your plate +2/+2 permanently. |
-| Seasoning Blend | 3 | 2 | Change the food's flavor. |
+| Party Mix | 3 | 3 | 4 random foods on your plate +1/+1 permanently. |
+| Seasoning Blend | 3 | 3 | The food gains a flavor you pick (up to 3 flavors). |
 | Tupperware | 3 | 3 | Held: the first hit on this food each battle is fully blocked. |
 | Takeout Bag | 3 | 3 | A random food one rarity above the buffet arrives on the counter tray. |
 | Microwave | 4 | 4 | +1 merge progress (counts as one extra copy). |
 | Chopsticks | 4 | 4 | Held: attacks twice on its first 2 attacks each battle. |
-| Lunchbox | 5 | 5 | All friends +2/+2 permanently. |
+| Lunchbox | 5 | 4 | All friends +1/+1 permanently. |
 
-Items are cheap (1 to 5 gold) and each one is a real swing: a Butter is a level's worth of stats for 2 gold, a Takeout Bag is a gamble on a food from the next rarity, Chopsticks double a big hitter's opening, Hot Sauce grows a fighter every turn, and a Bouillon Cube nudges a flavor one step closer to its next bonus.
+Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than a swing (stats should mostly come from the foods), while held items and the odd ones are where the choices are: a Takeout Bag is a gamble on a food from the next rarity, Chopsticks double a big hitter's opening, Hot Sauce grows a fighter every turn and every day, and a Bouillon Cube nudges a flavor one step closer to its next bonus.
 
 ## Look and feel
 
@@ -673,6 +675,7 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
    | item | `useItem`, with the flavor for Seasoning Blend |
    | special | `buySpecial` |
    | pick | `pickPack` |
+   | skip | `skipPack` (leave an open pack without taking anything) |
 
    The log is saved in `localStorage` with the run, so a refresh keeps the day. Only actions that worked are logged; a failed action changes nothing (tested).
 

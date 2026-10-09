@@ -128,10 +128,6 @@ export const MAX_ROUNDS = 40;
 export const OVERTIME_AFTER = 15;
 /** Most a food's attack can grow from rally auras in one battle. */
 export const RALLY_CAP = 3;
-/** Most Rot a food can carry. */
-export const ROT_CAP = 4;
-/** Most Burn a food can carry. */
-export const BURN_CAP = 6;
 const TRIGGER_BUDGET = 1000;
 const LANE_NAMES = ['far', 'middle', 'near'];
 
@@ -175,7 +171,7 @@ interface FireContext {
 /** What each side's flavor bonuses switched on (see applySynergies). */
 interface SideBonus {
   spicyBurn: number; // Burn each Spicy attack inflicts
-  burnSticks: boolean; // Burn on this side's enemies doesn't fade
+  burnSticks: boolean; // Burn on this side's enemies fades by 1 a turn instead of halving
   sweetHeal: number; // front row heals this much each round
   sweetCleanse: boolean; // and loses 1 Burn and 1 Rot
   sweetAll: boolean; // the back row is soothed too
@@ -183,7 +179,7 @@ interface SideBonus {
   summonBonus: number; // summons +n/+n
   hearty: boolean; // a friend eaten: its adjacent friends +1/+1
   crumbs: boolean; // a friend eaten leaves a 2/2 Crumb
-  rotSpreads: boolean; // an enemy eaten passes its Rot to its adjacent friends
+  rotSpreads: boolean; // an enemy eaten passes half its Rot to its adjacent friends
   flare: boolean; // Spicy x8: Burning enemies take +2 from every hit
   rotWeakens: boolean; // Sour x6: Rotting enemies deal 1 less damage
   sugarRush: boolean; // Sweet x8: each friend survives being eaten once, at 1 HP
@@ -206,6 +202,8 @@ class Battle {
   /** Reactions waiting for their own moment: each fires in its own frame after the one that caused it. */
   private later: { unit: BattleUnit; trigger?: Trigger; ctx?: FireContext; echo?: number; bonus?: { from: BattleUnit; hp?: number; crust?: number } }[] = [];
   private bonus: [SideBonus, SideBonus] = [{ ...NO_BONUS }, { ...NO_BONUS }];
+  /** Summons with no free slot while a friend is being eaten: they arrive once the eaten are cleared away. */
+  private waiting: { by: BattleUnit; defId: string; attack: number; hp: number; count: number }[] = [];
   private nextUid = 1;
   private triggerBudget = TRIGGER_BUDGET;
   private round = 0;
@@ -334,7 +332,7 @@ class Battle {
             b.spicyBurn = tier >= 2 ? 2 : 1;
             b.burnSticks = tier >= 3;
             b.flare = tier >= 4;
-            lines.push(`Spicy x${n}: spicy attacks Burn ${b.spicyBurn}${tier >= 3 ? ', Burn never fades' : ''}${tier >= 4 ? ', Burning enemies take +2 from every hit' : ''}`);
+            lines.push(`Spicy x${n}: spicy attacks Burn ${b.spicyBurn}${tier >= 3 ? ', Burn fades by only 1' : ''}${tier >= 4 ? ', Burning enemies take +2 from every hit' : ''}`);
             break;
           case 'sweet':
             b.sweetHeal = tier >= 2 ? 2 : 1;
@@ -633,7 +631,11 @@ class Battle {
     }
   }
 
-  /** Burn and Rot deal their damage (ignoring Crust; not a hit). Burn then fades by 1 unless Spicy x6 keeps it. */
+  /**
+   * Burn and Rot deal their damage (ignoring Crust; not a hit). Neither has a cap: Burn then halves (rounded down), so
+   * it settles near twice what is added each turn, or with Spicy x6 on the other side fades by only 1. Rot never fades,
+   * so it only builds from foods that keep applying it.
+   */
   private statusTick() {
     const lines: string[] = [];
     const ticks: string[] = [];
@@ -648,7 +650,7 @@ class Battle {
         if (u.rot > 0) this.mark(u, 'rot', u.rot);
         ticks.push(`${this.name(u)} ${dmg}`);
         lines.push(`${this.name(u)} ${u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots'} for ${dmg}${doubled ? ' (doubled)' : ''}`);
-        if (u.burn > 0 && !sticks) u.burn--;
+        if (u.burn > 0) u.burn = sticks ? u.burn - 1 : Math.floor(u.burn / 2);
       }
     }
     // Several foods ticking at once: one compact line ("Burn & Rot: Popcorn 4, Kimchi 2").
@@ -777,6 +779,7 @@ class Battle {
       if (rushed.length > 0) this.snap(`Sugar rush! ${rushed.map((u) => this.name(u)).join(', ')} ${rushed.length > 1 ? 'hang' : 'hangs'} on at 1 HP`);
       dead = dead.filter((u) => u.lives === 0 && u.hp <= 0);
       if (dead.length === 0) {
+        this.waiting = []; // nobody was eaten after all, so no room was made
         if (revived.length > 0) continue;
         return;
       }
@@ -807,11 +810,19 @@ class Battle {
         if (b.crumbs && !u.token && unitDef(u.defId).id !== 'crumb') {
           if (this.summon(u.side, u.slot, 'crumb', 2, 2, u.flavor)) lines.push(`${this.name(u)} leaves a Crumb behind`);
         }
-        // Sour x6 on the other side: its Rot spreads to its neighbours.
+        // Sour x6 on the other side: half its Rot (rounded up) spreads to each of its neighbours.
         if (u.rot > 0 && this.bonus[(1 - u.side) as Side].rotSpreads) {
-          for (const n of neighbours) this.addStatus(n, 'rot', u.rot);
+          for (const n of neighbours) this.addStatus(n, 'rot', Math.ceil(u.rot / 2));
           if (neighbours.length > 0) lines.push(`the Rot spreads from ${this.name(u)}`);
         }
+      }
+      // Summons that were waiting for room: the eaten are gone, so they arrive now.
+      for (const w of this.waiting.splice(0)) {
+        let n = 0;
+        while (n < w.count && this.summon(w.by.side, w.by.slot, w.defId, w.attack, w.hp, w.by.flavor)) n++;
+        if (n === 0) continue;
+        if (this.onPlate(w.by)) this.mark(w.by, 'ability');
+        lines.push(`${this.name(w.by)} summons ${n > 1 ? `${n} ` : 'a '}${unitDef(w.defId).name}${n > 1 ? 's' : ''}`);
       }
       for (const c of captionChunks(lines)) this.snap(c);
     }
@@ -892,10 +903,11 @@ class Battle {
     switch (ab.effect) {
       case 'summon': {
         const def = unitDef(ab.summon!.id);
+        const [a, h, count] = [ab.summon!.attack ?? amount, ab.summon!.hp ?? amount, ab.count ?? 1];
         let n = 0;
-        for (let i = 0; i < (ab.count ?? 1); i++) {
-          if (this.summon(u.side, u.slot, def.id, ab.summon!.attack ?? amount, ab.summon!.hp ?? amount, u.flavor)) n++;
-        }
+        while (n < count && this.summon(u.side, u.slot, def.id, a, h, u.flavor)) n++;
+        // The plate is full but a friend is being eaten (maybe this food): the rest arrive once it is cleared away.
+        if (n < count && this.units(u.side).some((t) => t.hp <= 0)) this.waiting.push({ by: u, defId: def.id, attack: a, hp: h, count: count - n });
         if (n === 0) return;
         this.mark(u, 'ability');
         return `${name} summons ${n > 1 ? `${n} ` : 'a '}${def.name}${n > 1 ? 's' : ''}`;
@@ -1123,9 +1135,6 @@ class Battle {
 
   private addStatus(u: BattleUnit, status: 'burn' | 'rot' | 'chill', amount: number) {
     if (amount <= 0 || !this.onPlate(u)) return;
-    if (status === 'rot') amount = Math.min(amount, ROT_CAP - u.rot);
-    if (status === 'burn') amount = Math.min(amount, BURN_CAP - u.burn);
-    if (amount <= 0) return;
     u[status] += amount;
     this.mark(u, status, amount);
   }

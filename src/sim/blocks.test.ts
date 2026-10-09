@@ -85,12 +85,20 @@ describe('mythic rules', () => {
 });
 
 describe('statuses', () => {
-  it('Burn deals its damage at the end of each round, then fades by 1', () => {
-    const burner = food('t_burner', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' }], {}, 3);
+  it('Burn deals its damage at the end of each round, then halves', () => {
+    const burner = food('t_burner', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' }], {}, 6);
     const r = simulateBattle(plate(inst(burner)), plate(inst(wall)), 1);
+    expect(texts(r)).toContain('t_wall burns for 6');
     expect(texts(r)).toContain('t_wall burns for 3');
-    expect(texts(r)).toContain('t_wall burns for 2');
     expect(texts(r)).toContain('t_wall burns for 1');
+    expect(texts(r)).not.toContain('t_wall burns for 2');
+  });
+
+  it('Spicy x6: Burn on the enemy fades by only 1 a turn', () => {
+    // Rich: it alone counts as 6 Spicy foods. Burn 6 at the start, +2 from each of its spicy attacks, -1 a turn.
+    const burner = food('t_burner6', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' }], { flavor: 'spicy', rich: true }, 6);
+    const r = simulateBattle(plate(inst(burner)), plate(inst(wall, { hp: 200 })), 1);
+    for (const n of [8, 9, 10]) expect(texts(r)).toContain(`t_wall burns for ${n}`);
   });
 
   it('Rot deals its damage every round and never fades', () => {
@@ -199,7 +207,7 @@ describe('ability blocks', () => {
     const spicy = (n: number) => texts(simulateBattle(plate(...hots.slice(0, n).map((h) => inst(h))), plate(inst(wall)), 1));
     expect(spicy(2)).toContain('Spicy x2: spicy attacks Burn 1');
     expect(spicy(4)).toContain('Spicy x4: spicy attacks Burn 2');
-    expect(spicy(6)).toContain('Burn never fades');
+    expect(spicy(6)).toContain('Burn fades by only 1');
   });
 
   it('copies of one food count once toward a flavor', () => {
@@ -319,14 +327,22 @@ describe('projectiles and patterns', () => {
 });
 
 describe('Rot and the new triggers', () => {
-  it('Burn stacks higher than Rot: up to 6', () => {
+  it('Burn and Rot have no cap', () => {
     const burner = food('t_burn9', 1, 60, [{ trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' }], {}, 9);
-    expect(highest(simulateBattle(plate(inst(burner)), plate(inst(wall)), 1), 1, 0, 'burn')).toBe(6);
+    expect(highest(simulateBattle(plate(inst(burner)), plate(inst(wall)), 1), 1, 0, 'burn')).toBe(9);
+    const rotter = food('t_rot7', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }], {}, 7);
+    expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall, { hp: 200 })), 1), 1, 0, 'rot')).toBe(7);
   });
 
-  it('Rot stacks only up to 4', () => {
-    const rotter = food('t_rot5', 1, 60, [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }], {}, 5);
-    expect(highest(simulateBattle(plate(inst(rotter)), plate(inst(wall)), 1), 1, 0, 'rot')).toBe(4);
+  it('a summon with no room waits for a friend being eaten that turn, then takes its place', () => {
+    // A full plate; the egg-like food in front is hit for lethal and summons on that hit.
+    const cracker = food('t_cracker', 1, 1, [{ trigger: 'hit', effect: 'summon', summon: { id: 'yolk' } }], {}, 2);
+    const r = simulateBattle(plate(inst(cracker), inst(wall), inst(wall), inst(wall), inst(wall), inst(wall)), plate(inst(brute)), 1);
+    const eaten = r.frames.findIndex((f) => f.text.includes('t_cracker got eaten'));
+    expect(eaten).toBeGreaterThan(0);
+    const after = r.frames.slice(eaten).find((f) => f.text.includes('t_cracker summons a Yolk'));
+    expect(after).toBeTruthy();
+    expect(after!.plates[0].some((u) => u?.defId === 'yolk')).toBe(true);
   });
 
   it('friendHealed: a neighbour that gets healed gains attack', () => {

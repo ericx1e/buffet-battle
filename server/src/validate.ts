@@ -51,6 +51,8 @@ export function parseAction(x: unknown): Action | null {
       return keys(x, ['t']) ? { t: 'special' } : null;
     case 'pick':
       return keys(x, ['t', 'index']) && isIndex(x.index) ? { t: 'pick', index: x.index } : null;
+    case 'skip':
+      return keys(x, ['t']) ? { t: 'skip' } : null;
   }
   return null;
 }

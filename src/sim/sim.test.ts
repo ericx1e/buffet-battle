@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_ROUNDS, OVERTIME_AFTER, simulateBattle } from './battle';
+import { applyAction } from './actions';
 import { generateGhost } from './bot';
 import { MARKET_UNITS, PAIRS, UNITS, flavorTally, partnersOf, flavorsOf, rarityOf, unitCost, unitDef } from './data';
 import {
@@ -7,6 +8,7 @@ import {
   START_GOLD,
   buySpecial,
   buyUnit,
+  endDay,
   finishBattle,
   interestCap,
   marketOdds,
@@ -323,14 +325,14 @@ describe('run', () => {
     expect(Math.max(...r.frames.map((f) => f.plates[0][0]?.attack ?? 0))).toBeGreaterThanOrEqual(unitDef('baguette').attack + 2);
   });
 
-  it('Sprinkles give 3 random foods +1/+1', () => {
+  it('Sprinkles give 2 random foods +1/+1', () => {
     const run = newRun(9);
     for (let i = 0; i < 4; i++) run.plate[i] = unit('egg');
     run.market[run.market.length - 1] = { kind: 'item', itemId: 'sprinkles' };
     run.gold = 10;
     const before = run.plate.reduce((n, u) => n + (u?.attack ?? 0), 0);
     expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.plate.reduce((n, u) => n + (u?.attack ?? 0), 0)).toBe(before + 3);
+    expect(run.plate.reduce((n, u) => n + (u?.attack ?? 0), 0)).toBe(before + 2);
   });
 
   it('Sourdough grows whenever you sell a friend', () => {
@@ -358,7 +360,7 @@ describe('run', () => {
     run.market[run.market.length - 1] = { kind: 'item', itemId: 'boneBroth' };
     run.gold = 10;
     expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 6 + unitDef('cake').values[0]);
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 4 + unitDef('cake').values[0]);
     expect(run.growth.some((g) => g.from === run.plate[1]!.uid)).toBe(true); // shown as the cake's own gift
   });
 
@@ -503,6 +505,41 @@ describe('run', () => {
     useItem(run, { area: 'special', index: 0 }, { area: 'plate', index: 0 });
     expect(run.gold).toBe(gold);
     expect(run.special).toBeNull();
+  });
+
+  it('an open pack can be skipped: nothing is taken and serving is unblocked', () => {
+    const run = newRun(5);
+    run.special = { kind: 'farmPack', cost: 5 };
+    run.gold = 10;
+    run.plate[0] = unit('egg');
+    expect(buySpecial(run).ok).toBe(true);
+    expect(serveBlocker(run)).not.toBeNull();
+    expect(applyAction(run, { t: 'skip' }).ok).toBe(true);
+    expect(run.pack).toBeNull();
+    expect(run.overflow.every((u) => !u)).toBe(true);
+    expect(serveBlocker(run)).toBeNull();
+    expect(applyAction(run, { t: 'skip' }).ok).toBe(false);
+  });
+
+  it('Seasoning Blend adds the flavor you pick, up to 3 flavors', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('kimchi'); // Sour and Spicy
+    run.gold = 20;
+    const season = (flavor: 'sweet' | 'salty' | 'sour') => {
+      run.market[0] = { kind: 'item', itemId: 'seasoning' };
+      return useItem(run, { area: 'market', index: 0 }, { area: 'plate', index: 0 }, flavor);
+    };
+    expect(season('sour').ok).toBe(false); // already Sour
+    expect(season('sweet').ok).toBe(true);
+    expect(flavorsOf(run.plate[0]!).sort()).toEqual(['sour', 'spicy', 'sweet']);
+    expect(season('salty').ok).toBe(false); // three is the most
+  });
+
+  it('Hot Sauce (held) gives +2 HP for good at the end of each day', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('egg', { item: 'hotSauce' });
+    endDay(run);
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 2);
   });
 
   it('a premium restock stocks the buffet from the next tier', () => {

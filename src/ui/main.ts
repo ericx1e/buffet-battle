@@ -28,6 +28,7 @@ import {
   interestOn,
   INCOME,
   INTEREST_STEP,
+  MAX_FLAVORS,
   isOver,
   marketOdds,
   migrateRun,
@@ -41,7 +42,7 @@ import {
 } from '../sim/run';
 import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
-import { itemArt, propArt, specialArt, unitArt } from './art';
+import { PROP_URLS, itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
 import PROPS from './kitchen-props.json';
 import { pickOpponent, saveGhost } from './ghosts';
@@ -50,6 +51,18 @@ import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
 import { type Sfx, isMuted, sfx, toggleMute, unlockAudio } from './sound';
+
+/**
+ * The scenes and kitchen props, fetched and decoded at start-up and kept in memory: otherwise a screen's backdrop
+ * loads only when that screen first shows, and the dark page showed through it for a moment.
+ */
+const SCENE_IMAGES = [kitchenUrl, battleUrl, ...PROP_URLS].map((src) => {
+  const img = new Image();
+  img.src = src;
+  return img;
+});
+/** Resolves once every scene image is decoded, or after `ms` at most (a slow connection still gets a page). */
+const scenesReady = (ms: number) => Promise.race([Promise.all(SCENE_IMAGES.map((img) => img.decode().catch(() => {}))), new Promise((r) => setTimeout(r, ms))]);
 
 /** What's selected or being dragged: an offer, an owned food, the special cubby's offer, or a choice from an open pack. */
 type Selection = { kind: 'offer'; src: OfferSource } | { kind: 'unit'; loc: Loc } | { kind: 'special' } | { kind: 'pick'; index: number } | null;
@@ -125,8 +138,8 @@ const tipBox = (title: string, body: string) => tip(`<div class="tip-title">${ti
 
 /** Keywords explained at the bottom of any card or tooltip whose text mentions them. */
 const GLOSSARY: { re: RegExp; icon: () => string; name: string; text: string }[] = [
-  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then drops by 1. Stacks up to 6.' },
-  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. Stacks up to 4. HP gains on a Rotting food are halved.' },
+  { re: /\bBurn(s|ing|ed)?\b/i, icon: () => pix('flame'), name: 'Burn', text: 'deals its stacks as damage at the end of each turn, then halves. No limit, but it burns out fast.' },
+  { re: /\bRot(s|ting)?\b/i, icon: () => pix('rotBlob'), name: 'Rot', text: 'deals its stacks as damage at the end of each turn and never fades. No limit. HP gains on a Rotting food are halved.' },
   { re: /\bChill(s|ed)?\b/i, icon: () => pix('snowflake'), name: 'Chill', text: 'the food skips its next attack for each stack.' },
   { re: /\bCrust\b/i, icon: () => pix('shield'), name: 'Crust', text: 'blocks damage before HP, point for point. Gone after the battle.' },
   { re: /\bcleans/i, icon: () => '', name: 'Cleanse', text: 'removes Burn and Rot.' },
@@ -568,7 +581,9 @@ function onDropSlot(loc: Loc) {
       return report(dispatch({ t: 'buy', src: sel.src, to: loc }), into?.defId === offer.defId ? 'merge' : 'buy');
     }
     if (offer.itemId === 'seasoning') {
-      if (!getUnit(run, loc)) return report({ ok: false, error: 'Use items on a unit.' });
+      const into = getUnit(run, loc);
+      if (!into) return report({ ok: false, error: 'Use items on a unit.' });
+      if (unitDef(into.defId).allFlavors || flavorsOf(into).length >= MAX_FLAVORS) return report({ ok: false, error: `It already has ${MAX_FLAVORS} flavors.` });
       app.seasoning = { src: sel.src, loc };
       return render();
     }
@@ -665,6 +680,8 @@ function onAction(action: string, el: HTMLElement) {
       if (pending) report(dispatch({ t: 'item', src: pending.src, at: pending.loc, flavor: el.dataset.flavor as Flavor }), 'item');
       return;
     }
+    case 'skip-pack':
+      return report(dispatch({ t: 'skip' }), 'select');
     case 'cancel-season':
       app.seasoning = undefined;
       return render();
@@ -799,6 +816,9 @@ async function serveOnline(mine: Plate, beforeEnd: RunState) {
   }
 }
 
+/** How long after the kitchen comes back the start of day (income, interest, growth) plays. */
+const DAY_START_MS = 750;
+
 function endBattle() {
   const battle = app.battle;
   if (!battle) return;
@@ -825,8 +845,9 @@ function endBattle() {
   else {
     if (o === 'win') sfx('trophy', back);
     else if (o === 'loss' && app.run.turn - 1 >= 3) sfx('lifeLost', back);
-    for (let i = 0; i <= Math.min(lastInterest, 5); i++) sfx('coin', back + 350 + i * 90);
-    playGrowth(back + 400);
+    // Start of day waits a beat after the kitchen is back, so its coins and growth don't land during the wipe.
+    for (let i = 0; i <= Math.min(lastInterest, 5); i++) sfx('coin', back + DAY_START_MS + i * 90);
+    playGrowth(back + DAY_START_MS + 50);
   }
 }
 
@@ -1104,7 +1125,8 @@ function counterTray(): string {
   const label = pack ? `${pack.kind === 'spice' ? 'spice pack' : 'farm box'}: keep one` : busy ? 'place these before serving' : 'counter tray';
   return `<div class="tray ${busy ? 'busy' : ''} ${pack ? 'pack' : ''}" style="${box([x, y, w, h])}" data-drop="tray" ${tipBox('Counter tray', '<p>Pairs, Farm Box picks and mythics land here. Place, merge or sell everything on it before you serve.</p><p class="dim">Drop the special offer here to buy it.</p>')}></div>
     <div class="label ${busy ? 'tag' : 'dark'} center tray-label" style="${box([x + 22, y - 10, w - 44, 10])}" data-vk="tray" data-v="${label}" data-va="flash">${label}</div>
-    ${slots}`;
+    ${slots}
+    ${pack ? `<button class="chip skip-pack" style="${box([x + w / 2 - 16, y + h + 2, 32, 12])}" data-action="skip-pack" data-k="skip-pack" data-in="fade" ${tip(`<p>Leave the ${pack.kind === 'spice' ? 'Spice Pack' : 'Farm Box'} without taking anything (your plate and fridge are full, say). The gold is spent.</p>`)}>skip</button>` : ''}`;
 }
 
 /** Top-left of a plate slot on the kitchen stage. */
@@ -1234,7 +1256,7 @@ function freezerMagnets(): string {
  * 8 needs foods that count as two flavors (or Saffron), and changes a rule.
  */
 const FLAVOR_BONUS: Record<Flavor, [string, string, string, string]> = {
-  spicy: ['spicy hits Burn 1', 'spicy hits Burn 2', 'Burn never fades', 'Burning take +2'],
+  spicy: ['spicy hits Burn 1', 'spicy hits Burn 2', 'Burn fades by 1', 'Burning take +2'],
   sweet: ['front row +1 HP a turn', '+2 HP + cleanses', 'back row too', 'sugar rush'],
   sour: ['enemy front Rots 1', 'every enemy Rots 1', 'Rotting hit softer', 'Rot spreads'],
   salty: ['front row 2 Crust', 'front row 4 Crust', '+2 Crust a turn', 'Crust bites back'],
@@ -1242,9 +1264,9 @@ const FLAVOR_BONUS: Record<Flavor, [string, string, string, string]> = {
 };
 /** The same bonuses spelled out, for tooltips. */
 const FLAVOR_BONUS_LONG: Record<Flavor, [string, string, string, string]> = {
-  spicy: ['Your Spicy foods\' attacks Burn their target 1.', 'They Burn 2 instead.', 'Burn on enemies never fades.', 'Burning enemies take +2 damage from every hit.'],
+  spicy: ['Your Spicy foods\' attacks Burn their target 1.', 'They Burn 2 instead.', 'Burn on enemies fades by only 1 a turn instead of halving.', 'Burning enemies take +2 damage from every hit.'],
   sweet: ['Your front row gains 1 HP at the end of each turn.', 'It gains 2 HP and cleanses 1 Burn and 1 Rot.', 'Your back row gets it too.', 'Sugar rush: each of your foods survives being eaten once, at 1 HP.'],
-  sour: ['The enemy front row Rots 1 at the start of battle.', 'Every enemy Rots 1 instead.', 'Rotting enemies deal 1 less damage.', 'When a Rotting enemy is eaten, its Rot spreads to its neighbours.'],
+  sour: ['The enemy front row Rots 1 at the start of battle.', 'Every enemy Rots 1 instead.', 'Rotting enemies deal 1 less damage.', 'When a Rotting enemy is eaten, half its Rot spreads to each of its neighbours.'],
   salty: ['Your front row gains 2 Crust at the start of battle.', 'It gains 4 Crust instead.', 'Your front row regains 2 Crust every turn.', 'Crust bites back: damage it blocks is dealt back to the attacker.'],
   savory: ['Your summoned foods get +1/+1.', 'They get +2/+2, and when a friend is eaten its neighbours gain +1/+1.', 'Eaten friends leave a 2/2 Crumb behind.', 'Feast: when a friend is eaten, every friend gains +2/+2.'],
 };
@@ -1576,12 +1598,17 @@ function onNamingInput(el: HTMLInputElement | HTMLSelectElement) {
   }
 }
 
+/** Seasoning Blend: the food's flavors now, and the ones it can gain. */
 function seasoningModal(): string {
+  const u = app.seasoning ? getUnit(app.run, app.seasoning.loc) : null;
+  const have = u ? flavorsOf(u) : [];
+  const name = u ? unitDef(u.defId).name : 'it';
   return `
     <div class="modal" data-k="modal" data-in="fade"></div>
     <div class="modal-card" data-k="modal-card">
-      <div class="pg-title">Pick a new flavor</div>
-      <div class="row">${FLAVORS.map((f) => `<button class="chip" data-action="season" data-flavor="${f}">${pix(f)} ${f}</button>`).join('')}</div>
+      <div class="pg-title">Add a flavor to ${name}</div>
+      <div class="season-now">Now: ${have.map((f) => `${pix(f)} ${f}`).join(', ')}</div>
+      <div class="row">${FLAVORS.filter((f) => !have.includes(f)).map((f) => `<button class="chip" data-action="season" data-flavor="${f}">${pix(f)} ${f}</button>`).join('')}</div>
       <button class="chip" data-action="cancel-season">cancel</button>
     </div>`;
 }
@@ -2421,5 +2448,8 @@ if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]
 }
 
 if (app.battle) app.frame = app.battle.result.frames.length - 1;
-render();
-void connect();
+// The first screen waits (briefly) for its backdrop, so it appears whole rather than in pieces.
+void scenesReady(1500).then(() => {
+  render();
+  void connect();
+});

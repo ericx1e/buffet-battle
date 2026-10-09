@@ -44,6 +44,9 @@ export function unitArt(defId: string, cooked: boolean): string {
 
 const props = import.meta.glob('../../art/scenes/props/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
+/** Every kitchen prop sprite's url (preloaded at start-up). */
+export const PROP_URLS = Object.values(props);
+
 /** A kitchen prop sprite (bell, bin, jars) cut out of the scene by tools/gen-kitchen.mjs. */
 export function propArt(name: string): string {
   const url = props[`../../art/scenes/props/${name}.png`];

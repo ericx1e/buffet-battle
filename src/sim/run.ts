@@ -680,21 +680,20 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
   let taken = false;
   switch (def.id) {
     case 'butter':
-      unit!.attack += 2;
+      unit!.attack += 1;
       unit!.hp += 2;
-      run.growth.push({ uid: unit!.uid, attack: 2, hp: 2, source: def.name });
+      run.growth.push({ uid: unit!.uid, attack: 1, hp: 2, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'oliveOil':
-      unit!.attack += 1;
       unit!.hp += 1;
       unit!.sellBonus = (unit!.sellBonus ?? 0) + 3;
-      run.growth.push({ uid: unit!.uid, attack: 1, hp: 1, sell: 3, source: def.name });
+      run.growth.push({ uid: unit!.uid, attack: 0, hp: 1, sell: 3, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'boneBroth':
-      unit!.hp += 6;
-      run.growth.push({ uid: unit!.uid, attack: 0, hp: 6, source: def.name });
+      unit!.hp += 4;
+      run.growth.push({ uid: unit!.uid, attack: 0, hp: 4, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'flavorPacket': {
@@ -721,10 +720,15 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
       result = ok(`${unitDef(defId).name} arrives on the counter tray.`);
       break;
     }
-    case 'seasoning':
+    case 'seasoning': {
       if (!flavor) return fail('Pick a flavor.');
-      unit!.flavorOverride = flavor;
+      const have = flavorsOf(unit!);
+      if (unitDef(unit!.defId).allFlavors || have.length >= MAX_FLAVORS) return fail(`It already has ${MAX_FLAVORS} flavors.`);
+      if (have.includes(flavor)) return fail(`It is already ${flavor}.`);
+      unit!.extraFlavors = [...(unit!.extraFlavors ?? []), flavor];
+      result = ok(`${unitDef(unit!.defId).name} now also tastes ${flavor}.`);
       break;
+    }
     case 'microwave': {
       if (unit!.copies >= 6) return fail('Already cooked.');
       // Out of its cubby first: a level-up's bonus dish may land there (see addBonusUnit).
@@ -736,7 +740,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     }
     case 'sprinkles':
     case 'partyMix': {
-      const [count, attack, hp] = def.id === 'sprinkles' ? [3, 1, 1] : [4, 2, 2];
+      const [count, attack, hp] = def.id === 'sprinkles' ? [2, 1, 1] : [4, 1, 1];
       const foods = run.plate.filter((u): u is UnitInstance => !!u);
       for (const u of withRng(run, (rng) => rng.sample(foods, count))) {
         u.attack += attack;
@@ -749,9 +753,9 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'lunchbox':
       for (const u of run.plate) {
         if (!u) continue;
-        u.attack += 2;
-        u.hp += 2;
-        run.growth.push({ uid: u.uid, attack: 2, hp: 2, source: def.name });
+        u.attack += 1;
+        u.hp += 1;
+        run.growth.push({ uid: u.uid, attack: 1, hp: 1, source: def.name });
         afterHpGain(run, u);
       }
       break;
@@ -824,6 +828,14 @@ export function pickPack(run: RunState, index: number): ActionResult {
   return ok(`${unitDef(defId).name} arrives on the counter tray.`);
 }
 
+/** Closes the open pack without taking anything (a full plate and fridge, or nothing worth keeping). */
+export function skipPack(run: RunState): ActionResult {
+  if (!run.pack) return fail('No pack is open.');
+  const what = run.pack.kind === 'spice' ? 'Spice Pack' : 'Farm Box';
+  run.pack = null;
+  return ok(`You leave the ${what}.`);
+}
+
 /** Why you can't serve yet, or null if you can. */
 export function serveBlocker(run: RunState): string | null {
   if (run.pack) return 'Pick something from the open pack first.';
@@ -836,6 +848,13 @@ export function endDay(run: RunState) {
   run.plate.forEach((u, slot) => {
     if (u) fireShop(run, u, slot, 'endTurn');
   });
+  // Hot Sauce (held): +2 HP for good every day.
+  for (const u of run.plate) {
+    if (u?.item !== 'hotSauce') continue;
+    u.hp += 2;
+    run.growth.push({ uid: u.uid, attack: 0, hp: 2, source: 'Hot Sauce' });
+    afterHpGain(run, u);
+  }
   for (const e of run.fridge) if (e?.kind === 'unit') fireShop(run, e.unit, null, 'fridgeTurn');
 }
 
