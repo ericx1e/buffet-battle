@@ -11,8 +11,9 @@ required.
   - "Pop sounds" by cogitollc: the bloops (bloop_0 to bloop_3)
   - "Pop sounds" by EZduzziteh: the plops (plop_0, plop_1)
 - Kenney (www.kenney.nl):
-  - Impact Sounds: soft food thumps, the bell
+  - Impact Sounds: soft food thumps
   - RPG Audio: coins, the knife chop, the metal pot, the fridge door, book page flips
 
 They were converted to WAVs (full quality, normalized to the same peak, instrument notes tuned exactly) with
-`tools/import-sfx.mjs`. Burn's sizzle and the poof of an eaten food are synthesized in `src/ui/sound.ts`.
+`tools/import-sfx.mjs`. Burn's sizzle and the poof of an eaten food are synthesized in `src/ui/sound.ts`, and the
+service bell's ding (`bell.wav`, tuned to G6) by `tools/gen-bell.mjs`; those are our own, also CC0.

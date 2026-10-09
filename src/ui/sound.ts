@@ -215,7 +215,7 @@ const SOUNDS = {
     play('shake', s, { v: 0.35 });
     [0, 1, 2, 3, 4].forEach((i) => play('bloop_0', s + 0.06 + i * 0.045, { v: 0.22, rate: 0.9 + i * 0.07 })); // the new stock popping in
   },
-  bell: (s: number) => play('bell', s, { v: 0.4, rate: 1.5 }),
+  bell: (s: number) => play('bell', s, { v: 0.45, exact: true }), // the service bell, tuned to G6 (tools/gen-bell.mjs)
   deny: (s: number) => {
     play('logHi', s, { v: 0.5 }); // nuh-uh
     play('logLo', s + 0.12, { v: 0.5 });
