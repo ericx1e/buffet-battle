@@ -28,7 +28,7 @@ const left = files.filter((f) => !f.endsWith('.js') && !f.endsWith('.css'));
 if (js.length !== 1 || left.length) throw new Error(`expected one script and nothing else, got ${files.join(', ')}`);
 
 const title = html.match(/<title>.*?<\/title>/)[0];
-const icon = html.match(/<link rel="icon" href="[^"]*"\s*\/?>/)?.[0] ?? ''; // the href is an SVG full of '>'
+const icon = html.match(/<link rel="icon"[^>]*href="data:[^"]*"[^>]*>/)?.[0] ?? ''; // the inlined favicon (a data: URL)
 const body = html.match(/<body>([\s\S]*?)<\/body>/)[1].replace(/\s*<script[\s\S]*?<\/script>/g, '').trim();
 // "</script" inside the bundle would end the inline script early.
 const script = js[0].replace(/<\/script/gi, '<\\/script');

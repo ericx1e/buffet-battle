@@ -1,6 +1,6 @@
 // Tiny pixel-art toolkit used by the sprite and scene generators: shaded shapes, colour ramps,
 // auto outlines in a darker shade of the neighbouring colour, soft drop shadows, and PNG output.
-import { deflateSync } from 'node:zlib';
+import { deflateSync, inflateSync } from 'node:zlib';
 
 // ---------- colour ----------
 export const hexToRgb = (hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
@@ -184,4 +184,38 @@ export function upscale(rgba, w, h, n) {
     out.set(rgba.subarray(s, s + 4), (y * w * n + x) * 4);
   }
   return out;
+}
+/** Reads an 8-bit RGBA, non-interlaced PNG (what encodePng and the sprite tools write): { rgba, w, h }. */
+export function decodePng(buf) {
+  let pos = 8;
+  let w = 0, h = 0;
+  const idat = [];
+  while (pos < buf.length) {
+    const len = buf.readUInt32BE(pos);
+    const type = buf.toString('latin1', pos + 4, pos + 8);
+    const data = buf.subarray(pos + 8, pos + 8 + len);
+    if (type === 'IHDR') {
+      w = data.readUInt32BE(0);
+      h = data.readUInt32BE(4);
+      if (data[8] !== 8 || data[9] !== 6 || data[12] !== 0) throw new Error('decodePng: only 8-bit RGBA, non-interlaced');
+    } else if (type === 'IDAT') idat.push(data);
+    pos += 12 + len;
+  }
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = w * 4;
+  const rgba = new Uint8ClampedArray(stride * h);
+  for (let y = 0; y < h; y++) {
+    const f = raw[y * (stride + 1)];
+    for (let x = 0; x < stride; x++) {
+      const v = raw[y * (stride + 1) + 1 + x];
+      const a = x >= 4 ? rgba[y * stride + x - 4] : 0;
+      const b = y > 0 ? rgba[(y - 1) * stride + x] : 0;
+      const c = x >= 4 && y > 0 ? rgba[(y - 1) * stride + x - 4] : 0;
+      const p = a + b - c;
+      const pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+      const paeth = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      rgba[y * stride + x] = (v + [0, a, b, (a + b) >> 1, paeth][f]) & 255;
+    }
+  }
+  return { rgba, w, h };
 }
