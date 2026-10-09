@@ -650,12 +650,12 @@ describe('round 5 rules', () => {
     expect(echoed.days).toEqual(grow('cheese').days);
   });
 
-  it('Bento Box makes a friend ahead that only attacks (a pattern) attack twice early on', () => {
+  it('Bento Box does nothing for a friend ahead that only attacks (a pattern, no abilities)', () => {
     const dealt = (behind: string) => {
       const r = simulateBattle(plate({ 0: unit('kebab', { hp: 99 }), 3: unit(behind) }), plate({ 0: unit('cheese', { hp: 200, attack: 1 }) }), 1);
       return r.frames.filter((f) => f.round === 1).flatMap((f) => f.marks).filter((m) => m.side === 1 && m.kind === 'hit').reduce((s, m) => s + (m.amount ?? 0), 0);
     };
-    expect(dealt('bento')).toBe(2 * dealt('cheese'));
+    expect(dealt('bento')).toBe(dealt('cheese'));
   });
 
   it('a mythic copy is a whole level: two make level 2, three are cooked; it sells by mythics in it', () => {

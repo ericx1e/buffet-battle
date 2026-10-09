@@ -240,9 +240,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .set-slider { width: 100%; height: 12px; margin: 0; accent-color: #e0642f; cursor: pointer; }
 .set-slider:disabled { opacity: 0.4; cursor: default; }
 .set-switch { min-width: 28px; text-align: center; }
-.set-switch.on, .set-track.on { background: #e0642f !important; color: #fff; }
-.set-tracks { grid-column: 2 / 4; display: flex; gap: 4px; }
-.set-track { text-transform: none !important; }
+.set-switch.on { background: #e0642f !important; color: #fff; }
 .set-hint { font: 400 10px/10px var(--pixel); color: #8a7560; text-align: center; }
 .chip { font: 400 10px/12px var(--pixel) !important; padding: 0 4px !important; background: #fffef5 !important; border: 1px solid #2a1b14 !important; text-transform: capitalize; }
 .chip { transition: translate 80ms steps(2, jump-end); }

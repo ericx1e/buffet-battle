@@ -167,7 +167,7 @@ export interface AbilityDef {
 
 /**
  * Standing effects while a food with the aura is on the plate:
- * echo: the friend ahead's abilities trigger again, battle and kitchen (a friend ahead with only an attack pattern attacks twice early instead); rally: an adjacent friend whose ability fires gains +1 attack
+ * echo: the friend ahead's abilities trigger again, battle and kitchen (a food with no abilities, that only attacks, gets nothing); rally: an adjacent friend whose ability fires gains +1 attack
  * (at most 3 times a battle each); soothe: your heals are +1.
  * Mythics each bend one rule, reaching further once they are cooked (level 3):
  * cook (Golden Truffle): in battle, the friend in its lane is cooked (every friend, once cooked);

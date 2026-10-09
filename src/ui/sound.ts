@@ -20,17 +20,14 @@ export interface AudioSettings {
   music: number;
   sfxOn: boolean;
   musicOn: boolean;
-  /** The chosen loop for each screen (a track id from music.ts). */
-  kitchen: string;
-  battle: string;
 }
 
-const DEFAULTS: AudioSettings = { sfx: 0.8, music: 0.5, sfxOn: true, musicOn: true, kitchen: 'prep', battle: 'rush' };
+const DEFAULTS: AudioSettings = { sfx: 0.8, music: 0.5, sfxOn: true, musicOn: true };
 
 let settings: AudioSettings = (() => {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? 'null');
-    if (saved) return { ...DEFAULTS, ...saved };
+    if (saved) return { sfx: saved.sfx ?? DEFAULTS.sfx, music: saved.music ?? DEFAULTS.music, sfxOn: saved.sfxOn ?? true, musicOn: saved.musicOn ?? true };
     if (localStorage.getItem(MUTE_KEY) === '1') return { ...DEFAULTS, sfxOn: false, musicOn: false };
   } catch {
     // unreadable: defaults

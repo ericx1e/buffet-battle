@@ -5,7 +5,7 @@ import { NAME_FIRST, NAME_SECOND, nameProblem, randomName, tidyName } from '../n
 import * as api from './api';
 import type { ServerRun } from './api';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, echoable, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -40,7 +40,7 @@ import {
   serveBlocker,
   specialCost,
 } from '../sim/run';
-import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf } from '../sim/types';
+import { type AttackPattern, FLAVORS, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf, slotAt } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { PROP_URLS, itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
@@ -51,7 +51,7 @@ import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
 import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
 import { type AudioSettings, type Sfx, audioSettings, isMuted, setAudio, sfx, toggleMute, unlockAudio } from './sound';
-import { type Scene, syncMusic, tracksFor } from './music';
+import { syncMusic } from './music';
 
 /**
  * The scenes and kitchen props, fetched and decoded at start-up and kept in memory: otherwise a screen's backdrop
@@ -728,10 +728,7 @@ function onAction(action: string, el: HTMLElement) {
       sfx('select');
       return render();
     }
-    case 'track':
-      setAudio({ [el.dataset.scene as Scene]: el.dataset.track! });
-      sfx('select');
-      return render();
+
     case 'skip':
       if (app.battle) app.frame = app.battle.result.frames.length - 1;
       return render();
@@ -939,7 +936,7 @@ function settingsButton(cls: string): string {
 /** The settings popup is open (not saved: it closes on reload). */
 let settingsOpen = false;
 
-/** Settings: a volume slider and an on/off switch for music and for sound effects, and the music for each screen. */
+/** Settings: a volume slider and an on/off switch for music and for sound effects. */
 function settingsModal(): string {
   const a = audioSettings();
   const row = (label: string, vol: 'music' | 'sfx', on: 'musicOn' | 'sfxOn') => `
@@ -948,19 +945,12 @@ function settingsModal(): string {
       <input class="set-slider" type="range" min="0" max="100" value="${Math.round(a[vol] * 100)}" data-audio="${vol}" aria-label="${label} volume" ${a[on] ? '' : 'disabled'}>
       <button class="chip set-switch ${a[on] ? 'on' : ''}" data-action="audio-on" data-key="${on}">${a[on] ? 'on' : 'off'}</button>
     </div>`;
-  const picks = (scene: Scene, label: string) => `
-    <div class="set-row">
-      <span class="set-label">${label}</span>
-      <div class="set-tracks">${tracksFor(scene).map((t) => `<button class="chip set-track ${a[scene] === t.id ? 'on' : ''}" data-action="track" data-scene="${scene}" data-track="${t.id}">${t.name}</button>`).join('')}</div>
-    </div>`;
   return `
     <div class="modal" data-k="modal" data-in="fade" data-action="close-settings"></div>
     <div class="modal-card settings-card" data-k="settings" data-in="pop">
       <div class="pg-title">Settings</div>
       ${row('Music', 'music', 'musicOn')}
       ${row('Sound effects', 'sfx', 'sfxOn')}
-      ${picks('kitchen', 'Kitchen music')}
-      ${picks('battle', 'Battle music')}
       <div class="row">
         <button class="chip" data-action="sound">${isMuted() ? 'unmute all' : 'mute all'}</button>
         <button class="chip" data-action="close-settings">done</button>
@@ -1461,6 +1451,23 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
     if (all) notes.push(`${all}/${all} this battle`);
   }
   if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
+  // Bento Box: whether the food ahead can be echoed, shown on both of them.
+  const slot = u ? app.run.plate.indexOf(u) : -1;
+  if (slot >= 0) {
+    const ahead = rowOf(slot) === 1 ? app.run.plate[slotAt(laneOf(slot), 0)] : null;
+    const behind = rowOf(slot) === 0 ? app.run.plate[slotAt(laneOf(slot), 1)] : null;
+    if (d.aura === 'echo') {
+      if (rowOf(slot) === 0) notes.push('Echoing nothing: put it behind a food.');
+      else if (!ahead) notes.push('Echoing nothing: no food ahead.');
+      else {
+        const a = unitDef(ahead.defId);
+        notes.push(echoable(a, levelOf(ahead.copies)) ? `Echoing ${a.name}: compatible.` : `Can't echo ${a.name}: it only attacks, no abilities.`);
+      }
+    }
+    if (behind && unitDef(behind.defId).aura === 'echo') {
+      notes.push(echoable(d, level) ? 'The Bento Box behind echoes its abilities.' : "The Bento Box behind can't echo it: it only attacks.");
+    }
+  }
   return notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
