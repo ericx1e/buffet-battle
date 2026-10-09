@@ -809,9 +809,22 @@ Limits: requests over 64 KB or with more than 500 actions in a day are refused; 
 5. **Deploy, done (October 2026):** Actions job, Cloudflare setup, `VITE_API_URL`. Live at https://buffet-battle-api.ericxie6.workers.dev.
 6. **Later:**
    - a leaderboard (runs won, best streak);
-   - a real-play balance report (win rate and lift by food and day from `battles`);
+   - ~~a real-play balance report~~: done, the dev site (above);
    - linking a login;
    - seeding the pool with bot runs after a patch.
+
+### The dev site and stats
+
+The kitchen office (`admin.html`, published with the game) is the dev site for watching real play and balancing from it. It reads the API's admin routes (`server/src/admin.ts`) with the admin key, a Worker secret (`wrangler secret put ADMIN_KEY`), and does the heavy work in the browser with the game's own code, since a Worker request gets only 10 ms of CPU.
+
+- **Overview:** chefs signed up, chefs and days served per day (30 days), runs by status, how many days finished runs lasted, battles and the share against bots, and the versions.
+- **Foods:** for the version picked, each food's pick rate (share of plates with it), the win rate of those plates, and its lift on real battles (`src/analysis/lift.ts`, shared with `tools/lift.ts`), by stage of the run.
+- **Kitchen:** every served day replayed from its morning: by day of the run, moves, foods bought, refills, gold kept at the bell and plate size; foods bought and sold; items used. This needs the `days` table (migration 0002), which keeps each day's morning state and actions.
+- **Battles:** every battle with both plates (sprites, attack/HP, level), filtered by day, opponent, result or food. **Watch** opens it in the game's battle screen (`index.html?replay`), which plays it without touching your run.
+
+Visits come from Cloudflare Web Analytics (no cookies) on the game page, when the `CF_BEACON_TOKEN` repository variable holds the beacon token; the dev site isn't counted.
+
+To try the dev site locally: run the API (`cd server && npm run dev`, with `ADMIN_KEY=...` in `server/.dev.vars`), fill it with bot runs (`npx tsx tools/seed-local.ts 40`), and open http://localhost:5173/admin.html from `VITE_API_URL=http://localhost:8787 npm run dev`.
 
 ### Bots
 

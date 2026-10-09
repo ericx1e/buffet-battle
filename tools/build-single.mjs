@@ -15,7 +15,7 @@ await build({
     assetsInlineLimit: () => true, // every image and font becomes a data: URI
     cssCodeSplit: false,
     modulePreload: false,
-    rollupOptions: { output: { codeSplitting: false } },
+    rollupOptions: { input: 'index.html', output: { codeSplitting: false } }, // the game only, not the dev site
   },
 });
 

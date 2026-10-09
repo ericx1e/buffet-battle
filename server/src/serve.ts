@@ -85,6 +85,10 @@ export async function serveDay(req: Request, env: Env, playerId: string, runId: 
       `INSERT INTO battles (run_id, day, my_ghost_id, opp_ghost_id, bot_seed, seed, outcome, created_at)
        VALUES (?, ?, (SELECT id FROM ghosts WHERE run_id = ? AND day = ? ORDER BY id DESC LIMIT 1), ?, ?, ?, ?, ?)`,
     ).bind(run.id, run.day, run.id, run.day, ghostId, ghostId === null ? opponentSeed : null, seed, outcome, now),
+    env.DB.prepare(
+      `INSERT INTO days (run_id, player_id, version, day, ghost_id, morning, actions, created_at)
+       VALUES (?, ?, ?, ?, (SELECT id FROM ghosts WHERE run_id = ? AND day = ? ORDER BY id DESC LIMIT 1), ?, ?, ?)`,
+    ).bind(run.id, playerId, GAME_VERSION, run.day, run.id, run.day, JSON.stringify(run.state), JSON.stringify(actions), now),
   ]);
   return { opponent, seed, outcome, run: next };
 }

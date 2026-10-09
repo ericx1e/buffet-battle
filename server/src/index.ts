@@ -7,22 +7,27 @@
 //   POST  /runs/:id/serve      replay the day, battle, move on: { day, version, actions, plateHash } -> { opponent, seed, outcome, run }
 //   GET   /runs/:id/battles    the run's battles, both plates and the seed -> { battles }
 //   POST  /runs/:id/abandon    the New run button
+//   GET   /admin/...           the dev site's data (admin.ts)
 import { GAME_VERSION } from '../../src/sim/version';
 import { cleanName, hashToken, randomId, requirePlayer } from './auth';
 import { HttpError, allowedOrigin, json, readBody, withCors } from './http';
 import { abandonRun, activeRun, startRun } from './runs';
 import { battlesOf, serveDay } from './serve';
+import { admin } from './admin';
 
 async function route(req: Request, env: Env): Promise<Response> {
-  const { pathname } = new URL(req.url);
+  const url = new URL(req.url);
+  const { pathname } = url;
   const at = (method: string, path: string) => req.method === method && pathname === path;
 
   if (at('GET', '/')) return json({ ok: true, version: GAME_VERSION });
+  if (pathname.startsWith('/admin/') && req.method === 'GET') return admin(req, env, url);
 
   if (at('POST', '/players')) {
-    // Cloudflare always sets the caller's address; without it (local tests) there is no one to count.
+    // Cloudflare always sets the caller's address; without one (tests), or from this machine (wrangler dev), there
+    // is no one to count.
     const ip = req.headers.get('cf-connecting-ip');
-    if (ip && !(await env.SIGNUP_LIMIT.limit({ key: ip })).success) throw new HttpError(429, 'Too many new chefs from here. Try again in a minute.');
+    if (ip && ip !== '127.0.0.1' && ip !== '::1' && !(await env.SIGNUP_LIMIT.limit({ key: ip })).success) throw new HttpError(429, 'Too many new chefs from here. Try again in a minute.');
     const name = cleanName((await readBody(req)).name);
     const playerId = randomId();
     const token = randomId(32);

@@ -64,6 +64,8 @@ jobs:
       - run: npm run build
         env:
           VITE_API_URL: ${{ env.API_URL }}
+          # Cloudflare Web Analytics on the game page: the beacon token, a repository variable (empty: no analytics).
+          VITE_CF_BEACON: ${{ vars.CF_BEACON_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

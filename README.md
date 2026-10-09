@@ -27,6 +27,7 @@ npm run dev              # the API at http://localhost:8787
 # then, from the project root, the game against it:
 # VITE_API_URL=http://localhost:8787 npm run dev
 npm test                 # API tests, run in the Workers runtime
+npx tsx ../tools/seed-local.ts 40   # fill the local API with 40 bot-played runs
 ```
 
 ## Play on your phone
@@ -66,6 +67,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 | `src/sim/bot.ts` | Heuristic bot player and ghost generator |
 | `src/sim/actions.ts` | The day's action log: every kitchen change as an action, replayable from the morning's state |
 | `server/` | The API: Cloudflare Worker, D1 schema in `migrations/` |
+| `admin.html`, `src/admin/` | The dev site (kitchen office): play stats, food pick and lift, kitchen habits, every battle; needs the admin key |
 | `src/ui/` | Vanilla TypeScript UI: kitchen, side-view battle, drag and drop, sprite loader, local ghost pool |
 | `tools/balance.ts` | Balance report |
 | `tools/gen-foods.mjs` | Draws the 32x32 food, item and special sprites (never overwrites hand-drawn art) |

@@ -65,6 +65,8 @@ interface PendingBattle {
   id?: number;
   /** Served online: the server's run after the battle, which the kitchen continues from. */
   next?: ServerRun;
+  /** The left plate's chef, when it isn't you (the dev site's battle viewer). */
+  meName?: string;
 }
 
 interface App {
@@ -86,6 +88,8 @@ interface App {
   server?: { runId: string };
   /** The chef-name card is open. */
   naming?: Naming;
+  /** Watching a battle from the dev site: nothing is saved and the run isn't touched. */
+  spectate?: boolean;
 }
 
 /** The chef-name card: a name from the two word lists, or a typed one (which wins when it isn't empty). */
@@ -145,6 +149,20 @@ let timer: number | undefined;
 
 const app: App = loadApp() ?? freshApp();
 
+// The dev site's battle viewer (admin.html) opens index.html?replay with a battle in localStorage: it plays here, in
+// the real battle screen, without touching your run. "Continue" goes back to the dev site.
+if (new URLSearchParams(location.search).has('replay')) {
+  try {
+    const r = JSON.parse(localStorage.getItem('buffetbattle.replay') ?? 'null');
+    const run = newRun(1);
+    run.turn = r.day;
+    const battle: PendingBattle = { result: simulateBattle(r.mine, r.theirs, r.seed), opponent: r.foe.name, foe: r.foe, me: r.me, meName: r.me.name, id: 1 };
+    Object.assign(app, { run, battle, spectate: true, server: undefined, frame: 0, message: '' });
+  } catch {
+    // No battle handed over: the game opens as usual.
+  }
+}
+
 function freshApp(): App {
   const seed = (Date.now() ^ (Math.random() * 2 ** 32)) >>> 0;
   const run = newRun(seed);
@@ -187,6 +205,7 @@ function loadApp(): App | null {
 }
 
 function save() {
+  if (app.spectate) return;
   try {
     const { run, runId, battle, day, server } = app;
     localStorage.setItem(SAVE_KEY, JSON.stringify({ run, runId, battle, day, server }));
@@ -212,7 +231,7 @@ function dispatch(a: Action): ActionResult {
 
 /** At start-up: a new chef picks a name; a returning one picks up their run from the server. */
 async function connect() {
-  if (!api.online()) return;
+  if (!api.online() || app.spectate) return;
   if (!api.savedPlayer()) return openNaming(false);
   await syncRun(false);
 }
@@ -783,6 +802,7 @@ async function serveOnline(mine: Plate, beforeEnd: RunState) {
 function endBattle() {
   const battle = app.battle;
   if (!battle) return;
+  if (app.spectate) return void (location.href = 'admin.html#battles');
   finishBattle(app.run, battle.result.outcome);
   // Online, the server's run is the real one: they should match, but if not the kitchen carries on from the server's.
   if (battle.next && canonical({ ...app.run, growth: [] }) !== canonical({ ...battle.next.state, growth: [] })) {
@@ -1979,7 +1999,7 @@ function renderBattle(battle: PendingBattle): boolean {
     <div class="stage-wrap" style="--s:${stageScale()}">
       <main class="stage battle-stage" style="--spd:${app.speed};--fxd:${fxDelay}s">
         <img class="scene-bg" src="${battleUrl}" alt="" draggable="false">
-        ${teamPlaque(0, app.server ? esc(api.savedPlayer()?.name ?? 'Your plate') : 'Your plate', battle.me ?? { wins: app.run.courses, lives: app.run.lives })}
+        ${teamPlaque(0, battle.meName ? esc(battle.meName) : app.server ? esc(api.savedPlayer()?.name ?? 'Your plate') : 'Your plate', battle.me ?? { wins: app.run.courses, lives: app.run.lives })}
         ${teamPlaque(1, esc(battle.opponent), battle.foe)}
         ${flavorSide(0, battle.result.flavors?.[0])}${flavorSide(1, battle.result.flavors?.[1])}
         <div class="round-text" style="${box([rx + 3, ry + 3, rw - 6, rh - 6])}" data-vk="round:${bid}" data-v="${f.round}">${f.round > 0 ? `turn ${f.round}` : 'serve!'}</div>
