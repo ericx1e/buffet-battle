@@ -72,12 +72,12 @@ function botAct(run: RunState): boolean {
     }
   }
 
-  // 4. Items on the strongest unit (seasoning needs a choice, so the bot skips it).
+  // 4. Items on the strongest unit (seasoning needs a choice and a Takeout Bag's food needs placing, so the bot skips them).
   const owned = plateLocs.filter((l) => getUnit(run, l)).sort((a, b) => power(getUnit(run, b)!) - power(getUnit(run, a)!));
   if (owned.length > 0) {
     for (let index = 0; index < run.market.length; index++) {
       const o = run.market[index];
-      if (!o || o.kind !== 'item' || o.itemId === 'seasoning' || run.gold < offerCost(o)) continue;
+      if (!o || o.kind !== 'item' || o.itemId === 'seasoning' || o.itemId === 'takeout' || run.gold < offerCost(o)) continue;
       const target = owned.find((l) => !getUnit(run, l)!.item) ?? owned[0];
       if (useItem(run, { area: 'market', index }, target).ok) return true;
     }
@@ -127,11 +127,25 @@ function score(plate: Plate): number {
   return s;
 }
 
-/** A bot's plate as served on `turn`, played from a fresh run with `seed`. */
-export function generateGhost(turn: number, seed: number): Plate {
+/**
+ * Gold a bot opponent gets on top of a normal day. A bot spends everything and never plans, so on its own it is too
+ * strong early (a player might be saving) and too weak late (a player's plate has grown and found its synergies):
+ * it gets less early and more late.
+ */
+export function ghostGold(turn: number): number {
+  return GHOST_GOLD[Math.min(turn, GHOST_GOLD.length) - 1];
+}
+const GHOST_GOLD = [-3, -1, 0, 0, 0, 1, 2, 2, 3, 3, 4, 4, 5];
+
+/**
+ * A bot's plate as served on `turn`, played from a fresh run with `seed`. `fair`: no handicap (bot-vs-bot balance
+ * reports).
+ */
+export function generateGhost(turn: number, seed: number, fair = false): Plate {
   const run = newRun(seed);
   let plate: Plate = [];
   for (let t = 1; t <= turn; t++) {
+    if (!fair) run.gold = Math.max(0, run.gold + ghostGold(t));
     botPrep(run);
     plate = serve(run);
     if (t < turn) advanceTurn(run);

@@ -215,12 +215,14 @@ export interface UnitDef {
   aura?: Aura;
   /** Counts as every flavor for flavor bonuses. */
   allFlavors?: boolean;
+  /** Counts as its level number (values) of foods of its flavor for flavor bonuses (Curry, Fudge...). */
+  rich?: boolean;
   /** Comes back at full HP this many times when eaten. */
   lives?: number;
 }
 
-export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware';
-export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix';
+export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware' | 'bouillon' | 'chopsticks';
+export type ItemId = HeldItemId | 'butter' | 'hotSauce' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix' | 'takeout';
 
 export interface ItemDef {
   id: ItemId;

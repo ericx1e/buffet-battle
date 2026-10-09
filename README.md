@@ -11,6 +11,7 @@ npm test           # sim unit tests
 npm run balance -- 500   # bot-vs-bot balance report over 500 runs
 npx tsx tools/cooked-check.ts   # what each cooked bonus is worth
 npx tsx tools/mythic-check.ts   # each mythic in each plate slot
+npx tsx tools/ghostcheck.ts     # how bot opponents fare against a plain bot, by day
 npm run build:single      # the whole game as one page: dist/single/buffet-battle.html
 ```
 
@@ -26,8 +27,8 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 
 - **Click** anything to read it in the cookbook. **Drag** a dish from the cabinet onto your plate to buy it (3-5 gold by rarity), onto a copy to merge, or into the fridge to buy it and keep it for later. Drag plate units to move, swap or merge, and into the scrap bin to sell. Clicking only selects; every action is a drag.
 - **Plate:** 3 lanes, back column on the left, front column on the right. Front foods attack the enemy in their lane (or the nearest lane with food); a food at 0 HP is eaten and the one behind steps up. Last plate with food wins.
-- **Gold:** unspent gold carries over and earns interest (+1 per 5 held, up to 3; the coins over the tip jar show what you would earn, hover them for details). Each refill in a day costs 1 more. Selling returns half of what a food cost.
-- **Special cubby:** once a day, a Spice Pack, Farm Box, Pair (2 copies for about 1.5x the price), Premium Refill or, rarely, a mythic. Drag it onto the counter tray to buy it; whatever lands on the tray must be placed, merged or sold before you serve.
+- **Gold:** unspent gold carries over and earns interest (+1 per 5 held, up to 3; the coins over the tip jar show what you would earn, hover them for details). A refill always costs 1 gold. The odds of each rarity today are shown over the buffet. Selling returns half of what a food cost.
+- **Special cubby:** once a day, a Spice Pack, Farm Box, Pair (2 copies for about 1.5x the price), Premium Refill or, rarely, a mythic. Drag it onto the counter tray to buy it (a mythic goes straight onto your plate); whatever lands on the tray must be placed, merged or sold before you serve.
 - **Flavors:** 2, 4, 6 or 8 different foods of a flavor give a growing team bonus (the chalkboard shows the tiers); 8 needs foods that count as two flavors (or Saffron) and changes a rule. Spicy Burns, Sour Rots, Sweet gives HP, Salty crusts, Savory summons. In battle each side's bonuses show on a chalkboard under its name. Some foods count as two flavors, and Tofu and the Flavor Packet add more.
 - **Battle:** Burn and Rot hurt every turn (Rot up to 3), Chill skips an attack. A few foods attack in shapes (pierce, splash, fork, escalate), and projectile foods throw from either row: Edamame, Olive and Peppercorns once, on the first turn; Takoyaki every turn. Growing foods grow for a set number of days, more at higher levels. Hold a food to read it.
 - **Ring the bell** to serve and battle a ghost. Keys: `r` refill, `s` sell selected, `Esc` deselect, `m` sound on/off.
@@ -47,7 +48,7 @@ The game installs as an app (fullscreen, landscape, works offline once loaded). 
 | --- | --- |
 | `src/sim/battle.ts` | Deterministic last-food-standing lane battle; outputs frames for playback |
 | `src/sim/run.ts` | Run state: market, economy (income, interest, prices), merging/cooking, fridge, special cubby and counter tray, items, kitchen triggers, serve |
-| `src/sim/data.ts` | 58 foods (3 mythic), 6 tokens, 11 items. **Design foods here**: stats and abilities as data (guide: "Designing foods" in DESIGN.md) |
+| `src/sim/data.ts` | 78 foods (4 mythic), 6 tokens, 16 items. **Design foods here**: stats and abilities as data (guide: "Designing foods" in DESIGN.md) |
 | `src/sim/bot.ts` | Heuristic bot player and ghost generator |
 | `src/ui/` | Vanilla TypeScript UI: kitchen, side-view battle, drag and drop, sprite loader, local ghost pool |
 | `tools/balance.ts` | Balance report |

@@ -368,6 +368,68 @@ const foods = {
     s.px(15, 8, '#ffffff'); s.px(16, 10, '#ffffff'); s.px(15, 12, '#ffffff');
     s.ball(16, 4, 1, 2, R('#ffc23a'));
   },
+  curry(s) {
+    s.shadow(17, 29, 13, 2);
+    // A wide white plate-bowl from the side and a little above: a mound of rice on the left, brown curry on the
+    // right with chunks of carrot and potato, the rice rising out of the opening.
+    const curry = R('#a8642a');
+    bowl(s, 16, 19, 13.5, 4.4, 7, C.bowl, (x, y) => (x < 14 ? '#f7f4ee' : (x * 3 + y * 5) % 7 === 0 ? curry[3] : y < 18 ? curry[1] : curry[2]));
+    s.ball(11, 16, 6, 4, R('#f7f4f0'), { bias: 0.3, tone: (nx, ny, x, y) => ((x * 5 + y * 3) % 7 === 0 ? 1 : 0) });
+    for (const [x, y, c] of [[19, 18, '#f08a2a'], [23, 19, '#f08a2a'], [21, 20, '#f0d48a'], [25, 18, '#f0d48a']]) s.ball(x, y, 1.4, 1, R(c), { bias: 0.3 });
+    s.px(10, 13, '#ffffff'); s.px(13, 14, '#ffffff');
+  },
+  fudge(s) {
+    s.shadow(17, 29, 11, 2);
+    // A thick square of fudge on the diagonal, like the sugar cube: lit top with a walnut half, two shaded sides.
+    const fudge = R('#6e3c22');
+    const speck = (x, y) => (x * 5 + y * 3) % 11 === 0;
+    s.poly([[16, 9], [27, 14], [16, 19], [5, 14]], (x, y) => (speck(x, y) ? fudge[0] : fudge[1]));
+    s.poly([[5, 14], [16, 19], [16, 27], [5, 22]], (x, y) => (speck(x, y) ? fudge[3] : fudge[2]));
+    s.poly([[16, 19], [27, 14], [27, 22], [16, 27]], (x, y) => (speck(x, y) ? fudge[4] : fudge[3]));
+    s.line(5, 14, 16, 19, fudge[0]);
+    s.ball(16, 13, 3.5, 2.2, R('#c8925a'), { bias: 0.25 }); // walnut half
+    s.line(14, 13, 18, 13, '#8a5a2a');
+  },
+  lime(s) {
+    s.shadow(17, 28, 12, 2);
+    // A whole lime and a half cut open beside it, its pale face toward you with the segments showing.
+    const lime = R('#5aa62e');
+    s.ball(12, 18, 8, 7.5, lime, { tone: (nx, ny, x, y) => ((x + y * 2) % 7 === 0 && ny < 0.4 ? 1 : 0) });
+    s.ball(4, 18, 1.6, 1.6, lime);
+    s.ball(22, 19, 6.5, 7, lime); // the cut half's rind
+    s.fill(16, 12, 28, 26, (x, y) => {
+      const nx = (x - 22.5) / 5, ny = (y - 19) / 5.6;
+      const r = nx * nx + ny * ny;
+      if (r > 1) return null;
+      if (r > 0.78) return '#e8f4c8'; // pith
+      const a = Math.atan2(ny, nx);
+      return Math.abs(Math.sin(a * 4)) < 0.16 || r < 0.04 ? '#e8f4c8' : (nx < -0.2 ? '#c2e070' : '#a8d050');
+    });
+  },
+  onigiri(s) {
+    s.shadow(17, 29, 12, 2);
+    // A rice ball from the front and a little above: a soft triangle with a shaded right side for its thickness,
+    // a band of nori wrapped round the bottom.
+    const rice = R('#f4f1ea');
+    s.poly([[16, 5], [27, 25], [24, 28], [16, 22]], (x, y) => ((x * 3 + y * 5) % 9 === 0 ? rice[4] : rice[3])); // side
+    s.poly([[16, 5], [4, 25], [7, 28], [24, 28], [27, 25]], (x, y) => ((x * 3 + y * 5) % 9 === 0 ? rice[3] : x < 10 ? rice[1] : rice[2]));
+    s.ball(16, 9, 3, 3, rice, { bias: 0.3 }); // the rounded tip
+    s.fill(12, 22, 20, 28, (x) => (x < 13 ? '#3a5a34' : x > 18 ? '#1a2c1a' : '#243a22'));
+    s.rect(12, 22, 9, 1, '#4a6a44');
+    for (const [x, y] of [[9, 20], [13, 14], [18, 12], [22, 21]]) s.px(x, y, '#ffffff');
+  },
+  miso(s) {
+    s.shadow(17, 29, 12, 2);
+    // A lacquered soup bowl from the side and a little above: cloudy miso broth with cubes of tofu and green onion.
+    const lacquer = R('#7a2a22');
+    const broth = R('#d4a056');
+    bowl(s, 16, 15, 12, 3.8, 12, lacquer, (x, y) => (Math.sin(x * 0.9 + y * 2.3) > 0.7 ? broth[0] : y < 14 ? broth[2] : broth[1]));
+    for (const [x, y] of [[12, 15], [19, 14], [16, 16]]) {
+      s.rect(x, y, 2, 2, '#fbf8ee');
+      s.px(x + 1, y + 1, '#d8d2c0');
+    }
+    for (const [x, y] of [[9, 15], [22, 16], [14, 13], [21, 13]]) s.px(x, y, C.leaf[1]);
+  },
   kimchi(s) {
     s.shadow(17, 29, 13, 2);
     // A white bowl from the side and a little above, heaped with red kimchi leaves rising out of its opening.
@@ -995,6 +1057,44 @@ const items = {
     s.ball(16, 22, 11, 7, I.stone, { clip: (x, y) => y >= 19 }); // mortar bowl
     s.ball(16, 19, 10, 3, I.spiceMix, { bias: 0.3, tone: (nx, ny, x, y) => ((x * 5 + y * 7) % 6 === 0 ? -2 : (x + y) % 5 === 0 ? 2 : 0) });
     s.rect(6, 19, 21, 1, I.stone[1]);
+  },
+  bouillon(s) {
+    s.shadow(17, 28, 10, 2);
+    // A stock cube in gold foil on the diagonal, the foil folded back on top to show the brown cube.
+    const foil = R('#e2b03a');
+    s.poly([[16, 9], [26, 14], [16, 19], [6, 14]], (x, y) => ((x + y) % 4 === 0 ? '#8a5226' : '#a8642a')); // the cube's top
+    s.poly([[6, 14], [16, 19], [16, 28], [6, 23]], (x, y) => ((x * 2 + y) % 5 === 0 ? foil[1] : foil[2]));
+    s.poly([[16, 19], [26, 14], [26, 23], [16, 28]], (x, y) => ((x * 2 + y) % 5 === 0 ? foil[3] : foil[4]));
+    s.line(6, 14, 16, 19, foil[0]);
+    s.poly([[6, 14], [10, 12], [11, 16]], foil[1]); // folded-back corners of foil
+    s.poly([[26, 14], [22, 12], [21, 16]], foil[3]);
+    s.rect(8, 19, 1, 3, '#fff2b0');
+  },
+  takeout(s) {
+    s.shadow(17, 29, 11, 2);
+    // A white takeout box with its flaps folded shut and a wire handle: the front face narrowing to the bottom, a
+    // darker side face for depth, a red pagoda on the front.
+    const box = R('#f4f1ec');
+    s.poly([[7, 12], [23, 12], [21, 28], [9, 28]], (x) => (x < 10 ? box[1] : box[2]));
+    s.poly([[23, 12], [27, 10], [25, 25], [21, 28]], box[3]);
+    s.poly([[7, 12], [11, 8], [19, 8], [23, 12]], box[1]); // the folded flaps
+    s.poly([[19, 8], [23, 6], [27, 10], [23, 12]], box[2]);
+    s.line(11, 8, 23, 12, box[3]);
+    s.tube([[9, 10], [12, 2], [21, 2], [25, 8]], 0.6, R('#9aa4aa'));
+    s.rect(14, 17, 5, 1, '#d23a33'); // pagoda
+    s.rect(13, 19, 7, 1, '#d23a33');
+    s.rect(15, 20, 3, 3, '#d23a33');
+    s.rect(14, 23, 5, 1, '#d23a33');
+  },
+  chopsticks(s) {
+    s.shadow(16, 28, 12, 2);
+    // A pair of lacquered chopsticks resting on a little ceramic rest, seen a little from above.
+    const stick = R('#9a3a2a');
+    s.ball(22, 24, 4, 2.4, R('#e8eef2'), { bias: 0.2 }); // the rest
+    s.tube([[4, 9], [26, 22]], (t) => 1.3 - 0.5 * t, stick);
+    s.tube([[6, 5], [28, 19]], (t) => 1.3 - 0.5 * t, stick);
+    s.tube([[4, 9], [8, 11.4]], 1.4, R('#d6ad45')); // gold tips at the held end
+    s.tube([[6, 5], [10, 7.4]], 1.4, R('#d6ad45'));
   },
   tupperware(s) {
     s.shadow(17, 28, 13, 2);

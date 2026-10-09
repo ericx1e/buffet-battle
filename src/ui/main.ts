@@ -1,6 +1,6 @@
 import './style.css';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -25,6 +25,7 @@ import {
   INCOME,
   INTEREST_STEP,
   isOver,
+  marketOdds,
   migrateRun,
   moveUnit,
   newRun,
@@ -82,7 +83,7 @@ interface App {
 
 const SAVE_KEY = 'buffetbattle.run';
 /** Pixel icon for each held item, shown in the corner of the food holding it. */
-const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware' } as const;
+const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware', bouillon: 'heldBouillon', chopsticks: 'heldChopsticks' } as const;
 
 /** A food's attack pattern, if it isn't a plain single-target attack. */
 const patternOf = (defId: string): AttackPattern | null => {
@@ -357,7 +358,7 @@ function onOffer(src: OfferSource) {
 /** Selects the special cubby's offer (or the free consumable waiting there) to read about it. */
 function onSpecial() {
   const s = app.run.special;
-  if (s?.kind === 'freeItem') return onOffer({ area: 'special', index: 0 });
+  if (s?.kind === 'freeItem' || s?.kind === 'mythic') return onOffer({ area: 'special', index: 0 });
   const same = app.selected?.kind === 'special';
   app.selected = same || !s ? null : { kind: 'special' };
   app.message = same || !s ? '' : s.kind === 'premium' ? 'Drag it onto the refill sign or the counter tray.' : 'Drag it onto the counter tray to open it.';
@@ -802,20 +803,35 @@ function marketSlots(): string {
     .join('');
 }
 
+/** Today's buffet odds as a table of rarities and chances (for tooltips). */
+function oddsTable(): string {
+  const rows = marketOdds(app.run.turn).map((o) => `<p>${rarityName(RARITY_BY_TIER[o.tier])} <b>${Math.round(o.chance * 100)}%</b></p>`).join('');
+  return `<p class="dim">Each food cubby today:</p>${rows}`;
+}
+
+/** The buffet's odds, over the food cubbies: a gem and a chance for each rarity on offer today. */
+function oddsStrip(): string {
+  const odds = marketOdds(app.run.turn);
+  const [x, y] = LAYOUT.market[0];
+  const cells = odds.map((o) => `<span class="odds-cell">${gemIcon(RARITY_BY_TIER[o.tier])}${Math.round(o.chance * 100)}%</span>`).join('');
+  const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p>`;
+  return `<div class="odds-strip" style="${at([x, y - 10])}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
+}
+
 /** Names and blurbs for what the special cubby can hold. */
 const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string; text: string }> = {
   spicePack: { name: 'Spice Pack', text: 'Open it and keep 1 of 3 consumables, maybe one the buffet does not stock yet.' },
   farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to one rarity above the buffet.' },
   bundle: { name: 'Pair', text: 'Two copies of one food for about one and a half times the price. They land on the counter tray: place, merge or sell them before serving.' },
   premium: { name: 'Premium Refill', text: 'Refills the buffet with nothing but foods of the next rarity.' },
-  mythic: { name: 'Mythic Delivery', text: 'A one-of-a-kind dish that never shows up in the buffet.' },
+  mythic: { name: 'Mythic Delivery', text: 'A one-of-a-kind dish that never shows up in the buffet. Drag it straight onto your plate.' },
 };
 
 /** The special cubby (the last teal one): one offer a turn that restocking leaves alone. */
 function specialSlot(): string {
   const s = app.run.special;
   const pos = LAYOUT.market[LAYOUT.market.length - 1];
-  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', '<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Refill or, late in the run, a mythic. Restocking leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it.</p>')}>${pix('starSmall')}special</div>`;
+  const tag = `<div class="special-tag" style="${at([pos[0] + 2, pos[1] - 9])}" ${tipBox('Special cubby', '<p>One special offer a day: a Spice Pack, Farm Box, Pair, Premium Refill or, late in the run, a mythic. Refilling leaves it alone.</p><p class="dim">Drag it onto the counter tray to buy it (a mythic goes straight onto your plate).</p>')}>${pix('starSmall')}special</div>`;
   if (!s) return tag;
   const key = `sp:${app.run.turn}:${s.kind}`;
   const selected = app.selected?.kind === 'special' || isSelectedSrc({ area: 'special', index: 0 });
@@ -823,7 +839,8 @@ function specialSlot(): string {
   if (s.kind === 'freeItem') {
     tile = offerTile({ kind: 'item', itemId: s.itemId }, `data-drag="offer:special:0" data-k="${key}:${s.itemId}" data-in="drop"`, selected);
   } else {
-    const attrs = `data-drag="special" data-k="${key}" data-in="drop" data-out="drop-out"`;
+    // A mythic is bought like any food, dragged straight onto the plate; the rest open on the counter tray.
+    const attrs = `data-drag="${s.kind === 'mythic' ? 'offer:special:0' : 'special'}" data-k="${key}" data-in="drop" data-out="drop-out"`;
     if (s.kind === 'bundle' || s.kind === 'mythic') {
       const d = unitDef(s.defId);
       tile = unitTile({ defId: d.id, level: 1, attack: d.attack, hp: d.hp, flavor: d.flavor, flavors: flavorsOf({ defId: d.id }) }, attrs, `special ${selected ? 'selected' : ''}`)
@@ -1028,9 +1045,9 @@ const flavorCounts = (): Map<Flavor, number> => flavorTally(app.run.plate);
 function flavorTip(f: Flavor, n: number): string {
   const tier = flavorTier(n);
   const rows = FLAVOR_BONUS_LONG[f].map((b, i) => `<p class="tier ${n >= TIER_AT[i] ? 'on' : ''}"><b>${TIER_AT[i]}</b>${b}</p>`).join('');
-  const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more different ${f} food${TIER_AT[tier] - n === 1 ? '' : 's'} for the next bonus.${tier === 3 ? ' Foods with two flavors, Saffron and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
+  const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more different ${f} food${TIER_AT[tier] - n === 1 ? '' : 's'} for the next bonus.${tier >= 2 ? ' Rich foods (Curry, Fudge, Lime, Rice Ball, Miso), Bouillon Cubes, foods with two flavors and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
   const saffron = app.run.plate.some((u) => u && unitDef(u.defId).aura === 'infuse') ? '<p class="dim">Foods next to Saffron count twice.</p>' : '';
-  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once: copies don't add more.</p>`);
+  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once (a rich food as its level number, doubled by a Bouillon Cube): copies don't add more.</p>`);
 }
 
 function spiceJars(): string {
@@ -1222,8 +1239,9 @@ function renderKitchen() {
         ${spiceJars()}
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
-          ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r). This one costs <b>${cost ? `${cost} gold` : 'nothing'}</b>; each refill in a day costs 1 more.</p><p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
+          ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r) for <b>${cost ? `${cost} gold` : 'nothing'}</b>, as often as you like.</p>${oddsTable()}<p class="dim">The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
         ${marketSlots()}
+        ${oddsStrip()}
         ${specialSlot()}
         ${fridgeSlots()}
         ${plateSlots()}
@@ -1833,7 +1851,7 @@ const CONDITIONS = new RegExp(
     'Start of battle', 'Start of day', 'start of day', 'End of day', 'end of day', 'at the end of every turn', 'First time hit', 'First attack each battle',
     'Every \\d+(?:st|nd|rd|th) time hit', 'Every \\d+ turns', 'Every turn', 'In the fridge', 'Friend summoned', 'Friend sold', 'Friend eaten', 'Crust broken', 'Level up', 'Refill', 'Start of battle, from any row',
     'When the friend ahead attacks', 'When the friend ahead is hit', 'when the friend ahead attacks', 'when the friend ahead is hit', 'when hit', 'each level up',
-    'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit', 'Sell', 'Bought', 'Eaten',
+    'Pierce attack', 'Splash attack', 'Fork attack', 'Escalating attack', 'Hit or eaten', 'every \\d+(?:st|nd|rd|th) time hit', 'every turn', 'Hit', 'Sell', 'Bought', 'Eaten',
   ].map((c) => `\\b${c}\\b`).join('|'),
   'g', // case-sensitive: "Sell:" is a condition, "sell value" isn't
 );

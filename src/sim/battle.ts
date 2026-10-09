@@ -352,9 +352,10 @@ class Battle {
         }
       }
 
-      for (const u of this.units(side)) if (u.item === 'saltShaker') this.giveCrust(u, 4);
+      for (const u of this.units(side)) if (u.item === 'saltShaker') this.giveCrust(u, 5);
+      for (const u of this.units(side)) if (u.item === 'chopsticks') u.extraAttacks += 2;
       if (lines.length > 0) this.snap(`${side === 0 ? 'Your' : 'Enemy'} flavors: ${lines.join(' · ')}`);
-      else if (this.marks.length > 0) this.snap('Salt Shakers: +4 Crust');
+      else if (this.marks.length > 0) this.snap('Salt Shakers: +5 Crust');
     }
   }
 
@@ -482,22 +483,14 @@ class Battle {
           const half = Math.max(1, Math.ceil(damage / 2));
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
-          const n = this.levelValue(u); // shots, lobs and peppercorns thrown; a volley's damage per ball
+          const n = this.levelValue(u); // shots, lobs, peppercorns and balls thrown
           const flat = unitDef(u.defId).throwDamage ?? half;
-          const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'volleys' : 'shoots';
+          const verb = pattern === 'lob' ? 'lobs' : pattern === 'spray' ? 'sprays' : pattern === 'volley' ? 'throws' : 'shoots';
           const land = (t: BattleUnit, dmg: number) => {
             this.hit(t, dmg, u, u.item === 'toothpick');
             if (burn > 0 && this.onPlate(t)) this.addStatus(t, 'burn', burn);
           };
           for (let i = 0; i < times; i++) {
-            if (pattern === 'volley') {
-              const row = this.units(enemy).filter((e) => rowOf(e.slot) === 0);
-              if (row.length === 0) continue;
-              for (const t of row) land(t, n); // a flat level number per ball, all at once
-              this.mark(u, 'shoot', 1);
-              this.snap(`Turn ${this.round} · ${this.name(u)} volleys`);
-              continue;
-            }
             // One projectile at a time, each at an enemy not hit yet in this throw, each its own moment.
             const hit = new Set<BattleUnit>();
             for (let k = 0; k < n; k++) {
@@ -505,7 +498,7 @@ class Battle {
               if (left.length === 0) break;
               const near = (e: BattleUnit) => Math.abs(laneOf(e.slot) - lane);
               let t: BattleUnit;
-              if (pattern === 'spray' || pattern === 'shot') t = this.rng.pick(left); // random, a different enemy each time
+              if (pattern !== 'lob') t = this.rng.pick(left); // random, a different enemy each time
               else t = [...left].sort((x, y) => rowOf(y.slot) - rowOf(x.slot) || near(x) - near(y) || x.slot - y.slot)[0]; // back row first
               hit.add(t);
               land(t, flat);

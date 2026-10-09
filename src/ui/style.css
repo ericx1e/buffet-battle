@@ -688,6 +688,12 @@ body[data-screen='battle'] {
   font: 400 10px/9px var(--pixel); color: #fff; background: #3f9b4a; border: 1px solid #2a1b14;
 }
 .price.free { color: #b6f0a0; }
+/* Today's buffet odds, over the food cubbies. */
+.odds-strip {
+  position: absolute; height: 9px; display: flex; gap: 4px; align-items: center; cursor: help;
+  font: 400 10px/9px var(--pixel); color: #fff3df; text-shadow: 1px 1px 0 #2a1b14;
+}
+.odds-cell { display: inline-flex; align-items: center; gap: 1px; }
 
 /* The counter tray: a steel baking sheet. Busy (holding a bundle or an open pack) it glints and must be cleared. */
 .tray {

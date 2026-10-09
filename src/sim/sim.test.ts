@@ -9,6 +9,7 @@ import {
   buyUnit,
   finishBattle,
   interestCap,
+  marketOdds,
   moveUnit,
   newRun,
   pickPack,
@@ -107,12 +108,12 @@ describe('battle', () => {
   });
 
   it('Crust blocks damage fully while it lasts; only what it cannot cover reaches HP', () => {
-    // Salt Shaker gives 4 Crust: a 3-attack hit is blocked completely, then the next one breaks through for 2.
+    // Salt Shaker gives 5 Crust: a 3-attack hit is blocked completely, then the next one breaks through for 1.
     const r = simulateBattle(plate({ 0: unit('pretzel', { attack: 3, hp: 50 }) }), plate({ 0: unit('pretzel', { attack: 1, hp: 50, item: 'saltShaker' }) }), 1);
     const hits = r.frames.filter((f) => f.marks.some((m) => m.side === 1 && m.kind === 'crust' && (m.amount ?? 0) < 0));
     const marks = (f: (typeof hits)[number], kind: string) => f.marks.find((m) => m.side === 1 && m.kind === kind)?.amount;
     expect([marks(hits[0], 'crust'), marks(hits[0], 'hit')]).toEqual([-3, undefined]);
-    expect([marks(hits[1], 'crust'), marks(hits[1], 'hit')]).toEqual([-1, 2]);
+    expect([marks(hits[1], 'crust'), marks(hits[1], 'hit')]).toEqual([-2, 1]);
   });
 });
 
@@ -157,7 +158,7 @@ describe('food data', () => {
     expect(ids.size).toBe(UNITS.length); // ids are unique
     for (const u of UNITS) {
       if (u.token) continue;
-      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.interestMult ? 1 : 0) + (u.hitsHarder ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
+      expect(u.abilities.length + (u.aura ? 1 : 0) + (u.attackPattern ? 1 : 0) + (u.interestCap ? 1 : 0) + (u.interestMult ? 1 : 0) + (u.hitsHarder ? 1 : 0) + (u.rich ? 1 : 0), `${u.id} does nothing`).toBeGreaterThan(0);
       for (const ab of u.abilities) {
         if (ab.effect === 'summon') {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
@@ -169,7 +170,7 @@ describe('food data', () => {
         const kitchen = ['buy', 'sell', 'friendSold', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
         if (['gold', 'sellValue', 'freeReroll', 'gainFlavor', 'buyBonus'].includes(ab.effect)) expect(kitchen, `${u.id}: ${ab.effect} is a kitchen effect`).toContain(ab.trigger);
       }
-      expect(u.text.includes('{v}') || u.abilities.every((a) => a.values || a.limitToAmount), `${u.id}: text should show {v} (a limitToAmount count shows in the hover instead)`).toBe(true);
+      expect(u.text.includes('{v}') || u.abilities.every((a) => a.values || a.limitToAmount || a.summon?.attack !== undefined), `${u.id}: text should show {v} (a limitToAmount count shows in the hover instead)`).toBe(true);
     }
   });
 
@@ -264,14 +265,14 @@ describe('run', () => {
     expect(interestCap(run)).toBe(6);
   });
 
-  it('prices follow tier, and restocks get pricier each time', () => {
+  it('prices follow tier, and a refill always costs the same', () => {
     expect(unitCost(unitDef('egg'))).toBe(3);
     expect(unitCost(unitDef('cheese'))).toBe(4);
     expect(unitCost(unitDef('steak'))).toBe(5);
     const run = newRun(5);
     run.gold = 20;
-    expect([rerollCost(run), (reroll(run), rerollCost(run)), (reroll(run), rerollCost(run))]).toEqual([1, 2, 3]);
-    expect(run.gold).toBe(17);
+    expect([rerollCost(run), (reroll(run), rerollCost(run)), (reroll(run), rerollCost(run))]).toEqual([1, 1, 1]);
+    expect(run.gold).toBe(18);
   });
 
   it('sells for half the gold put in, plus sell value', () => {
@@ -355,7 +356,7 @@ describe('run', () => {
     run.market[run.market.length - 1] = { kind: 'item', itemId: 'boneBroth' };
     run.gold = 10;
     expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
-    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 4 + unitDef('cake').values[0]);
+    expect(run.plate[0]!.hp).toBe(unitDef('egg').hp + 6 + unitDef('cake').values[0]);
     expect(run.growth.some((g) => g.from === run.plate[1]!.uid)).toBe(true); // shown as the cake's own gift
   });
 
@@ -542,5 +543,54 @@ describe('Saffron', () => {
     expect(tally.get('salty')).toBe(1);
     const cooked = flavorTally(plate({ 4: unit('saffron', { copies: 6 }), 1: unit('lemon'), 0: unit('pickle') }));
     expect(cooked.get('sour')).toBe(1 + 2 + 2);
+  });
+});
+
+describe('round 5 rules', () => {
+  it('a rich food counts as its level number of its flavor, and a Bouillon Cube doubles what a food counts', () => {
+    const tally = flavorTally(plate({ 0: unit('curry'), 1: unit('chili'), 2: unit('garlic', { item: 'bouillon' }) }));
+    expect(tally.get('spicy')).toBe(unitDef('curry').values[0] + 1 + 2);
+    expect(flavorTally(plate({ 0: unit('curry', { copies: 6 }) })).get('spicy')).toBe(unitDef('curry').values[2]);
+  });
+
+  it('Popcorn and Watermelon summon when eaten, into the slot they leave on a full plate', () => {
+    const full = plate({ 0: unit('popcorn', { hp: 1 }), 1: unit('egg', { hp: 40 }), 2: unit('egg', { hp: 40 }), 3: unit('egg', { hp: 40 }), 4: unit('egg', { hp: 40 }), 5: unit('egg', { hp: 40 }) });
+    const r = simulateBattle(full, plate({ 0: unit('cheese', { attack: 9, hp: 90 }) }), 1);
+    expect(r.frames.some((f) => f.text.includes('Popcorn summons a Kernel'))).toBe(true);
+    const melon = simulateBattle(plate({ 0: unit('watermelon', { hp: 1 }) }), plate({ 0: unit('cheese', { attack: 9, hp: 90 }) }), 1);
+    expect(melon.frames.some((f) => f.text.includes('Watermelon summons a Watermelon Slice'))).toBe(true);
+  });
+
+  it('Hot Pot makes every enemy Burn every turn', () => {
+    const r = simulateBattle(plate({ 3: unit('hotPot', { hp: 90 }), 0: unit('cheese', { attack: 1, hp: 90 }) }), plate({ 0: unit('cheese', { attack: 1, hp: 90 }), 1: unit('cheese', { attack: 1, hp: 90 }) }), 1);
+    const burns = r.frames.filter((f) => f.text.startsWith('Hot Pot:'));
+    expect(burns.length).toBeGreaterThan(2);
+  });
+
+  it('a mythic in the special cubby is bought straight onto the plate', () => {
+    const run = newRun(5);
+    run.gold = 20;
+    run.special = { kind: 'mythic', defId: 'wagyu', cost: 10 };
+    expect(buyUnit(run, { area: 'special', index: 0 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    expect(run.plate[0]?.defId).toBe('wagyu');
+    expect(run.special).toBe(null);
+    expect(run.gold).toBe(10);
+  });
+
+  it('a Takeout Bag brings a food from one rarity above the buffet to the counter tray', () => {
+    const run = newRun(5);
+    run.gold = 10;
+    run.market[run.market.length - 1] = { kind: 'item', itemId: 'takeout' };
+    expect(useItem(run, { area: 'market', index: run.market.length - 1 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    const got = run.overflow.find((u) => u);
+    expect(got && unitDef(got.defId).tier).toBe(2);
+  });
+
+  it('the buffet odds add up, and lean to the newest rarity', () => {
+    for (const turn of [1, 5, 9, 12]) {
+      const odds = marketOdds(turn);
+      expect(odds.reduce((n, o) => n + o.chance, 0)).toBeCloseTo(1);
+      expect(odds[odds.length - 1].chance).toBe(Math.max(...odds.map((o) => o.chance)));
+    }
   });
 });

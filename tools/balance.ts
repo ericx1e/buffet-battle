@@ -19,7 +19,7 @@ for (let i = 0; i < runs; i++) {
   while (!isOver(run)) {
     botPrep(run);
     const mine = serve(run);
-    const ghost = generateGhost(run.turn, nextSeed(run));
+    const ghost = generateGhost(run.turn, nextSeed(run), true);
     const { outcome, frames } = simulateBattle(mine, ghost, nextSeed(run));
     battles++;
     totalRounds += frames[frames.length - 1].round;

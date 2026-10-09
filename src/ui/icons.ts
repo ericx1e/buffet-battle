@@ -243,6 +243,20 @@ const ICONS = {
     '.c...',
     'c....',
   ],
+  heldBouillon: [
+    'CCCCC',
+    'cCCCk',
+    'cckkk',
+    'cckkk',
+    'ckkkk',
+  ],
+  heldChopsticks: [
+    'b...b',
+    '.b..b',
+    '.b.b.',
+    '..bb.',
+    '..bb.',
+  ],
   heldTupperware: [
     'iiiiiii',
     'IjjjjjI',

@@ -26,7 +26,7 @@ export const INCOME = 9;
 export const INTEREST_STEP = 5;
 /** ...up to this many (Fortune Cookie and Caviar raise the cap). */
 export const BASE_INTEREST_CAP = 3;
-/** The first restock each turn costs this; each one after costs 1 more. */
+/** Every refill costs this (free ones from Dumplings cost nothing). */
 export const REROLL_COST = 1;
 export const START_LIVES = 5;
 export const COURSES_TO_WIN = 10;
@@ -81,7 +81,7 @@ export interface RunState {
   bonusUnitsPending: number;
   nextUid: number;
   // Added with the economy rework; migrateRun fills them in for older saves.
-  /** Restocks this turn (each costs 1 more). */
+  /** Refills this turn. */
   rerolls: number;
   /** Free restocks left this turn (Soy Sauce). */
   freeRerolls: number;
@@ -234,21 +234,30 @@ function startTurn(run: RunState) {
   });
 }
 
+/**
+ * The chance of each rarity (tier) in a food cubby on this day: the newest unlocked rarity is the most likely and
+ * each older one less so (weights 4, 3, 2, 1, 1, 1 from the newest down). Then a food at random within it. Many
+ * foods per rarity keep copies, and so level 3, hard to come by.
+ */
+export function marketOdds(turn: number): { tier: Tier; chance: number }[] {
+  const { maxTier } = turnConfig(turn);
+  const tiers = [...new Set(MARKET_UNITS.filter((u) => u.tier <= maxTier).map((u) => u.tier))].sort();
+  const weight = (t: number) => Math.max(1, 4 - (maxTier - t));
+  const total = tiers.reduce((n, t) => n + weight(t), 0);
+  return tiers.map((tier) => ({ tier, chance: weight(tier) / total }));
+}
+
 /** Restocks the market. `premium`: every food comes from the tier above the highest unlocked one. */
 function rollMarket(run: RunState, premium = false) {
   const { maxTier, unitSlots } = turnConfig(run.turn);
   const top = Math.min(6, maxTier + 1);
   withRng(run, (rng) => {
     const units = MARKET_UNITS.filter((u) => (premium ? u.tier === top : u.tier <= maxTier));
-    // Each rarity's chance: the newest unlocked rarity is the most likely and each older one less so (weights
-    // 4, 3, 2, 1, 1, 1 from the newest down), then a food at random within it. Many foods per rarity keep copies,
-    // and so level 3, hard to come by.
-    const tierWeight = (t: number) => Math.max(1, 4 - (maxTier - t));
-    const tiers = [...new Set(units.map((u) => u.tier))];
+    const odds = marketOdds(run.turn);
     const pickTier = () => {
-      let r = rng.next() * tiers.reduce((n, t) => n + tierWeight(t), 0);
-      for (const t of tiers) if ((r -= tierWeight(t)) < 0) return t;
-      return tiers[tiers.length - 1];
+      let r = rng.next();
+      for (const o of odds) if ((r -= o.chance) < 0) return o.tier;
+      return odds[odds.length - 1].tier;
     };
     const market: (Offer | null)[] = [];
     for (let i = 0; i < unitSlots; i++) {
@@ -289,18 +298,17 @@ function rollSpecial(run: RunState) {
   });
 }
 
-/** What a restock costs now: 1, plus 1 for each restock already this turn (free while free restocks remain). */
+/** What a refill costs: always the same (free while free refills remain). */
 export function rerollCost(run: RunState): number {
-  return run.freeRerolls > 0 ? 0 : REROLL_COST + run.rerolls;
+  return run.freeRerolls > 0 ? 0 : REROLL_COST;
 }
 
 export function reroll(run: RunState): ActionResult {
   const cost = rerollCost(run);
   if (run.gold < cost) return fail('Not enough gold to refill.');
   run.gold -= cost;
-  // A free refill doesn't count toward the price of the next one.
   if (run.freeRerolls > 0) run.freeRerolls--;
-  else run.rerolls++;
+  run.rerolls++;
   run.rerolledThisTurn = true;
   rollMarket(run);
   const notes = run.plate.map((u, slot) => (u ? fireShop(run, u, slot, 'reroll') : '')).filter(Boolean);
@@ -317,7 +325,12 @@ export function specialCost(offer: SpecialOffer): number {
 
 export function getOffer(run: RunState, src: OfferSource): Offer | null {
   if (src.area === 'market') return run.market[src.index] ?? null;
-  if (src.area === 'special') return run.special?.kind === 'freeItem' ? { kind: 'item', itemId: run.special.itemId } : null;
+  if (src.area === 'special') {
+    // The free consumable from a Spice Pack, or a mythic, bought like any food (straight onto the plate).
+    if (run.special?.kind === 'freeItem') return { kind: 'item', itemId: run.special.itemId };
+    if (run.special?.kind === 'mythic') return { kind: 'unit', defId: run.special.defId };
+    return null;
+  }
   const entry = run.fridge[src.index];
   return entry?.kind === 'offer' ? entry.offer : null;
 }
@@ -666,24 +679,24 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
   let result: ActionResult = ok();
   switch (def.id) {
     case 'butter':
-      unit!.attack += 1;
+      unit!.attack += 2;
       unit!.hp += 2;
-      run.growth.push({ uid: unit!.uid, attack: 1, hp: 2, source: def.name });
+      run.growth.push({ uid: unit!.uid, attack: 2, hp: 2, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'hotSauce':
-      unit!.tempAttack = (unit!.tempAttack ?? 0) + 3;
+      unit!.tempAttack = (unit!.tempAttack ?? 0) + 5;
       break;
     case 'oliveOil':
       unit!.attack += 1;
       unit!.hp += 1;
-      unit!.sellBonus = (unit!.sellBonus ?? 0) + 2;
-      run.growth.push({ uid: unit!.uid, attack: 1, hp: 1, sell: 2, source: def.name });
+      unit!.sellBonus = (unit!.sellBonus ?? 0) + 3;
+      run.growth.push({ uid: unit!.uid, attack: 1, hp: 1, sell: 3, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'boneBroth':
-      unit!.hp += 4;
-      run.growth.push({ uid: unit!.uid, attack: 0, hp: 4, source: def.name });
+      unit!.hp += 6;
+      run.growth.push({ uid: unit!.uid, attack: 0, hp: 6, source: def.name });
       afterHpGain(run, unit!);
       break;
     case 'flavorPacket': {
@@ -695,8 +708,20 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'saltShaker':
     case 'toothpick':
     case 'tupperware':
+    case 'bouillon':
+    case 'chopsticks':
       unit!.item = def.id;
       break;
+    case 'takeout': {
+      // A surprise from one rarity above the buffet, waiting on the counter tray.
+      const spot = run.overflow.findIndex((u) => !u);
+      if (spot < 0) return fail('Clear the counter tray first.');
+      const top = Math.min(6, turnConfig(run.turn).maxTier + 1);
+      const defId = withRng(run, (rng) => rng.pick(MARKET_UNITS.filter((u) => u.tier === top)).id);
+      run.overflow[spot] = boughtUnit(run, defId);
+      result = ok(`${unitDef(defId).name} arrives on the counter tray.`);
+      break;
+    }
     case 'seasoning':
       if (!flavor) return fail('Pick a flavor.');
       unit!.flavorOverride = flavor;
@@ -709,7 +734,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     }
     case 'sprinkles':
     case 'partyMix': {
-      const [count, attack, hp] = def.id === 'sprinkles' ? [3, 1, 1] : [4, 2, 1];
+      const [count, attack, hp] = def.id === 'sprinkles' ? [3, 1, 1] : [4, 2, 2];
       const foods = run.plate.filter((u): u is UnitInstance => !!u);
       for (const u of withRng(run, (rng) => rng.sample(foods, count))) {
         u.attack += attack;
@@ -722,9 +747,9 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'lunchbox':
       for (const u of run.plate) {
         if (!u) continue;
-        u.attack += 1;
+        u.attack += 2;
         u.hp += 2;
-        run.growth.push({ uid: u.uid, attack: 1, hp: 2, source: def.name });
+        run.growth.push({ uid: u.uid, attack: 2, hp: 2, source: def.name });
         afterHpGain(run, u);
       }
       break;

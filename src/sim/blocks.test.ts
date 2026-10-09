@@ -276,7 +276,7 @@ describe('projectiles and patterns', () => {
   it('an opening throw flies once, then the food attacks like any other; a volley flies every turn', () => {
     const shots = texts(simulateBattle(plate(inst(thrower('t_shot', 'shot', 3))), plate(inst(wall)), 1)).match(/t_shot shoots/g) ?? [];
     expect(shots.length).toBe(1);
-    const volleys = texts(simulateBattle(plate(inst(wall), null, null, inst(thrower('t_volley', 'volley'))), plate(inst(wall)), 1)).match(/t_volley volleys/g) ?? [];
+    const volleys = texts(simulateBattle(plate(inst(wall), null, null, inst(thrower('t_volley', 'volley'))), plate(inst(wall)), 1)).match(/t_volley throws/g) ?? [];
     expect(volleys.length).toBeGreaterThan(1);
   });
 
@@ -301,9 +301,14 @@ describe('projectiles and patterns', () => {
     expect(lostTurn1(r)[3]).toBe(1); // half of 2
   });
 
-  it('a volley hits every enemy in the front row for its level number', () => {
-    const r = simulateBattle(plate(null, inst(wall), null, null, inst(thrower('t_volley', 'volley', 4))), plate(inst(wall), inst(wall), inst(wall)), 1);
-    expect(lostTurn1(r).slice(0, 3)).toEqual([1, 1 + 1, 1]); // its level number (1) each; our wall hits the middle one too
+  it('a volley throws its level number of balls, each at a different random enemy for its flat damage', () => {
+    const baller = food('t_volley3', 1, 60, [], { attackPattern: 'volley', throwDamage: 3, values: [2, 2, 2] });
+    const r = simulateBattle(plate(null, null, null, inst(baller)), plate(inst(wall), inst(wall), inst(wall)), 1);
+    const balls = r.frames.filter((f) => f.round === 1 && f.text.includes('t_volley3 throws at'));
+    expect(balls.length).toBe(2);
+    const targets = balls.map((f) => f.marks.find((m) => m.side === 1 && m.kind === 'hit')!);
+    expect(new Set(targets.map((m) => m.slot)).size).toBe(2);
+    expect(targets.every((m) => m.amount === 3)).toBe(true);
   });
 
   it('fork hits both other lanes, from a side lane too', () => {
