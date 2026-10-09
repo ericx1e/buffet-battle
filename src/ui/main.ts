@@ -1376,7 +1376,8 @@ function chalkboard(): string {
   const lines = FLAVORS.map((f) => {
     const n = counts.get(f) ?? 0;
     const tier = flavorTier(n);
-    const pips = TIER_AT.map((at) => `<i class="${n >= at ? 'on' : ''}"></i>`).join('');
+    // One segment per bonus tier: lit once reached, half lit when one more food would reach it.
+    const pips = TIER_AT.map((at) => `<i class="${n >= at ? 'on' : n === at - 1 ? 'half' : ''}"></i>`).join('');
     const text = tier ? FLAVOR_BONUS[f][tier - 1] : f;
     return `<div class="chalk-line ${tier ? 'on' : ''}" data-vk="chalk:${f}" data-v="${tier}" data-va="flash" ${flavorTip(f, n)}><b>${n}</b><span class="chalk-pips">${pips}</span>${text}</div>`;
   }).join('');

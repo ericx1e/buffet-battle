@@ -715,8 +715,10 @@ body[data-screen='battle'] {
 .fd-savory { background: var(--savory); }
 
 /* Chalkboard: three pips per flavor for its 2/4/6 bonuses. */
-.chalk-pips { display: inline-flex; gap: 1px; margin-right: 2px; }
-.chalk-pips i { width: 2px; height: 4px; background: #4b5a4f; }
+/* Bonus tiers as four even segments (whole pixels, so they stay even when the stage is scaled). */
+.chalk-pips { display: inline-flex; gap: 2px; margin: 0 3px 0 1px; flex: none; }
+.chalk-pips i { width: 8px; height: 4px; background: #4b5a4f; }
+.chalk-pips i.half { background: linear-gradient(90deg, #9c8550 0 4px, #4b5a4f 4px); }
 .chalk-pips i.on { background: #ffd27a; }
 .jar.t2 { outline-color: #ffb04a; }
 .jar.t3, .jar.t4 { outline: 1px solid #ff6a3a; animation: bonus-glint 1.4s steps(1) infinite; }
