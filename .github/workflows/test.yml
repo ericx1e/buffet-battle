@@ -1,0 +1,33 @@
+# Pushes to any branch but main (dev work), and pull requests: run the game's and the API's tests. Nothing deploys;
+# merging into main is a release (pages.yml).
+name: Test
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npm run build
+      - run: npm ci --prefix server
+      - run: npx tsc --noEmit
+        working-directory: server
+      - run: npm test
+        working-directory: server
