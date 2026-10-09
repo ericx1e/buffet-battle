@@ -281,11 +281,12 @@ const dip = (t, ry) => Math.round(ry * Math.sqrt(Math.max(0, 1 - t * t)));
 const shadow = () => {}; // props sit flat on the counter like the rest of the scene
 
 // Spice jars on the rack: little glass cylinders seen a little from above, like the tip jar. A round dark lid with
-// its top showing, the glass lit on the left and shaded on the right, and the spice inside with the top of its pile
-// an oval. Every edge across a jar (the lid's rim, the pile, the bottom) curves toward you by the same amount.
+// its top showing, and the glass lit on the left and shaded on the right. They are drawn empty: the game fills each
+// one with its flavor's spice behind the see-through glass, as high as that flavor's count (like the tip jar's
+// coins). Every edge across a jar (the lid's rim, the bottom) curves toward you by the same amount.
 const LID = ['#8a807b', '#6b615d', '#4a4240', '#3a3331', '#2f2927'];
-jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
-  const cx = 501.5 + 29 * j, rx = 8.5, ry = 2.2, lidTop = 32, lidBottom = 36, pile = 44, bottom = 51;
+jars.forEach((_, j) => prop(`spice${j}`, () => {
+  const cx = 501.5 + 29 * j, rx = 8.5, ry = 2.2, lidTop = 32, lidBottom = 36, bottom = 51;
   const curve = (x) => ry * Math.sqrt(Math.max(0, 1 - ((x - cx) / rx) ** 2));
   blob(Math.floor(cx - rx), lidTop - 3, Math.ceil(cx + rx), bottom + 3, (x, y) => {
     const t = (x - cx) / rx;
@@ -296,13 +297,8 @@ jars.forEach(([, c, d, speck], j) => prop(`spice${j}`, () => {
     if (y < lidTop) return null; // above the lid's rim: nothing, so the lid reads round
     if (y >= lidTop && y <= lidBottom + k) return y >= lidBottom + k - 0.5 ? LID[4] : side(t, LID);
     if (y > bottom + k) return null;
-    // The spice: the top of the pile, then the pile pressed against the glass, with a few bright specks
-    if (inEllipse(x, y, cx, pile, rx - 1, ry)) return Math.abs(t) > 0.8 ? d : y < pile ? d : c;
-    if (y > pile && Math.abs(t) < 0.94) {
-      if ((x * 5 + y * 3) % 11 === 0) return speck;
-      return t > 0.62 ? d : c;
-    }
-    // Empty glass above the spice: tinted, a highlight streak on the left, the far edge darker
+    // The glass, see-through so the spice drawn behind it shows: tinted, a highlight streak on the left, the far
+    // edge darker
     if (t > -0.7 && t < -0.5) return P.glassHi;
     return t > 0.8 ? P.jarEdge : '~' + P.jar;
   }, '#2f2927', true, false); // no cast shadow: it would land on the rack's back wall; the shelf has their shadows

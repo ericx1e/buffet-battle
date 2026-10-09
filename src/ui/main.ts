@@ -1351,12 +1351,20 @@ function flavorTip(f: Flavor, n: number): string {
   return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once (a rich food as its level number, a Bouillon Cube adds one): copies don't add more.</p>`);
 }
 
+/** The glass of a spice jar, inside its prop box: where the spice fills from (bottom) toward the lid (top). */
+const JAR_GLASS = { left: 2, width: 15, top: 7, bottom: 22 };
+/** A full jar: the top flavor bonus. */
+const JAR_FULL = 8;
+
 function spiceJars(): string {
   const counts = flavorCounts();
   return FLAVORS.map((f, j) => {
     const n = counts.get(f) ?? 0;
     const tier = flavorTier(n);
-    return `<div class="jar ${tier ? `active t${tier}` : ''}" style="${box(PROPS[`spice${j}` as keyof typeof PROPS] as Rect)}" ${flavorTip(f, n)} data-vk="jar:${f}" data-v="${n}" data-va="hop">${propArt(`spice${j}`)}<span>${n}</span></div>`;
+    // The spice, drawn behind the jar's see-through glass, rising with the count (full at the top bonus).
+    const h = Math.round((Math.min(n, JAR_FULL) / JAR_FULL) * (JAR_GLASS.bottom - JAR_GLASS.top));
+    const spice = h > 0 ? `<i class="jar-spice spice-${f}" style="left:${JAR_GLASS.left}px;top:${JAR_GLASS.bottom - h}px;width:${JAR_GLASS.width}px;height:${h}px"></i>` : '';
+    return `<div class="jar ${tier ? `active t${tier}` : ''}" style="${box(PROPS[`spice${j}` as keyof typeof PROPS] as Rect)}" ${flavorTip(f, n)} data-vk="jar:${f}" data-v="${n}" data-va="hop">${spice}${propArt(`spice${j}`)}<span>${n}</span></div>`;
   }).join('');
 }
 

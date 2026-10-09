@@ -170,6 +170,26 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .jar { display: grid; place-items: end center; padding-bottom: 2px; }
 .jar span { position: relative; font: 400 10px/1 var(--pixel); color: #fff; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; }
 .jar.active { outline: 1px solid #ffd27a; }
+/* The spice inside a jar: the flavor's colour, a darker side on the right, a lit top edge, a few specks and the
+   glass's highlight streak over it, rising with the flavor's count. Drawn over the empty jar so the glass tint
+   doesn't wash it out. */
+.jar { position: absolute; }
+.jar > .sprite { position: relative; z-index: 0; }
+.jar > span { z-index: 2; }
+.jar-spice {
+  position: absolute; z-index: 1; border-radius: 0 0 6px 6px / 0 0 2px 2px; pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 2px, rgba(255, 255, 255, 0.45) 2px 3px, transparent 3px),
+    radial-gradient(circle at 3px 3px, var(--speck) 0 0.6px, transparent 0.7px) 0 0 / 5px 4px,
+    linear-gradient(90deg, var(--fill) 0 78%, var(--shade) 78%);
+  box-shadow: inset 0 1px 0 var(--top);
+  transition: top 0.3s steps(4, jump-end), height 0.3s steps(4, jump-end);
+}
+.spice-spicy { --fill: #d23a3a; --shade: #9e2238; --top: #ff6a5a; --speck: #ff8a6a; }
+.spice-sweet { --fill: #ef6fa6; --shade: #c24c84; --top: #ff9cc6; --speck: #ffd0e4; }
+.spice-sour { --fill: #f2c94c; --shade: #c8952f; --top: #ffe48a; --speck: #fff0a8; }
+.spice-salty { --fill: #c8e0ee; --shade: #9cc4dc; --top: #ffffff; --speck: #ffffff; }
+.spice-savory { --fill: #8a5a32; --shade: #6a4224; --top: #b8763f; --speck: #b8763f; }
 
 /* Chalkboard */
 .chalkboard { padding: 3px 5px; color: #dfe7dc; }
