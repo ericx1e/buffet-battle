@@ -536,7 +536,7 @@ function kitchenHpGain(run: RunState, t: UnitInstance, parts: string[]) {
       if (ab.trigger !== 'friendHealed' || ab.effect !== 'buff') return;
       const key = `${o.uid}:${index}`;
       const used = run.dayFires?.[key] ?? 0;
-      if (used >= (ab.max ?? 3)) return;
+      if (used >= (ab.dayMax ?? ab.max ?? 3)) return;
       run.dayFires = { ...run.dayFires, [key]: used + 1 };
       const v = (ab.values ?? odef.values)[levelOf(o.copies) - 1];
       const a = v * (ab.attack ?? 1);

@@ -371,6 +371,17 @@ describe('run', () => {
     expect(cakeFrame!.marks.find((m) => m.kind === 'buff')?.hp).toBe(unitDef('cake').values[0]);
   });
 
+  it('Hot Cocoa turns a neighbour\'s HP gain into attack once a day in the kitchen, up to 4 times in battle', () => {
+    const run = newRun(5);
+    run.plate[0] = unit('hotCocoa');
+    run.plate[1] = unit('breadDough'); // both neighbours gain HP at the end of day
+    run.plate[3] = unit('cheese');
+    serve(run);
+    const gained = (slot: number) => run.plate[slot]!.attack - unitDef(run.plate[slot]!.defId).attack;
+    expect(gained(1) + gained(3)).toBe(1);
+    expect(unitDef('hotCocoa').abilities[0]).toMatchObject({ max: 4, dayMax: 1 });
+  });
+
   it('Caviar gives a random friend +1/+1 per gold of interest at the start of day', () => {
     const run = newRun(5);
     run.plate[0] = unit('caviar');

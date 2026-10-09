@@ -155,7 +155,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Free refills | Dumplings (first 1/2/3 refills free) | Soy Sauce (a random friend +1/+1 per refill) |
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
-| HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack), Birthday Cake (+1 to every gain) |
+| HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack: once a day in the kitchen, up to 4 times a battle), Birthday Cake (+1 to every gain) |
 | Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (+damage to Burning enemies) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn) |
@@ -519,7 +519,6 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Cheese | Savory | 2/4 | 4 | Ages: end of day, +1/2/3 HP, +1 more next to a Savory friend. | **Fondue**: Start of battle: adjacent friends gain +2/+2. |
 | 3 | Wasabi | Spicy | 5/9 | 4 | First attack deals +3/5/7 damage. | **Wasabi Peas**: Start of battle: deal 6 damage to the enemy across. |
 | 3 | Honey | Sweet | 4/9 | 4 | Start of battle: adjacent friends gain +1/+1, +2/+2 or +3/+3, double if Spicy. | **Honeycomb**: Every 2 turns: adjacent friends gain +1/+1. |
-| 3 | Crème Brûlée | Sweet | 4/8 | 4 | Crust broken on your plate: that food gains +2/3/4 attack. | **Torched Brûlée**: Start of battle: your front row gains 3 Crust. |
 | 3 | Pickle | Sour | 3/6 | 4 | Brines: in the fridge, +2/+2, +3/+3 or +4/+4 a day. | **Fried Pickle**: Hit: the attacker loses 1 attack. |
 | 3 | Anchovy | Salty | 4/7 | 4 | Every 2 turns: it and the friend in its lane gain 2/3/4 Crust. | **Caesar Salad**: Start of battle: front-row friends gain 3 Crust. |
 | 3 | Fortune Cookie | Sweet | 3/5 | 4 | Start of day: +1/2/3 HP per gold of interest earned. | **Lucky Cookie Jar**: End of day: +2 gold tomorrow. |
@@ -531,6 +530,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Peppercorns | Spicy | 2/6 | 4 | Start of battle, 3/4/5 peppercorns hit random enemies for half its attack. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 4/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
 | 3 | Pepperoni | Spicy | 5/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
+| 4 | Crème Brûlée | Sweet | 3/7 | 4 | Crust broken on your plate: that food gains +1/2/3 attack. | **Torched Brûlée**: Start of battle: your front row gains 3 Crust. |
 | 4 | Mushroom | Savory | 4/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |
 | 4 | Coffee Bean | Spicy | 5/8 | 4 | Start of battle: the friend ahead (or itself) attacks twice on its first 1/2/3 attacks. | **Espresso**: Start of battle: your front row attacks twice on its first attack. |
 | 4 | Watermelon | Sweet | 4/16 | 4 | Eaten, and every 2nd time hit: summon a 2/2, 3/3 or 4/4 Slice. | **Fruit Salad**: Eaten: summon two more 4/4 Slices. |

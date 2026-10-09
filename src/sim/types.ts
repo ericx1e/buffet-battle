@@ -147,6 +147,8 @@ export interface AbilityDef {
   grows?: boolean;
   /** Kitchen: this ability gives at most this much in total over the run (per stat). Battle: it fires at most this many times a battle. */
   max?: number;
+  /** Kitchen: fires at most this many times a day (Hot Cocoa), when that should differ from `max` in battle. */
+  dayMax?: number;
   /** Kitchen: only if you own a level 3 food. */
   ifLevel3?: boolean;
   /** Kitchen startTurn: amount x the interest you earned this turn. */
