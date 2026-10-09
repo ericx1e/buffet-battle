@@ -935,7 +935,7 @@ function imagesByMarkup(): Map<string, HTMLImageElement[]> {
 
 /** The settings button: opens the popup with volumes, mutes and music. `cls` may carry extra attributes for the kitchen's placement. */
 function settingsButton(cls: string): string {
-  return `<button class="${cls}" data-action="settings" ${tip('<p>Settings: volume, music and sound on/off (key m mutes everything).</p>')} aria-label="settings">${pix(isMuted() ? 'soundOff' : 'gear')}</button>`;
+  return `<button class="${cls}" data-action="settings" ${tip('<p>Settings: volume, music and sound on/off (key m mutes everything).</p>')} aria-label="settings">${pix('gear')}</button>`;
 }
 
 /** The settings popup is open (not saved: it closes on reload). */
