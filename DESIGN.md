@@ -67,7 +67,7 @@ The market offers higher-tier units as the run goes on. Tiers unlock by day, not
 
 ## The Kitchen (prep phase)
 
-**Order rail:** the top of the kitchen is a ticket rail. The day ticket hangs in the middle, with four order tickets beside it, each showing one fact (hover for the detail): the buffet's newest rarity and the day the next one opens, tomorrow's gold (income, interest on what you hold, gold from foods), the plate's total attack and HP, and what a loss today costs (free on days 1-2, else a life, with the courses still to win).
+**Order rail:** the top of the kitchen is a ticket rail. The day ticket hangs in the middle, with four order tickets beside it, each showing one fact (hover for the detail): the buffet's newest rarity and the day the next one opens, tomorrow's gold (income, interest on what you hold, gold from foods), and what a loss today costs. Today's buffet odds sit on a card on the tiles beside the refill sign (free on days 1-2, else a life, with the courses still to win).
 
 Gold is now a resource to manage across days: it carries over, interest rewards saving, foods cost more as their tier rises, and refills cost 1 gold each, as many as you like.
 
@@ -89,7 +89,7 @@ Selling never refunds a merge in full: a level 2 tier 1 food (3 copies) sells fo
 ### Market
 
 - Offers 3 to 5 foods (by day, see Tier unlocks) and 1 item.
-- Each food cubby picks a rarity first, leaning to the newest one (weights 4, 3, 2, 1, 1, 1 from the newest down), then a food at random within it. The odds for the day are shown over the food cubbies (a gem and a chance for each rarity), and in the refill sign's tooltip.
+- Each food cubby picks a rarity first, leaning to the newest one (weights 4, 3, 2, 1, 1, 1 from the newest down), then a food at random within it. The odds for the day are shown on a card beside the refill sign (a gem and a chance for each rarity), and in the refill sign's tooltip.
 - Refilling replaces everything except the special cubby.
 - **Level-up bonus:** when a food reaches level 2 or 3, a food from one tier above the current highest unlocked tier (capped at 6) drops into an empty food cubby right away, marked as a bonus. If all 6 food cubbies are full, it joins the next market instead.
 

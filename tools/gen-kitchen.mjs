@@ -118,7 +118,7 @@ for (const x of [138, 498]) panel(x, 9, 5, 8, P.steelDark, P.steelHi, P.outline)
 rect(298, 8, 44, 15, P.paper);
 frame(298, 8, 44, 15, P.paperShade);
 for (let x = 299; x < 341; x += 4) px(x, 22, P.paperShade);
-rect(316, 10, 8, 3, P.steelDark);
+rect(316, 7, 8, 3, P.steelDark); // its clip, on the rail like the order tickets beside it
 
 // ---------- upper cabinet = market (80..480, 24..112) ----------
 panel(80, 26, 400, 86, P.woodMid, P.woodHi, P.wood);

@@ -810,13 +810,12 @@ function oddsTable(): string {
   return `<p class="dim">Each food cubby today:</p>${rows}`;
 }
 
-/** The buffet's odds, over the food cubbies: a gem and a chance for each rarity on offer today. */
+/** The buffet's odds, on the tiles beside the refill sign: a gem and a chance for each rarity on offer today. */
 function oddsStrip(): string {
   const odds = marketOdds(app.run.turn);
-  const [x, y] = LAYOUT.market[0];
   const cells = odds.map((o) => `<span class="odds-cell">${gemIcon(RARITY_BY_TIER[o.tier])}${Math.round(o.chance * 100)}%</span>`).join('');
   const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p>`;
-  return `<div class="odds-strip" style="${at([x, y - 10])}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
+  return `<div class="odds-strip" style="${box(LAYOUT.odds as Rect)}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
 }
 
 /** Names and blurbs for what the special cubby can hold. */
@@ -1105,7 +1104,7 @@ function jarMarks(): string {
 /** The jar's tooltip: gold, the interest rule, and what tomorrow brings. */
 /**
  * Order tickets clipped to the rail beside the day ticket: the buffet's newest rarity and when the next opens,
- * tomorrow's gold, the plate's total attack and HP, and what a loss today costs. Hover one for the detail.
+ * tomorrow's gold, and what a loss today costs. Hover one for the detail.
  */
 function orderTickets(): string {
   const { run } = app;
@@ -1124,10 +1123,6 @@ function orderTickets(): string {
   const tomorrow = INCOME + interest + run.bonusGoldNext;
   const goldTip = tipBox(`${pix('coin')} Tomorrow: +${tomorrow} gold`, `<p>+${INCOME} income, +${interest} interest on the ${run.gold} gold you hold now${run.bonusGoldNext ? `, +${run.bonusGoldNext} from your foods` : ''}.</p><p class="dim">Spend less today to earn more interest (see the tip jar).</p>`);
 
-  const foods = run.plate.filter((u): u is UnitInstance => !!u);
-  const atk = foods.reduce((n, u) => n + u.attack + (u.tempAttack ?? 0), 0);
-  const hp = foods.reduce((n, u) => n + u.hp, 0);
-  const plateTip = tipBox('Your plate', `<p>${foods.length} of 6 foods: <b>${atk}</b> attack and <b>${hp}</b> HP in all.</p><p class="dim">Before battle buffs, Crust and flavor bonuses.</p>`);
 
   const freeLoss = run.turn < 3;
   const stakes = freeLoss ? 'free loss' : `loss ${pix('lifeOff')}-1`;
@@ -1135,10 +1130,9 @@ function orderTickets(): string {
 
   const t = (x: number, w: number, body: string, tip: string, key: string, cls = '') => `<div class="order-ticket ${cls}" style="${box([x, 9, w, 13])}" ${tip} data-vk="ticket:${key}" data-v="${hash(body)}" data-va="hop">${body}</div>`;
   return [
-    t(152, 66, rarity, rarityTip, 'rarity'),
-    t(224, 66, `${pix('coin')}+${tomorrow} next`, goldTip, 'gold'),
-    t(350, 70, `${statBadge('atk', atk)}${statBadge('hp', hp)}`, plateTip, 'plate'),
-    t(426, 66, stakes, stakesTip, 'stakes', freeLoss ? 'safe' : ''),
+    t(226, 66, rarity, rarityTip, 'rarity'),
+    t(348, 66, `${pix('coin')}+${tomorrow} next`, goldTip, 'gold'),
+    t(420, 62, stakes, stakesTip, 'stakes', freeLoss ? 'safe' : ''),
   ].join('');
 }
 
