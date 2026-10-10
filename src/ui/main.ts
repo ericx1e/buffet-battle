@@ -2293,8 +2293,8 @@ function cookbook(): string {
     <div class="page page-old" style="${box(LAYOUT.pageLeft)}" data-k="old:${sig}" data-in="pageHold" data-out="none">${bookBefore.left}</div>
     <div class="page" style="${box(LAYOUT.pageRight)}">${right}</div>
     <div class="page-leaf" style="${box([spine, top, reach, h])}" data-k="leaf:${sig}" data-in="pageTurn" data-out="none">
-      <div class="page face front" style="padding-left:${LAYOUT.pageRight[0] - spine + 4}px">${bookBefore.right}</div>
-      <div class="page face back" style="padding-left:${LAYOUT.pageLeft[0] - (spine - reach) + 4}px">${left}</div>
+      <div class="page face front" style="padding-left:${LAYOUT.pageRight[0] - spine + 4}px;padding-right:${spine + reach - (LAYOUT.pageRight[0] + LAYOUT.pageRight[2]) + 4}px">${bookBefore.right}</div>
+      <div class="page face back" style="padding-left:${LAYOUT.pageLeft[0] - (spine - reach) + 4}px;padding-right:${spine - (LAYOUT.pageLeft[0] + LAYOUT.pageLeft[2]) + 4}px">${left}</div>
     </div>`;
 }
 
