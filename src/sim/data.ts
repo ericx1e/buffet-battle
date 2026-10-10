@@ -138,14 +138,15 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Your Chilled foods take no Burn or Rot either.', abilities: [], coldPackStatus: true },
     abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'friendAheadOrSelf' }] },
   { id: 'rice', name: 'Rice', cookedName: 'Fried Rice', emoji: '🍚', tier: 2, flavor: 'savory', plain: true, attack: 2, hp: 6, values: [1, 2, 3],
-    text: "Every other night, soaks up a neighbour's flavor (no limit). Each is a power over its neighbours ({v}):",
+    text: "Every other night, soaks up a neighbour's flavor (no limit). Each flavor is a power ({v}):",
     cooked: { text: 'Its flavor effects are doubled.', abilities: [] },
-    // Each flavor it soaks up is a power over its neighbours (see plainPowers in the UI for the wording).
+    // Each flavor it soaks up is a power (see plainPowers in the UI for the wording): it guards its neighbours, toughens
+    // up and gets angry when hit, follows their attacks, and feeds one of them every night.
     flavorAbilities: {
       spicy: { trigger: 'neighbourAttacks', effect: 'damage', target: 'attacker', thrown: true },
-      sweet: { trigger: 'startOfBattle', effect: 'sticky' },
-      sour: { trigger: 'neighbourAttacks', effect: 'debuff', target: 'attacker' },
-      salty: { trigger: 'neighbourHit', effect: 'chill', target: 'attacker', fixed: 1, limitToAmount: true },
+      sweet: { trigger: 'startOfBattle', effect: 'guard' },
+      sour: { trigger: 'hit', effect: 'buff', hp: 0 },
+      salty: { trigger: 'startOfBattle', effect: 'armor' },
       savory: { trigger: 'endTurn', effect: 'buff', target: 'adjacentFriends', count: 1 },
     },
     abilities: [{ trigger: 'endTurn', effect: 'soakFlavor', every: 2, values: [1, 1, 1] }] },

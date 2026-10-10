@@ -66,8 +66,10 @@ interface BattleUnit {
   chill: number;
   /** The turn it last skipped for Chill: it stays frozen for the rest of that turn (see frozen). */
   frozeIn: number;
-  /** Rice: neighbours it can still save from being eaten this battle. */
-  sticky: number;
+  /** Rice: enemy hits on a neighbour it will still take instead. */
+  guards: number;
+  /** Damage taken off every hit on it (Rice), down to 1. */
+  armor: number;
 
   /** Attack gained from rally auras this battle (capped). */
   rallied: number;
@@ -252,7 +254,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, frozeIn: 0, sticky: 0, rallied: 0, rushed: false, towered: false,
+      burn: 0, rot: 0, chill: 0, frozeIn: 0, guards: 0, armor: 0, rallied: 0, rushed: false, towered: false,
     };
   }
 
@@ -852,19 +854,6 @@ class Battle {
         this.mark(u, 'heal', 1);
       }
       if (rushed.length > 0) this.snap(`Sugar rush! ${rushed.map((u) => this.name(u)).join(', ')} ${rushed.length > 1 ? 'hang' : 'hangs'} on at 1 HP`);
-      // Rice: a neighbour about to be eaten holds on at 1 HP, while it has saves left.
-      const stuck: string[] = [];
-      for (const u of dead) {
-        if (u.hp > 0 || u.lives > 0 || u.token) continue;
-        const rice = this.adjacent(u).find((r) => r.hp > 0 && r.sticky > 0);
-        if (!rice) continue;
-        rice.sticky--;
-        u.hp = 1;
-        this.mark(u, 'heal', 1);
-        this.mark(rice, 'ability');
-        stuck.push(`${this.name(rice)} holds ${this.name(u)} together at 1 HP`);
-      }
-      if (stuck.length > 0) this.snap(joinLines(stuck));
       // Chicken Tender Tower: the friend in its lane (every friend, once cooked) is back once, with part of its HP.
       const towered: BattleUnit[] = [];
       for (const u of dead) {
@@ -951,12 +940,11 @@ class Battle {
         if (ab.every && u.hitsTaken % ab.every !== 0) return;
         if (ab.limitToAmount && (u.fired[index] ?? 0) >= this.amountOf(u, ab, index)) return;
       }
-      if (trigger !== 'hit' && ab.limitToAmount && (u.fired[index] ?? 0) >= this.amountOf(u, ab, index)) return;
       if (trigger === 'round' && this.round % (ab.every ?? 1) !== 0) return;
       if (ab.max && (u.fired[index] ?? 0) >= ab.max) return; // at most `max` times a battle
       for (let t = 0; t < times; t++) {
         if (!this.spendTrigger()) return;
-        const line = this.execute(u, ab, ab.fixed ?? this.amountOf(u, ab, index), ctx, trigger === 'hit' || trigger === 'crustBlock' || trigger === 'neighbourHit');
+        const line = this.execute(u, ab, this.amountOf(u, ab, index), ctx, trigger === 'hit' || trigger === 'crustBlock');
         if (!line) continue;
         u.fired[index] = (u.fired[index] ?? 0) + 1;
         if (index >= def.abilities.length && index < own.length) this.mark(u, 'cooked');
@@ -1126,9 +1114,12 @@ class Battle {
         for (const t of near) this.addStatus(t, 'burn', n);
         return `${name}: ${this.name(from)}'s Burn spreads, ${names(near)} ${near.length > 1 ? 'Burn' : 'Burns'} ${n}`;
       }
-      case 'sticky':
-        u.sticky += amount;
-        return `${name} gets sticky: it can save ${amount} ${amount > 1 ? 'neighbours' : 'neighbour'} from being eaten`;
+      case 'guard':
+        u.guards += amount;
+        return `${name} guards its neighbours: it takes the next ${amount} ${amount > 1 ? 'hits' : 'hit'} on them`;
+      case 'armor':
+        u.armor += amount;
+        return `${name} toughens up: hits on it deal ${amount} less`;
       case 'doubleCrust': {
         const crusted = targets.filter((t) => t.crust > 0);
         if (crusted.length === 0) return;
@@ -1239,6 +1230,17 @@ class Battle {
     const foe = source && source.side !== target.side ? source : undefined;
     if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
     if (foe && target.chill > 0) amount += this.chillBite(foe.side); // cooked Ice Cream
+    // Guarded (Rice): a neighbour with guards left takes the enemy's hit instead.
+    if (foe && !reaction) {
+      const guard = this.adjacent(target).find((g) => g.guards > 0 && g.hp > 0);
+      if (guard) {
+        guard.guards--;
+        this.mark(guard, 'ability');
+        this.mark(target, 'blocked');
+        this.hit(guard, amount, source, ignoreCrust, reaction);
+        return;
+      }
+    }
     // Cold pack (Frozen Peas): a Chilled food takes no damage from hits.
     if (this.frozen(target) && this.units(target.side).some((f) => unitDef(f.defId).aura === 'coldPack')) {
       this.mark(target, 'blocked');
@@ -1264,6 +1266,7 @@ class Battle {
         for (const f of [target, ...this.adjacent(target)]) this.later.push({ unit: f, trigger: 'crustBlock', ctx: { source: foe } });
       }
     }
+    if (rest > 0 && target.armor > 0) rest = Math.max(1, rest - target.armor); // Rice's armor
     if (rest > 0) {
       target.hp -= rest;
       this.mark(target, 'hit', rest);
@@ -1271,8 +1274,6 @@ class Battle {
     if (reaction) return;
     target.hitsTaken++;
     this.queue.push({ unit: target, source });
-    // Its neighbours can react (Rice).
-    if (foe) for (const f of this.adjacent(target)) this.later.push({ unit: f, trigger: 'neighbourHit', ctx: { source: foe } });
   }
 
   /**

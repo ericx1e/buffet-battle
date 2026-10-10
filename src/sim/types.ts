@@ -13,7 +13,6 @@ export type Trigger =
   | 'friendAheadHit' // the friend ahead of this food is hit (`attacker` = who hit it)
   | 'friendAheadAttacks' // the friend ahead of this food attacks (`attacker` = the food it attacked)
   | 'neighbourAttacks' // an adjacent friend attacks (`attacker` = the food it attacked)
-  | 'neighbourHit' // an adjacent friend is hit by an enemy (`attacker` = who hit it)
   | 'friendFaint' // an adjacent friend is eaten
   | 'anyFriendEaten' // any friend is eaten
   | 'crustBreak' // a hit uses up the last of this food's Crust
@@ -108,7 +107,8 @@ export type Effect =
   | 'spreadBurn' // the enemy with the most Burn passes amount Burn to each enemy beside it (Habanero Salsa)
   | 'doubleCrust' // the targets' Crust doubles (Salt-Crusted Fish)
   | 'siphon' // the targets lose amount attack and your front row gains amount attack (Fondue)
-  | 'sticky' // the next amount neighbours that would be eaten hold on at 1 HP instead (Rice)
+  | 'guard' // the next amount enemy hits on a neighbour hit this food instead (Rice)
+  | 'armor' // every hit on this food deals amount less damage, at least 1 (Rice)
   // kitchen
   | 'sellValue' // +amount sell value, for good
   | 'freeReroll' // your next amount restocks this turn are free
@@ -129,10 +129,8 @@ export interface AbilityDef {
   every?: number;
   /** hit trigger: only the first time this food is hit. */
   once?: boolean;
-  /** hit trigger (and other reactions): at most `amount` times per battle (Popcorn). */
+  /** hit trigger: at most `amount` times per battle (Popcorn). */
   limitToAmount?: boolean;
-  /** The effect's own number, when the level's number counts something else (with limitToAmount: how often). */
-  fixed?: number;
   /** randomFriends: how many; summon: how many; kitchen adjacentFriends: at most this many, at random. */
   count?: number;
   /** summon: which token, and fixed stats (otherwise attack/HP = amount). */

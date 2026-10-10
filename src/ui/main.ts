@@ -2035,9 +2035,9 @@ function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
   const n = d.values[level - 1] * (level === 3 ? 2 : 1);
   const what: Record<Flavor, string> = {
     spicy: `grain hits for ${n}`,
-    sweet: `saves ${n} at 1 HP`,
-    sour: `target -${n} attack`,
-    salty: `hit: Chill attacker (${n}x)`,
+    sweet: `guards ${n} hit${n > 1 ? 's' : ''}`,
+    sour: `hit: +${n} attack`,
+    salty: `hits on it -${n}`,
     savory: `one +${n}/+${n} nightly`,
   };
   // The powers it has, a line each; the rest as icons to hover (the page has no room for all five).
@@ -2057,7 +2057,14 @@ function cookbook(): string {
   const unitPages = (defId: string, level: 1 | 2 | 3, flavors: Flavor[], atk: number, hp: number, u?: UnitInstance, price?: string) => {
     const d = unitDef(defId);
     const values = d.values.map((v, i) => (i + 1 === level ? `<b>${v}</b>` : `${v}`)).join('/');
-    const shown = d.allFlavors ? 'every flavor' : flavors.map(flavorTag).join(' ');
+    // Three or more flavors (Tofu, Rice) show as icons, each naming its flavor on hover, so the page keeps its room.
+    const shown = d.allFlavors
+      ? 'every flavor'
+      : flavors.length > 2
+        ? flavors.map((f) => `<span ${tip(`<p>${flavorTag(f)}</p>`)}>${pix(f)}</span>`).join(' ')
+        : d.plain && flavors.length === 0
+          ? '<span class="dim">no flavor yet</span>'
+          : flavors.map(flavorTag).join(' ');
     left = `<div class="pg-art">${unitArt(defId, level === 3)}</div>
       <div class="pg-title">${level === 3 ? d.cookedName : d.name}</div>
       <p>${shown}</p>
