@@ -112,6 +112,8 @@ interface App {
   chef?: { me?: api.Me; error?: string; busy?: boolean };
   /** The page of foods won with is open (`foods` once loaded). */
   wonWith?: { foods?: Record<string, number>; error?: string };
+  /** First-day tutorial: the step shown (see TUTORIAL), while a new chef's first day is on. */
+  tutorial?: number;
   /** The website, opened by the desktop app to sign it in (?link=code): `done` once it has, with the chef's name. */
   linking?: { code: string; done?: string; error?: string };
   /** The desktop app waiting for the browser sign-in to finish. */
@@ -177,6 +179,14 @@ function glossary(html: string, topic = ''): string {
 const root = document.getElementById('app')!;
 let timer: number | undefined;
 
+// A chef who has played here before (a saved run) has seen the kitchen: no tutorial for them.
+const firstVisit = (() => {
+  try {
+    return !localStorage.getItem(SAVE_KEY);
+  } catch {
+    return false;
+  }
+})();
 const app: App = loadApp() ?? freshApp();
 
 // The dev site's battle viewer (admin.html) opens index.html?replay with a battle in localStorage: it plays here, in
@@ -393,6 +403,89 @@ function wonWithPage(w: NonNullable<App['wonWith']>): string {
       <div class="won-sub">${foods ? `${won} of ${all.length} foods have been on a plate that won a run${app.server ? '' : ' on this device'}.` : ''}</div>
       <div class="won-grid">${grid}</div>
       <div class="row"><button class="big-btn" data-action="won-with-close">done</button></div>
+    </div>`;
+}
+
+// ---------- first-day tutorial ----------
+// A new chef's first day: four cards, each pointing at part of the kitchen (buy a food, flavors, how to win, the bell),
+// with next and skip. Shown once per browser; buying the first food moves past the first card on its own.
+
+const TUTORIAL_KEY = 'buffetbattle.tutorial';
+/** Where the cards sit: over the counter tray, clear of the plate, the buffet and the bell. */
+const CARD_AT: Rect = [246, 150, 214, 0];
+const TUTORIAL: { target: Rect; card: Rect; title: string; text: string }[] = [
+  {
+    target: LAYOUT.buffet as Rect,
+    card: CARD_AT,
+    title: 'Buy a dish',
+    text: 'Drag a dish from the buffet onto your plate. Its price is under it; your gold is in the jar. The front column (right) attacks, the back column supports.',
+  },
+  {
+    target: LAYOUT.chalkboard as Rect,
+    card: CARD_AT,
+    title: 'Flavors',
+    text: 'Every food has a flavor. Two foods of a flavor on your plate unlock its bonus, and it grows at 4, 6 and 8. The chalkboard keeps count: hover a line to see the bonus.',
+  },
+  {
+    target: LAYOUT.magnets as Rect,
+    card: CARD_AT,
+    title: 'How to win',
+    text: 'Win a battle to serve a course: ten courses wins the run. A loss costs a life (the first two days are free), and five lost lives close the kitchen.',
+  },
+  {
+    target: PROPS.bell as Rect,
+    card: CARD_AT,
+    title: 'Ring the bell',
+    text: "When your plate is ready, ring the bell to serve. Your plate battles another chef's on its own. Then it's a new day, more gold, and a fresh buffet.",
+  },
+];
+
+function tutorialDone(): boolean {
+  try {
+    return localStorage.getItem(TUTORIAL_KEY) === 'done';
+  } catch {
+    return true;
+  }
+}
+
+function endTutorial() {
+  app.tutorial = undefined;
+  try {
+    localStorage.setItem(TUTORIAL_KEY, 'done');
+  } catch {
+    // Not kept: it may show again next visit.
+  }
+}
+
+// An existing player never sees it.
+if (!firstVisit && !tutorialDone()) endTutorial();
+
+/** Starts the tutorial on a new chef's first day, and moves past "buy a dish" once a food is on the plate. */
+function stepTutorial() {
+  const kitchen = !app.battle && !isOver(app.run) && !app.spectate;
+  if (app.tutorial === undefined) {
+    if (kitchen && app.run.turn === 1 && !app.naming && !app.linking && !tutorialDone()) app.tutorial = 0;
+    return;
+  }
+  if (!kitchen || app.run.turn > 1) return endTutorial();
+  if (app.tutorial === 0 && app.run.plate.some(Boolean)) app.tutorial = 1;
+}
+
+function tutorialCard(): string {
+  const i = app.tutorial;
+  if (i === undefined || app.naming || app.chef || app.wonWith || settingsOpen) return '';
+  const t = TUTORIAL[i];
+  const [x, y, w] = t.card;
+  const last = i === TUTORIAL.length - 1;
+  return `
+    <div class="coach-ring" style="${box(t.target)}" data-k="coach-ring:${i}" data-in="pop"></div>
+    <div class="coach" style="left:${x}px;top:${y}px;width:${w}px" data-k="coach:${i}" data-in="pop">
+      <div class="coach-title">${t.title}<span>${i + 1}/${TUTORIAL.length}</span></div>
+      <p>${t.text}</p>
+      <div class="coach-buttons">
+        <button type="button" class="alt-btn" data-action="tutorial-skip">skip tutorial</button>
+        <button type="button" class="big-btn" data-action="tutorial-next">${last ? 'got it' : 'next ›'}</button>
+      </div>
     </div>`;
 }
 
@@ -947,7 +1040,18 @@ function onAction(action: string, el: HTMLElement) {
     case 'sell':
       return sellSelected();
     case 'serve':
+      if (app.tutorial !== undefined) endTutorial();
       return ringBell();
+    case 'tutorial-next':
+      if (app.tutorial === undefined) return;
+      if (app.tutorial >= TUTORIAL.length - 1) endTutorial();
+      else app.tutorial++;
+      sfx('page');
+      return render();
+    case 'tutorial-skip':
+      endTutorial();
+      sfx('select');
+      return render();
     case 'season': {
       const pending = app.seasoning;
       app.seasoning = undefined;
@@ -1192,6 +1296,7 @@ let toast = { text: '', id: 0, at: 0 };
 
 function render() {
   clearTimeout(timer);
+  stepTutorial();
   const screen = app.battle ? 'battle' : isOver(app.run) ? 'over' : 'kitchen';
   const first = lastScreen === '';
   const changed = screen !== lastScreen || forceWipe;
@@ -2205,6 +2310,7 @@ function renderKitchen() {
         ${app.naming ? namingCard(app.naming) : ''}
         ${app.chef ? chefCard(app.chef) : ''}
         ${app.linking ? linkCard(app.linking) : ''}
+        ${tutorialCard()}
       </main>
     </div>`;
   if (app.naming) fillNamingCard(app.naming);

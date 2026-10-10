@@ -3,6 +3,7 @@
 import { plateHash, replayDay } from '../../src/sim/actions';
 import { type Outcome, simulateBattle } from '../../src/sim/battle';
 import { type Opponent, botOpponent } from '../../src/sim/bot';
+import { isUnit } from '../../src/sim/data';
 import { Rng } from '../../src/sim/rng';
 import { COURSES_TO_WIN, finishBattle, isOver, nextSeed } from '../../src/sim/run';
 import type { Plate } from '../../src/sim/types';
@@ -11,12 +12,22 @@ import { HttpError, readBody } from './http';
 import { type RunView, ownRun, saveDay } from './runs';
 import { parseActions } from './validate';
 
-/** Below this many ghosts to choose from a bot always fills in; from POOL_FULL on, never; in between, less and less. */
-export const POOL_THIN = 10;
-export const POOL_FULL = 100;
+/**
+ * Below POOL_THIN ghosts to choose from a bot always fills in (one is enough on the first days); from POOL_FULL on,
+ * never; in between, less and less, and half as often on the first days, where a real plate matters most to a new chef.
+ */
+export const POOL_THIN = 2;
+export const POOL_FULL = 20;
+export const EARLY_DAYS = 3;
 const SHORTLIST = 20;
 
-export const botChance = (pool: number) => (pool < POOL_THIN ? 1 : pool >= POOL_FULL ? 0 : (POOL_FULL - pool) / (POOL_FULL - POOL_THIN));
+export function botChance(pool: number, day = EARLY_DAYS + 1): number {
+  const early = day <= EARLY_DAYS;
+  if (pool < (early ? 1 : POOL_THIN)) return 1;
+  if (pool >= POOL_FULL) return 0;
+  const thin = early ? 1 : POOL_THIN;
+  return ((POOL_FULL - pool) / (POOL_FULL - thin)) * (early ? 0.5 : 1);
+}
 
 export interface ServeResult {
   opponent: Opponent;
@@ -25,26 +36,35 @@ export interface ServeResult {
   run: RunView;
 }
 
-/** Ghosts this run may meet today: same rules and day, someone else's, not a run it already fought. */
-const ELIGIBLE = `FROM ghosts g WHERE g.version = ?1 AND g.day = ?2 AND g.player_id != ?3
+/**
+ * Ghosts this run may meet today: the same day, someone else's, not a run it already fought. Plates from earlier rules
+ * count too (a release would otherwise empty the pool): they fight under today's rules, and ones holding a food that
+ * no longer exists are skipped. Today's rules are preferred (see findOpponent).
+ */
+const ELIGIBLE = `FROM ghosts g WHERE g.day = ?2 AND g.player_id != ?3
   AND g.run_id NOT IN (SELECT o.run_id FROM battles b JOIN ghosts o ON o.id = b.opp_ghost_id WHERE b.run_id = ?4)`;
 
 /**
- * The day's opponent: from the shortlist of the 20 nearest records (newest first), unless the pool is thin and a bot
- * fills in. Every random choice comes from `seed`, which comes from the run.
+ * The day's opponent: from the shortlist of the 20 nearest records (a plate from earlier rules counts as one step
+ * further; newest first), unless the pool is thin and a bot fills in. Every random choice comes from `seed`, which
+ * comes from the run.
  */
 async function findOpponent(env: Env, run: RunView, playerId: string, wins: number, lives: number, seed: number): Promise<{ opponent: Opponent; ghostId: number | null }> {
   const args = [GAME_VERSION, run.day, playerId, run.id];
   const pool = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM (SELECT 1 ${ELIGIBLE} LIMIT ${POOL_FULL})`).bind(...args).first<{ n: number }>())!.n;
   const rng = new Rng(seed);
-  if (rng.next() < botChance(pool)) return { opponent: botOpponent(run.day, seed, wins, lives), ghostId: null };
+  const bot = () => ({ opponent: botOpponent(run.day, seed, wins, lives), ghostId: null });
+  if (rng.next() < botChance(pool, run.day)) return bot();
   const { results } = await env.DB.prepare(
     `SELECT g.id, g.plate, g.wins, g.lives, p.name FROM (SELECT * ${ELIGIBLE}) g JOIN players p ON p.id = g.player_id
-     ORDER BY ABS(g.wins - ?5) + ABS(g.lives - ?6), g.created_at DESC LIMIT ${SHORTLIST}`,
+     ORDER BY ABS(g.wins - ?5) + ABS(g.lives - ?6) + (g.version != ?1), g.created_at DESC LIMIT ${SHORTLIST}`,
   )
     .bind(...args, wins, lives)
     .all<{ id: number; plate: string; wins: number; lives: number; name: string }>();
-  const g = rng.pick(results);
+  // A plate from earlier rules may hold a food that has since been removed: those are passed over.
+  const usable = results.filter((r) => (JSON.parse(r.plate) as Plate).every((u) => !u || isUnit(u.defId)));
+  if (usable.length === 0) return bot();
+  const g = rng.pick(usable);
   return { opponent: { plate: JSON.parse(g.plate) as Plate, label: g.name, wins: g.wins, lives: g.lives }, ghostId: g.id };
 }
 

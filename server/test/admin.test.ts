@@ -38,7 +38,7 @@ describe('admin', () => {
     const { body } = await adminGet('/admin/overview');
     expect(body.players).toBe(2);
     expect(body.runs.active).toBe(2);
-    expect(body.battles).toMatchObject({ n: 5, bots: 5 });
+    expect(body.battles.n).toBe(5); // some may be against each other's plates now (one is enough on the first days)
     expect(body.active.at(-1)).toMatchObject({ chefs: 2, days: 5 });
     expect(body.versions[0]).toMatchObject({ version: GAME_VERSION, plates: 5, chefs: 2 });
     expect(body.google).toEqual({ chefs: 0, linked: [], devices: 0 });

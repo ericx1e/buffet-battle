@@ -801,11 +801,11 @@ CREATE INDEX battles_run ON battles (run_id);
 
 ### Matchmaking
 
-1. Same version and same day: a hard rule.
+1. Same day: a hard rule. Plates from earlier rules count too (a release would otherwise empty the pool and leave everyone with bots); they fight under today's rules, and a plate holding a food that has since been removed is skipped.
 2. Not the player's own ghosts, and not a run already fought this run.
-3. Nearest record: the smallest `|wins - mine| + |lives - mine|`.
+3. Nearest record: the smallest `|wins - mine| + |lives - mine|`, plus 1 for a plate from earlier rules (today's are preferred).
 4. Most recent first. From the best 20, pick one at random.
-5. A bot instead, when the pool is thin (counting the ghosts that pass 1 and 2): always with fewer than 10 ghosts that qualify, never with 100 or more, and in between a chance that falls evenly from 100% to 0%. `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today (`botOpponent` in bot.ts, shared with the client). Bot plates aren't stored; their seed is enough to rebuild them.
+5. A bot instead, when the pool is thin (counting the ghosts that pass 1 and 2): always with fewer than 2 ghosts that qualify (1 on days 1-3), never with 20 or more, and in between a chance that falls evenly from 100% to 0%, halved on days 1-3, where meeting a real plate matters most to a new chef. (Lightened October 2026 from 10 and 100: with few players, chefs only ever met bots.) `generateGhost(day, seed)`, with the day's gold adjustment and a record next to the player's, as today (`botOpponent` in bot.ts, shared with the client). Bot plates aren't stored; their seed is enough to rebuild them.
 
 Every random choice here comes from a seed drawn from the run, so a day's opponent is fixed once the day is played.
 

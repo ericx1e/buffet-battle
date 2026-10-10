@@ -202,7 +202,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .spice-savory { --fill: #8a5a32; --shade: #6a4224; --top: #b8763f; --speck: #b8763f; }
 
 /* Chalkboard */
-.chalkboard { padding: 3px 5px; color: #dfe7dc; }
+.chalkboard { padding: 3px 5px 3px 8px; color: #dfe7dc; }
 .chalk-title { font: 400 10px/10px var(--pixel); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1px; }
 .chalk-line { display: flex; align-items: center; gap: 3px; font: 400 10px/10px var(--pixel); color: #75887a; white-space: nowrap; overflow: hidden; }
 .chalk-line.on { color: #f3f7f1; }
@@ -1029,6 +1029,19 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .over-buttons .big-btn { margin-top: 0; }
 .mag-course small { font-size: 10px; margin-left: 1px; }
 .mag-course { cursor: pointer; pointer-events: auto; }
+/* First-day tutorial: a card, and a pulsing ring around what it's about (the kitchen stays playable under it). */
+.coach-ring { position: absolute; z-index: 60; pointer-events: none; border: 2px solid #ffd23f; box-shadow: 0 0 0 1px #2a1b14, 0 0 6px 2px rgba(255, 210, 63, 0.6); animation: coach-pulse 1s steps(2) infinite; }
+@keyframes coach-pulse { 50% { box-shadow: 0 0 0 1px #2a1b14, 0 0 10px 4px rgba(255, 210, 63, 0.35); } }
+.coach {
+  position: absolute; z-index: 61; padding: 6px 8px 8px; display: flex; flex-direction: column; gap: 5px;
+  background: #fbf2da; border: 2px solid #2a1b14; box-shadow: 3px 3px 0 rgba(42, 27, 20, 0.45);
+  font: 400 10px/11px var(--pixel); color: #3a2a22;
+}
+.coach p { margin: 0; }
+.coach-title { display: flex; justify-content: space-between; font-size: 12px; line-height: 12px; color: #b2401b; text-transform: uppercase; letter-spacing: 1px; }
+.coach-title span { color: #8a7568; font-size: 10px; letter-spacing: 0; }
+.coach-buttons { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+.coach-buttons .big-btn { margin-top: 0; }
 /* The desktop app signs in through the browser: our own button, and a note while it waits. */
 .google-chip { padding: 0 8px; }
 .signin-wait { display: flex; align-items: center; gap: 4px; font: 400 10px/10px var(--pixel); color: #8a7568; }

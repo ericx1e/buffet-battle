@@ -18,15 +18,15 @@ async function startedRun(name = 'Server Chef') {
 }
 
 /** `n` ghosts on `day` from another player's runs, each with the given record. */
-async function seedGhosts(n: number, day: number, wins: number, lives: number, name = 'Pool Chef') {
+async function seedGhosts(n: number, day: number, wins: number, lives: number, name = 'Pool Chef', version = GAME_VERSION, plate?: unknown) {
   const other = await newPlayer(name);
   const now = Date.now();
   const stmts = [];
   for (let i = 0; i < n; i++) {
     const runId = `seed-${name.replace(/\W/g, '')}-${wins}-${i}`;
     stmts.push(
-      env.DB.prepare("INSERT INTO runs (id, player_id, version, seed, day, wins, lives, status, state, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?, ?, 'active', '{}', ?, ?)").bind(runId, other.playerId, GAME_VERSION, day, wins, lives, now, now),
-      env.DB.prepare('INSERT INTO ghosts (run_id, player_id, version, day, wins, lives, plate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(runId, other.playerId, GAME_VERSION, day, wins, lives, JSON.stringify(generateGhost(day, 500 + i)), now + i),
+      env.DB.prepare("INSERT INTO runs (id, player_id, version, seed, day, wins, lives, status, state, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?, ?, 'active', '{}', ?, ?)").bind(runId, other.playerId, version, day, wins, lives, now, now),
+      env.DB.prepare('INSERT INTO ghosts (run_id, player_id, version, day, wins, lives, plate, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').bind(runId, other.playerId, version, day, wins, lives, JSON.stringify(plate ?? generateGhost(day, 500 + i)), now + i),
     );
   }
   await env.DB.batch(stmts);
@@ -110,8 +110,25 @@ describe('matchmaking', () => {
   it('uses bots while the pool is thin, fewer as it fills', () => {
     expect(botChance(0)).toBe(1);
     expect(botChance(POOL_THIN - 1)).toBe(1);
-    expect(botChance(55)).toBeCloseTo(0.5);
+    expect(botChance(11)).toBeCloseTo(0.5);
     expect(botChance(POOL_FULL)).toBe(0);
+    // The first days: one plate is enough, and bots come half as often.
+    expect(botChance(0, 1)).toBe(1);
+    expect(botChance(1, 1)).toBe(0.5);
+    expect(botChance(POOL_FULL, 2)).toBe(0);
+  });
+
+  it('meets plates from earlier rules too, but not ones with a food that no longer exists', async () => {
+    await seedGhosts(POOL_FULL, 1, 0, 5, 'Gone Chef', 'old-version', [{ uid: 1, defId: 'removedFood', copies: 1, attack: 3, hp: 5 }, null, null, null, null, null]);
+    let p = await startedRun('Diner A');
+    let res = await call('POST', `/runs/${p.run.id}/serve`, { token: p.token, body: serveBody(1, playDay(p.run.state)) });
+    expect(res.status).toBe(200);
+    expect(res.body.opponent.label).not.toBe('Gone Chef');
+    await seedGhosts(POOL_FULL, 1, 0, 5, 'Old Chef', 'old-version');
+    p = await startedRun('Diner B');
+    res = await call('POST', `/runs/${p.run.id}/serve`, { token: p.token, body: serveBody(1, playDay(p.run.state)) });
+    expect(res.status).toBe(200);
+    expect(res.body.opponent.bot).toBeUndefined();
   });
 
   it('meets a real plate from the same day once the pool is full, from the nearest records', async () => {
