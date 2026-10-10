@@ -134,20 +134,22 @@ for (let i = 0; i < 8; i++) {
   const ox = 86 + 48 * i;
   // Foods on brown, the item on teal, and the special cubby (the last) its own plum showcase (the game outlines its
   // offer in gold). Each is an open
-  // box: the shelf's underside in shadow along the top, and the floor the dish stands on along the bottom.
+  // box: the shelf's underside in shadow along the top and the floor the dish stands on along the bottom, each a
+  // trapezoid narrowing toward the back wall, so their angled corners carry the depth without drawing the side walls.
   const special = i === 7;
   const teal = i === 6;
   const tone = special ? CUBBY_TONES.special : teal ? CUBBY_TONES.teal : CUBBY_TONES.food;
   const [x0, y0, w, h, d] = [ox, 36, 44, 64, 4];
   for (let y = y0; y < y0 + h; y++) {
     for (let x = x0; x < x0 + w; x++) {
-      const [t, bt] = [y - y0, y0 + h - 1 - y];
-      px(x, y, t < d ? tone.ceiling : bt < d ? tone.floor : tone.back);
+      const [l, r, t, bt] = [x - x0, x0 + w - 1 - x, y - y0, y0 + h - 1 - y];
+      const side = Math.min(l, r);
+      px(x, y, t < d && t <= side ? tone.ceiling : bt < d && bt <= side ? tone.floor : tone.back);
     }
   }
   // Where the ceiling meets the back wall, a line of shadow; where the floor meets it, a darker seam.
-  rect(x0, y0 + d, w, 1, tone.dark);
-  rect(x0, y0 + h - d - 1, w, 1, tone.dark);
+  rect(x0 + d, y0 + d, w - 2 * d, 1, tone.dark);
+  rect(x0 + d, y0 + h - d - 1, w - 2 * d, 1, tone.dark);
   if (special) {
     // Two little four-point sparkles on the velvet floor (single specks read as dirt, not shine).
     for (const [sx, sy] of [[ox + 7, 97], [ox + 36, 96]]) {
