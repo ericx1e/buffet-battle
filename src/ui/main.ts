@@ -2211,6 +2211,10 @@ function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
   return owned.join('') + more;
 }
 
+/** The cookbook's pages now, and as they were before the last turn (the turning leaf carries the old right page). */
+let bookPages = { sig: -1, left: '', right: '' };
+let bookBefore = { sig: -1, left: '', right: '' };
+
 function cookbook(): string {
   const s = app.selected;
   const { run } = app;
@@ -2275,12 +2279,23 @@ function cookbook(): string {
       unitPages(d.id, 1, flavorsOf({ defId: d.id }), d.attack, d.hp, undefined, 'free pick');
     }
   }
-  // A new selection turns the page: a leaf (keyed by what's on the pages, so it enters afresh) swings from the right
-  // page to the left; the new right page is under it, the new left page shows as it lands.
+  // A new selection turns the page, like a real one: a leaf (keyed by what's on the pages, so it enters afresh) carries
+  // the old right page on its front and the new left page on its back, and swings about the spine; the old left page
+  // stays until it lands, and the new right page is under it all along.
   const sig = hash(left + right);
+  if (sig !== bookPages.sig) bookBefore = bookPages;
+  bookPages = { sig, left, right };
+  const [, top, , h] = LAYOUT.pageLeft as Rect;
+  const spine = (LAYOUT.pageLeft[0] + LAYOUT.pageLeft[2] + LAYOUT.pageRight[0]) / 2;
+  // The leaf reaches as far as the wider of the two pages from the spine.
+  const reach = Math.max(LAYOUT.pageRight[0] + LAYOUT.pageRight[2] - spine, spine - LAYOUT.pageLeft[0]);
   return `<div class="page" style="${box(LAYOUT.pageLeft)}" data-vk="pgL" data-v="${sig}" data-va="pageLand">${left}</div>
+    <div class="page page-old" style="${box(LAYOUT.pageLeft)}" data-k="old:${sig}" data-in="pageHold" data-out="none">${bookBefore.left}</div>
     <div class="page" style="${box(LAYOUT.pageRight)}">${right}</div>
-    <div class="page-leaf" style="${box(LAYOUT.pageRight)}" data-k="leaf:${sig}" data-in="pageTurn" data-out="none"></div>`;
+    <div class="page-leaf" style="${box([spine, top, reach, h])}" data-k="leaf:${sig}" data-in="pageTurn" data-out="none">
+      <div class="page face front" style="padding-left:${LAYOUT.pageRight[0] - spine + 4}px">${bookBefore.right}</div>
+      <div class="page face back" style="padding-left:${LAYOUT.pageLeft[0] - (spine - reach) + 4}px">${left}</div>
+    </div>`;
 }
 
 /**

@@ -269,12 +269,24 @@ body.dragging .slot.empty {
 
 /* Cookbook pages */
 .page { padding: 4px 4px; font: 400 10px/9px var(--pixel); color: #3a2a22; overflow: hidden; }
-/* The turning leaf: a blank ruled page, only seen while it turns (see pageTurn in motion.ts). */
-.page-leaf {
-  position: absolute; z-index: 4; opacity: 0; pointer-events: none;
-  background: repeating-linear-gradient(to bottom, #fbf6e8 0 11px, #e6d9bf 11px 12px);
-  box-shadow: inset 2px 0 0 rgba(42, 27, 20, 0.18), 1px 0 0 rgba(42, 27, 20, 0.35);
+/* The turning leaf: only seen while it turns (see pageTurn in motion.ts). Two faces, each a ruled page like the book's
+   (the lines fall where the art's do): the old right page on the front, the new left page on the back. The old left
+   page waits under it until it lands. */
+.page.page-old { z-index: 3; opacity: 0; pointer-events: none; background: #fbf2da; }
+.page-leaf { position: absolute; z-index: 4; opacity: 0; pointer-events: none; transform-style: preserve-3d; }
+.page-leaf .face {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(to bottom, #fbf2da 0 11px, #e4dcc6 11px 12px) 0 3px, #fbf2da;
+  box-shadow: inset 0 0 0 1px rgba(232, 214, 174, 0.9);
 }
+.page-leaf .face.front { box-shadow: inset 2px 0 0 rgba(42, 27, 20, 0.15), 1px 0 0 rgba(42, 27, 20, 0.3); }
+.page-leaf .face.back { transform: rotateY(180deg); box-shadow: inset -2px 0 0 rgba(42, 27, 20, 0.15), -1px 0 0 rgba(42, 27, 20, 0.3); }
+/* Each face shows for its half of the turn (backface-visibility would do it, but the stage flattens 3D). The leaf
+   is invisible at rest, so these replaying on a re-render show nothing. */
+.page-leaf .face.front { animation: face-front 260ms linear both; }
+.page-leaf .face.back { animation: face-back 260ms linear both; }
+@keyframes face-front { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes face-back { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
 .page p { margin: 0 0 3px; line-height: 9px; }
 .page b { color: #b2401b; }
 .page .dim { color: #8a7568; font-size: 10px; }
