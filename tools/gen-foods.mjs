@@ -671,12 +671,15 @@ const foods = {
   },
   jalapeno(s) {
     s.shadow(17, 29, 9, 2);
-    // A plump dark-green pepper curving down to a blunt tip, with a thick stem and a shine along its back.
+    // A plump dark-green pepper curving down to a blunt tip, a shine along its back; on top, a darker cap hugging its
+    // shoulders and a pale, woody stem curving up and away (a different colour from the body, so it reads as a stem).
     const green = R('#3d8f2c');
-    s.tube([[12, 9], [13, 16], [16, 23], [21, 27]], (t) => 4.2 - t * 2.2, green);
-    s.tube([[12, 9], [11, 6], [13, 3]], 1.1, R('#6a8f3a'));
-    s.ball(12, 9, 3, 1.5, R('#5f8f34'));
-    s.line(11, 12, 12, 18, green[0]);
+    s.tube([[13, 11], [14, 17], [16, 23], [21, 27]], (t) => 4.4 - t * 2.4, green);
+    s.tube([[12, 9], [11, 6], [9, 4], [8, 2]], (t) => 1 - 0.3 * t, R('#93a04e'));
+    s.ball(13, 10, 4.5, 2.4, R('#4f6f24'));
+    s.ball(9, 11, 1.6, 1.2, R('#4f6f24')); // the cap's lobes drooping over the shoulders
+    s.ball(17, 11, 1.6, 1.2, R('#4f6f24'));
+    s.line(12, 14, 13, 20, green[0]);
   },
   cranberry(s) {
     s.shadow(17, 28, 11, 2);
