@@ -2030,17 +2030,23 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
-/** What each flavor does for a plain food (Rice), at its level's number (doubled once cooked). */
+/** The power each flavor gives a plain food (Rice) over its neighbours, at its level's number (doubled once cooked). */
 function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
   const n = d.values[level - 1] * (level === 3 ? 2 : 1);
   const what: Record<Flavor, string> = {
-    spicy: `Burns across ${n}`,
-    sweet: `weakest +${n} HP/turn`,
-    sour: `attackers Rot ${n}`,
-    salty: `+${n} Crust`,
-    savory: `+${n}/+${n} per flavor`,
+    spicy: `hits their target ${n}`,
+    sweet: `saves ${n} at 1 HP`,
+    sour: `abilities +${n}`,
+    salty: `wraps ${n} (block a hit)`,
+    savory: `one +${n}/+${n} nightly`,
   };
-  return FLAVORS.map((f) => `<p class="plain-power ${has.includes(f) ? 'on' : 'dim'}">${pix(f)} ${what[f]}</p>`).join('');
+  // The powers it has, a line each; the rest as icons to hover (the page has no room for all five).
+  const owned = FLAVORS.filter((f) => has.includes(f)).map((f) => `<p class="plain-power on">${pix(f)} ${what[f]}</p>`);
+  const rest = FLAVORS.filter((f) => !has.includes(f));
+  const more = rest.length
+    ? `<p class="plain-power dim">${has.length ? 'more:' : 'soak:'} ${rest.map((f) => `<span ${tip(`<p>${flavorTag(f)}: ${what[f]}.</p>`)}>${pix(f)}</span>`).join('')}</p>`
+    : '';
+  return owned.join('') + more;
 }
 
 function cookbook(): string {

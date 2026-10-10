@@ -1,5 +1,5 @@
 import type { Outcome } from './battle';
-import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorCap, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
+import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorAbilities, flavorCap, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
 import { Rng } from './rng';
 import {
   type AbilityDef,
@@ -752,9 +752,11 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
           case 'level3Friends':
             targets = withRng(run, (rng) => rng.sample(friends.filter((u) => levelOf(u.copies) === 3), ab.count ?? 1));
             break;
-          case 'adjacentFriends':
-            targets = slot === null ? [] : run.plate.filter((u, i): u is UnitInstance => !!u && u !== unit && isAdjacent(i, slot));
+          case 'adjacentFriends': {
+            const near = slot === null ? [] : run.plate.filter((u, i): u is UnitInstance => !!u && u !== unit && isAdjacent(i, slot));
+            targets = ab.count ? withRng(run, (rng) => rng.sample(near, ab.count!)) : near;
             break;
+          }
           case 'friendAhead': {
             const ahead = slot !== null && rowOf(slot) === 1 ? run.plate[slotAt(laneOf(slot), 0)] : null;
             targets = ahead ? [ahead] : [];
@@ -784,7 +786,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
     }
   };
   for (let pass = 0; pass <= echoes; pass++) {
-    abilitiesOf(def, level).forEach((ab, index) => {
+    [...abilitiesOf(def, level), ...flavorAbilities(def, level, flavorsOf(unit))].forEach((ab, index) => {
       if (pass > 0 && !fired.has(index)) return;
       const before = parts.length;
       fireAbility(ab, index, pass);

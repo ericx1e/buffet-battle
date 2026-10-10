@@ -66,6 +66,10 @@ interface BattleUnit {
   chill: number;
   /** The turn it last skipped for Chill: it stays frozen for the rest of that turn (see frozen). */
   frozeIn: number;
+  /** Rice: neighbours it can still save from being eaten this battle. */
+  sticky: number;
+  /** Hits it will still block (Rice's wrap). */
+  wraps: number;
   /** Attack gained from rally auras this battle (capped). */
   rallied: number;
   /** Sweet x8 already saved it once this battle. */
@@ -249,7 +253,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, frozeIn: 0, rallied: 0, rushed: false, towered: false,
+      burn: 0, rot: 0, chill: 0, frozeIn: 0, sticky: 0, wraps: 0, rallied: 0, rushed: false, towered: false,
     };
   }
 
@@ -615,6 +619,11 @@ class Battle {
           const line = this.fire(behind, 'friendAheadAttacks', { source: primary });
           if (line) followUps.push(line);
         }
+        // So can every food next to it (Rice).
+        for (const n of this.adjacent(attacker)) {
+          const line = this.fire(n, 'neighbourAttacks', { source: primary });
+          if (line) followUps.push(line);
+        }
       }
       this.snap(`Turn ${this.round} · ${LANE_NAMES[lane]} lane`);
       for (const c of captionChunks(followUps)) this.snap(c);
@@ -844,6 +853,19 @@ class Battle {
         this.mark(u, 'heal', 1);
       }
       if (rushed.length > 0) this.snap(`Sugar rush! ${rushed.map((u) => this.name(u)).join(', ')} ${rushed.length > 1 ? 'hang' : 'hangs'} on at 1 HP`);
+      // Rice: a neighbour about to be eaten holds on at 1 HP, while it has saves left.
+      const stuck: string[] = [];
+      for (const u of dead) {
+        if (u.hp > 0 || u.lives > 0 || u.token) continue;
+        const rice = this.adjacent(u).find((r) => r.hp > 0 && r.sticky > 0);
+        if (!rice) continue;
+        rice.sticky--;
+        u.hp = 1;
+        this.mark(u, 'heal', 1);
+        this.mark(rice, 'ability');
+        stuck.push(`${this.name(rice)} holds ${this.name(u)} together at 1 HP`);
+      }
+      if (stuck.length > 0) this.snap(joinLines(stuck));
       // Chicken Tender Tower: the friend in its lane (every friend, once cooked) is back once, with part of its HP.
       const towered: BattleUnit[] = [];
       for (const u of dead) {
@@ -1104,6 +1126,17 @@ class Battle {
         for (const t of near) this.addStatus(t, 'burn', n);
         return `${name}: ${this.name(from)}'s Burn spreads, ${names(near)} ${near.length > 1 ? 'Burn' : 'Burns'} ${n}`;
       }
+      case 'sticky':
+        u.sticky += amount;
+        return `${name} gets sticky: it can save ${amount} ${amount > 1 ? 'neighbours' : 'neighbour'} from being eaten`;
+      case 'wrap': {
+        const wrapped = this.rng.sample(targets, amount);
+        for (const t of wrapped) {
+          t.wraps++;
+          this.mark(t, 'buff');
+        }
+        return `${name} wraps ${names(wrapped)}: ${wrapped.length > 1 ? 'each blocks' : 'it blocks'} the next hit`;
+      }
       case 'doubleCrust': {
         const crusted = targets.filter((t) => t.crust > 0);
         if (crusted.length === 0) return;
@@ -1214,6 +1247,12 @@ class Battle {
     const foe = source && source.side !== target.side ? source : undefined;
     if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
     if (foe && target.chill > 0) amount += this.chillBite(foe.side); // cooked Ice Cream
+    // Wrapped (Rice): the wrap takes the hit.
+    if (target.wraps > 0) {
+      target.wraps--;
+      this.mark(target, 'blocked');
+      return;
+    }
     // Cold pack (Frozen Peas): a Chilled food takes no damage from hits.
     if (this.frozen(target) && this.units(target.side).some((f) => unitDef(f.defId).aura === 'coldPack')) {
       this.mark(target, 'blocked');
