@@ -120,6 +120,8 @@ interface Naming {
   busy?: boolean;
   /** Changing the name of a chef who already has one (else: signing up). */
   renaming?: boolean;
+  /** The word list open for picking, if any. */
+  open?: 'first' | 'second';
 }
 
 const SAVE_KEY = 'buffetbattle.run';
@@ -703,8 +705,24 @@ function onAction(action: string, el: HTMLElement) {
     case 'chef':
       if (!app.battle) openNaming(true);
       return;
+    case 'name-open': {
+      const n = app.naming;
+      if (!n) return;
+      const field = el.dataset.field as 'first' | 'second';
+      n.open = n.open === field ? undefined : field;
+      sfx('select');
+      return render();
+    }
+    case 'name-set': {
+      const n = app.naming;
+      if (!n) return;
+      n[el.dataset.field as 'first' | 'second'] = el.dataset.word!;
+      Object.assign(n, { custom: '', error: undefined, open: undefined });
+      sfx('select');
+      return render();
+    }
     case 'name-shuffle':
-      if (app.naming) Object.assign(app.naming, splitName(randomName()), { custom: '', error: undefined });
+      if (app.naming) Object.assign(app.naming, splitName(randomName()), { custom: '', error: undefined, open: undefined });
       sfx('select');
       return render();
     case 'name-offline':
@@ -1309,6 +1327,20 @@ function freezerSlots(): string {
     .join('');
 }
 
+/** The fridge's glass door, in front of the foods inside (like the freezer's window): a cool tint and pixel glints. */
+const FRIDGE_GLASS: Rect = [9, 122, 54, 152]; // down to the note on the door's outside
+const FRIDGE_GLINTS = (() => {
+  const px: string[] = [];
+  for (let k = 0; k < 24; k++) px.push(`M${45 + Math.floor(k / 3)} ${78 - k}h1v1h-1z`);
+  for (let k = 0; k < 10; k++) px.push(`M${4 + k} ${40 - k}h1v1h-1z`);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${FRIDGE_GLASS[2]}' height='${FRIDGE_GLASS[3]}' shape-rendering='crispEdges'><path fill='%23f4fbfd' d='${px.join('')}'/></svg>`;
+  return `url("data:image/svg+xml,${svg.replace(/</g, '%3C').replace(/>/g, '%3E')}")`;
+})();
+
+function fridgeGlass(): string {
+  return `<div class="fridge-glass" style="${box(FRIDGE_GLASS)};background-image:${FRIDGE_GLINTS}"></div>`;
+}
+
 function fridgeSlots(): string {
   return LAYOUT.fridge
     .map((pos, index) => {
@@ -1814,6 +1846,7 @@ function renderKitchen() {
         ${oddsStrip()}
         ${specialSlot()}
         ${fridgeSlots()}
+        ${fridgeGlass()}
         ${freezerSlots()}
         ${plateSlots()}
         ${counterTray()}
@@ -1849,24 +1882,33 @@ const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`)
 
 /** The chef-name card: two word lists and a shuffle, or a name of your own. */
 function namingCard(n: Naming): string {
-  const options = (words: readonly string[], chosen: string) => words.map((w) => `<option${w === chosen ? ' selected' : ''}>${w}</option>`).join('');
+  // The word lists are our own pixel dropdowns, not <select>: a native list is drawn at the page's size, not the
+  // stage's, so it came out tiny. A list opens as a grid of every word over the card.
+  const pick = (field: 'first' | 'second') =>
+    `<button type="button" class="name-pick ${n.open === field ? 'open' : ''}" data-action="name-open" data-field="${field}" ${n.busy ? 'disabled' : ''}>${esc(n[field])}<i>▾</i></button>`;
+  const menu = n.open
+    ? `<div class="name-menu" data-k="name-menu" data-in="fade">${(n.open === 'first' ? NAME_FIRST : NAME_SECOND)
+        .map((w) => `<button type="button" class="name-opt ${w === n[n.open!] ? 'on' : ''}" data-action="name-set" data-field="${n.open}" data-word="${w}">${w}</button>`)
+        .join('')}</div>`
+    : '';
   return `
     <div class="over-dim name-dim" data-k="name-dim" data-in="fade"></div>
     <form class="over-card name-card" style="${box([170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
       <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
       <p class="over-sub">${n.renaming ? 'Pick a new name.' : 'Pick your chef name. Other chefs see it when they meet your plate.'}</p>
       <div class="name-row">
-        <select data-name="first" ${n.busy ? 'disabled' : ''}>${options(NAME_FIRST, n.first)}</select>
-        <select data-name="second" ${n.busy ? 'disabled' : ''}>${options(NAME_SECOND, n.second)}</select>
+        ${pick('first')}
+        ${pick('second')}
         <button type="button" class="name-dice" data-action="name-shuffle" title="Shuffle" ${n.busy ? 'disabled' : ''}>${pix('dice')}</button>
       </div>
       <div class="over-plate-label">or write your own</div>
-      <input class="name-input" data-name="custom" maxlength="20" placeholder="your own name" spellcheck="false" ${n.busy ? 'disabled' : ''}>
+      <input class="name-input" data-name="custom" maxlength="20" placeholder="your own name" spellcheck="false" value="${esc(n.custom)}" ${n.busy ? 'disabled' : ''}>
       <div class="name-preview">${n.error ? `<span class="name-error">${esc(n.error)}</span>` : `you'll be <b>${esc(chosenName(n))}</b>`}</div>
       <div class="name-buttons">
         <button type="button" class="newrun name-alt" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
         <button type="submit" class="big-btn" ${n.busy ? 'disabled' : ''}>${n.busy ? 'one moment...' : n.renaming ? 'rename ›' : 'open the kitchen ›'}</button>
       </div>
+      ${menu}
     </form>`;
 }
 

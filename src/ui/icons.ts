@@ -284,10 +284,10 @@ const ICONS = {
   dice: [
     '.BBBBBB.',
     'BxxxxxlB',
-    'BxBxxxlB',
+    'BxBxBxlB',
     'BxxxxxlB',
-    'BxxBxxlB',
-    'BxxxxBlB',
+    'BxBxBxlB',
+    'BxxxxxlB',
     'BlllllgB',
     '.BBBBBB.',
   ],
