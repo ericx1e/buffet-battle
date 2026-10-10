@@ -412,10 +412,10 @@ function playGrowth(delay = 0): number {
   save();
   const stage = root.querySelector<HTMLElement>('.stage');
   if (!stage) return 0;
-  // One pop per food and cause, in the order they happened.
+  // One pop per food and cause, in the order they happened; each Bento Box echo is a go of its own.
   const groups = new Map<string, Growth>();
   for (const g of events) {
-    const k = `${g.uid}:${g.from ?? ''}:${g.source}`;
+    const k = `${g.uid}:${g.from ?? ''}:${g.source}:${g.echo ?? 0}`;
     const cur = groups.get(k);
     if (cur) {
       cur.attack += g.attack;
@@ -424,12 +424,23 @@ function playGrowth(delay = 0): number {
     } else groups.set(k, { ...g });
   }
   let i = 0;
+  let pause = 0;
+  let lastGo = '';
   for (const g of groups.values()) {
     const el = root.querySelector<HTMLElement>(`[data-k="u:${g.uid}"]`);
     if (!el) continue; // sold, or not on screen
-    const t = delay + i * 280;
-    const at = stagePos(root, el);
     const src = g.from !== undefined ? root.querySelector<HTMLElement>(`[data-k="u:${g.from}"]`) : null;
+    // An echo starts a fresh go: a beat, then "Echo!" over the food casting again.
+    const go = `${g.from ?? g.uid}:${g.source}:${g.echo ?? 0}`;
+    if (g.echo && go !== lastGo) {
+      pause += 360;
+      const caster = src ?? el;
+      const [cx, cy] = stagePos(root, caster);
+      floater(stage, cx, cy - 40, 'Echo!', 'callout echo', 1, delay + i * 280 + pause - 200);
+    }
+    lastGo = go;
+    const t = delay + i * 280 + pause;
+    const at = stagePos(root, el);
     if (src) orb(stage, stagePos(root, src), at, 'k-buff', { delay: t, ms: 260 });
     burst(stage, [at[0], at[1] - 8], g.attack || g.hp ? 'star' : 'coin-spark', { delay: t + 160, count: 4, spread: 12 });
     sfx('grow', t + 160);
@@ -442,7 +453,7 @@ function playGrowth(delay = 0): number {
     }, t + 160);
     i++;
   }
-  return i === 0 ? 0 : delay + i * 280 + 700;
+  return i === 0 ? 0 : delay + i * 280 + pause + 700;
 }
 
 /**

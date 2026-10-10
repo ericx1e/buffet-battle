@@ -123,6 +123,8 @@ export interface Growth {
   from?: number;
   /** What caused it, for the summary ("Bean Sprout", "Butter"). */
   source: string;
+  /** Which Bento Box echo it came from (1, 2...), so each echo plays back as its own go. */
+  echo?: number;
 }
 
 /** A merge that raised a food's level: which food, its new level, and where the bonus dish landed in the market. */
@@ -662,7 +664,8 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
   // growth days of its own).
   const echoes = echoesOn(run, slot);
   const fired = new Set<number>();
-  const fireAbility = (ab: AbilityDef, index: number, echo: boolean) => {
+  const fireAbility = (ab: AbilityDef, index: number, pass: number) => {
+    const echo = pass > 0;
     if (ab.trigger !== trigger) return;
     // Day-gated growth: it has a set number of days in it (more at higher levels).
     const days = ab.days?.[level - 1];
@@ -694,7 +697,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
       case 'sellValue':
         unit.sellBonus = (unit.sellBonus ?? 0) + amount;
         grew();
-        run.growth.push({ uid: unit.uid, attack: 0, hp: 0, sell: amount, source: def.name });
+        run.growth.push({ uid: unit.uid, attack: 0, hp: 0, sell: amount, source: def.name, echo: pass || undefined });
         parts.push(`${def.name} is worth +${amount}`);
         return;
       case 'freeReroll':
@@ -743,7 +746,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
         for (const t of targets) {
           t.attack += a;
           t.hp += h;
-          run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name });
+          run.growth.push({ uid: t.uid, attack: a, hp: h, from: t === unit ? undefined : unit.uid, source: def.name, echo: pass || undefined });
           if (h > 0) afterHpGain(run, t, parts);
         }
         grew();
@@ -757,7 +760,7 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
     abilitiesOf(def, level).forEach((ab, index) => {
       if (pass > 0 && !fired.has(index)) return;
       const before = parts.length;
-      fireAbility(ab, index, pass > 0);
+      fireAbility(ab, index, pass);
       if (parts.length > before) fired.add(index);
     });
   }

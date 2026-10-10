@@ -908,6 +908,7 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 @keyframes cook-flicker { 50% { translate: 0 -1px; } }
 .cooked-line { display: block; margin-top: 3px; color: #b2401b; }
 .floater.callout.cooked { color: #ff8a3d; }
+.floater.callout.echo { color: #8fd3ff; font-size: 14px; }
 .bit.ember { width: 3px; height: 3px; margin: -1px 0 0 -1px; background: #ff8a3d; border: none; }
 .bit.ember1 { background: #ffd23f; }
 

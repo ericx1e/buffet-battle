@@ -781,7 +781,9 @@ class Battle {
         if (counted.length > 1 && prefix && counted.every((l) => l.startsWith(prefix))) {
           counted = [prefix + counted.map((l) => l.slice(prefix.length)).join(', ')];
         }
-        for (const c of captionChunks(counted.map((l) => (first.echo !== undefined ? `Echo! ${l}` : l)))) this.snap(c);
+        // Each echo is its own step, so a level 2 or 3 Bento Box clearly casts twice or three times.
+        if (first.echo !== undefined) for (const l of lines) for (const c of captionChunks([`Echo! ${l}`])) this.snap(c);
+        else for (const c of captionChunks(counted)) this.snap(c);
         continue;
       }
 
