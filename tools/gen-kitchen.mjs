@@ -169,7 +169,9 @@ frame(488, 70, 146, 68, P.outline);
 for (let k = 0; k < 200; k++) px(490 + Math.floor(rand() * 142), 72 + Math.floor(rand() * 64), P.chalkSmudge);
 rect(492, 74, 18, 1, P.chalkSmudge); // old erased line
 panel(486, 138, 150, 6, P.woodLight, P.woodHi, P.wood); // chalk tray
-rect(600, 136, 9, 2, P.chalkLine);
+// The chalk on the tray is drawn by the game (you can pick it up and draw); the felt eraser beside it wipes the board.
+panel(494, 133, 14, 5, '#c4935e', '#e0b47e', '#8a5a32');
+rect(495, 137, 12, 1, '#55505a'); // the felt
 
 // ---------- backsplash tiles (80..480, 112..148) ----------
 rect(80, 112, 400, 36, P.grout);
@@ -191,18 +193,18 @@ rect(400, 119, 72, 16, P.red);
 rect(402, 121, 68, 12, P.paper);
 frame(400, 119, 72, 16, P.redDark);
 
-// ---------- counter top: butcher block (80..640, 148..324) ----------
+// ---------- counter top: butcher block (80..640, 148..336) ----------
 for (let x = 80; x < 640; x += 10) {
   const c = [P.block1, P.block2, P.block3][Math.floor(x / 10) % 3];
-  rect(x, 148, 10, 176, c);
-  rect(x, 148, 1, 176, P.blockGrain);
+  rect(x, 148, 10, 188, c);
+  rect(x, 148, 1, 188, P.blockGrain);
   for (let k = 0; k < 10; k++) rect(x + 2 + Math.floor(rand() * 7), 150 + Math.floor(rand() * 170), 1, 3 + Math.floor(rand() * 8), P.blockGrain);
 }
 rect(80, 148, 560, 3, P.blockShade); // shadow line against the backsplash
 rect(80, 148, 560, 1, P.outline);
 
 // Platter (your plate): 120..240 x 160..324
-roundRect(124, 165, 120, 160, 10, P.blockShade); // shadow
+roundRect(123, 165, 122, 167, 11, P.blockShade); // shadow, down and to the right, showing under the rim too
 roundRect(119, 159, 122, 166, 11, P.plateEdge);
 roundRect(120, 160, 120, 164, 10, P.plateRim);
 roundRect(126, 166, 108, 152, 7, P.plate);
@@ -446,14 +448,113 @@ rect(532, 168, 1, 128, P.outline);
 rect(540, 166, 3, 140, P.redDark); // ribbon
 rect(540, 306, 3, 6, P.redDark);
 
-// ---------- counter edge + lower cabinets (80..640, 324..360) ----------
-panel(80, 324, 560, 12, P.woodMid, P.woodHi, P.woodDark);
+// ---------- counter edge + lower cabinets (80..640, 336..360): the counter runs past the platter, so its shadow shows ----------
+panel(80, 336, 560, 10, P.woodMid, P.woodHi, P.woodDark);
 for (let i = 0; i < 4; i++) {
   const x = 80 + 140 * i;
-  panel(x, 336, 140, 24, P.sage, P.sageHi, P.sageDark);
-  frame(x + 6, 340, 128, 20, P.sageDark);
-  ellipse(x + 70, 345, 2, 2, P.brass);
-  px(x + 69, 344, P.brassHi);
+  panel(x, 346, 140, 14, P.sage, P.sageHi, P.sageDark);
+  frame(x + 6, 349, 128, 11, P.sageDark);
+  ellipse(x + 70, 353, 2, 2, P.brass);
+  px(x + 69, 352, P.brassHi);
+}
+
+// ---------- fridge magnets: little pixel maps, one character per pixel ('.' is see-through) ----------
+const MAGNET_INK = {
+  o: P.outline, r: P.red, R: P.redHi, d: P.redDark, g: P.leaf, G: P.leafDark,
+  y: '#fbe58a', Y: '#e8b52a', w: '#fffaf0', p: '#f28cb6', P: '#ffc4dc', q: '#c95a8a', b: '#d8b07a',
+  f: '#6fa8d6', F: '#a8d2f0', k: '#3f6f9a',
+};
+const MAGNETS = {
+  tomato: [
+    '...oGo...',
+    '.oogggoo.',
+    'oRrrgrrro',
+    'oRrrrrrro',
+    'orrrrrrdo',
+    'orrrrrrdo',
+    '.orrrddo.',
+    '..ooooo..',
+  ],
+  lemon: [
+    '..ooooo..',
+    '.oYYYYYo.',
+    'oYywywyYo',
+    'oYwyyywYo',
+    'oYyywyyYo',
+    'oYwyyywYo',
+    'oYywywyYo',
+    '.oYYYYYo.',
+    '..ooooo..',
+  ],
+  popsicle: [
+    '.ooo.',
+    'oPppo',
+    'oPppo',
+    'oPpqo',
+    'oPppo',
+    'oPpqo',
+    'opqqo',
+    '.ooo.',
+    '..b..',
+    '..b..',
+    '..o..',
+  ],
+  strawberry: [
+    '.oGgGo.',
+    'oRrgrro',
+    'orryrro',
+    'oyrrryo',
+    '.orryo.',
+    '.oryro.',
+    '..odo..',
+    '...o...',
+  ],
+  fish: [
+    '..oooo..o',
+    '.oFFffoof',
+    'oFkFfffo.',
+    'oFFffffo.',
+    '.offffoof',
+    '..oooo..o',
+  ],
+};
+/**
+ * A magnet stuck on the door: its pixel map turned `deg` degrees about its centre (nearest pixel), casting a shadow
+ * down and to the right so it stands off the door.
+ */
+function magnet(x, y, rows, deg = 0) {
+  const h = rows.length, w = rows[0].length;
+  const [cx, cy] = [(w - 1) / 2, (h - 1) / 2];
+  const [c, s] = [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180)];
+  const r = Math.ceil(Math.hypot(w, h) / 2) + 1;
+  const at = (i, j) => {
+    // the source pixel that lands on (i, j) after turning
+    const [dx, dy] = [i - cx, j - cy];
+    const [sx, sy] = [Math.round(cx + dx * c + dy * s), Math.round(cy - dx * s + dy * c)];
+    const ch = rows[sy]?.[sx];
+    return ch && ch !== '.' ? ch : null;
+  };
+  const cells = [];
+  for (let j = Math.floor(cy - r); j <= cy + r; j++) for (let i = Math.floor(cx - r); i <= cx + r; i++) {
+    const ch = at(i, j);
+    if (ch) cells.push([i, j, ch]);
+  }
+  for (const [i, j] of cells) px(x + i + 1, y + j + 1, P.fridgeDark);
+  for (const [i, j, ch] of cells) px(x + i, y + j, MAGNET_INK[ch]);
+}
+
+/**
+ * A thin magnet leaning instead of turned (turning a 5px-wide sprite breaks it up): each row (lean > 0: the top
+ * leans right) or column (tip < 0: the right end rises) slides over a pixel every few, so every line stays whole.
+ */
+function leaningMagnet(x, y, rows, lean = 0, tip = 0) {
+  const h = rows.length, w = rows[0].length;
+  const cells = [];
+  rows.forEach((row, j) => [...row].forEach((ch, i) => {
+    if (ch !== '.') cells.push([i + Math.round((h - 1 - j) * lean), j + Math.round(i * tip), ch]);
+  }));
+  for (const [i, j] of cells) px(x + i + 1, y + j + 1, P.fridgeDark);
+  for (const [i, j, ch] of cells) px(x + i, y + j, MAGNET_INK[ch]);
 }
 
 // ---------- fridge (0..80, 24..360) ----------
@@ -478,13 +579,33 @@ for (let k = 0; k < 16; k++) px(10 + k, 300 - k, P.glassHi); // reflections
   panel(x, y, w, h, P.paper, '#fffaf0', P.paperShade);
   for (let ly = y + 14; ly < y + h - 3; ly += 7) rect(x + 3, ly, w - 6, 1, P.paperLine); // ruled lines
   rect(x + 3, y + 3, 1, h - 6, '#f0c4b8'); // the margin
-  // the magnet: a little red dome pinning the top
-  const mx = x + Math.floor(w / 2);
-  ellipse(mx, y + 1, 4, 3, P.outline);
-  ellipse(mx, y + 1, 3, 2, P.red);
-  rect(mx - 2, y, 2, 1, P.redHi);
-  rect(mx - 2, y + 3, 5, 1, P.redDark);
+  // pinned by a tomato magnet
+  magnet(x + Math.floor(w / 2) - 4, y - 4, MAGNETS.tomato, -14);
 }
+// The freezer's window: frosted glass onto an icy inside, where a frozen offer waits (LAYOUT.freezer)
+{
+  const [fx, fy] = SLOTS.freezer[0];
+  const [x0, y0, x1, y1] = [fx - 1, fy - 4, fx + 41, fy + 49];
+  for (let y = y0; y < y1; y++) rect(x0, y, x1 - x0, 1, y < y0 + 6 ? P.glassHi : y > y1 - 5 ? P.glass : P.interior);
+  rect(x0, y1 - 4, x1 - x0, 1, P.glassDark); // the ice floor's edge
+  frame(x0 - 1, y0 - 1, x1 - x0 + 2, y1 - y0 + 2, P.fridgeDark);
+  // icicles along the top, and frost creeping in from the corners
+  for (let x = x0 + 2; x < x1 - 1; x += 3) rect(x, y0, 1, 2 + ((x * 7) % 3), '#ffffff');
+  for (let k = 0; k < 40; k++) {
+    const corner = k % 4;
+    const d = Math.floor(rand() * 7);
+    const e = Math.floor(rand() * (7 - d));
+    const x = corner % 2 ? x1 - 1 - d : x0 + d;
+    const y = corner < 2 ? y0 + 3 + e : y1 - 5 - e;
+    px(x, y, '#ffffff');
+  }
+  for (let k = 0; k < 10; k++) px(x0 + 4 + k, y0 + 18 - k, P.glassHi); // a glint on the glass
+}
+// Fun fridge magnets around the freezer window (clear of it and its price tag)
+magnet(4, 96, MAGNETS.lemon, 20);
+leaningMagnet(4, 40, MAGNETS.popsicle, 0.3);
+magnet(56, 96, MAGNETS.strawberry, -16);
+leaningMagnet(29, 99, MAGNETS.fish, 0, -0.25);
 for (let k = 0; k < 24; k++) px(54 + Math.floor(k / 3), 200 - k, P.glassHi);
 panel(67, 130, 6, 100, P.steel, P.steelHi, P.steelDark); // door handle
 for (let x = 8; x < 72; x += 4) rect(x, 350, 2, 6, P.fridgeDark); // kick grille

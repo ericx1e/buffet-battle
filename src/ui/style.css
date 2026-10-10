@@ -132,7 +132,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .unit.cooked .u-lvl { color: #ff9b6a; }
 .u-item { position: absolute; right: 0; top: 0; display: flex; }
 .unit.item .u-art { top: 6px; }
-.frost { left: 0; top: 0; width: 40px; height: 48px; background: rgba(210, 238, 248, 0.35); pointer-events: none; }
+.frost { position: absolute; left: 0; top: 0; width: 40px; height: 48px; background: rgba(210, 238, 248, 0.35); pointer-events: none; }
 .buffet-zone { position: absolute; }
 /* A price tag on each cubby: paper, a coin and a dark number, red when you can't afford it. */
 .price {
@@ -826,6 +826,19 @@ body[data-screen='battle'] {
 .tipbox .gloss p > b, .inspect-card .gloss p > b { color: #2a1b14; }
 /* Hoverable keywords in the cookbook */
 .kw { color: #b2401b; border-bottom: 1px dotted #b2401b; cursor: help; }
+/* Easter egg: the chalk on the tray. Hold it and it follows the pointer, drawing on the board (over the flavor
+   lines); let go and it drops back onto the tray. */
+.chalk-art { position: absolute; z-index: 3; pointer-events: none; image-rendering: pixelated; }
+.chalk-stick, .chalk-eraser { position: absolute; z-index: 3; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+.chalk-stick i { position: absolute; left: 4px; bottom: 1px; width: 9px; height: 2px; background: #d9e2d6; }
+.chalk-stick:hover i { background: #ffffff; }
+.chalk-stick.held i { visibility: hidden; }
+/* Its tip (the bottom-left corner) sits at the pointer. */
+.chalk-hand {
+  position: fixed; left: 0; top: -2px; z-index: 50; width: 9px; height: 2px; pointer-events: none;
+  background: #f3f7f1; box-shadow: 0 1px 0 #8a9a8c; transform-origin: 0 100%;
+}
+body:has(.chalk-hand), body:has(.chalk-hand) * { cursor: grabbing !important; }
 .chalk-line, .jar, .u-flavors, .u-item, .mag-stars, .mag-course, .u-gem { cursor: help; }
 
 /* Flavor tags: pixel icon + name */

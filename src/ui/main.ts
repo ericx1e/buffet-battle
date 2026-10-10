@@ -671,6 +671,8 @@ function sellSelected() {
 function onAction(action: string, el: HTMLElement) {
   const { run } = app;
   switch (action) {
+    case 'erase':
+      return eraseChalk();
     case 'reroll': {
       const result = dispatch({ t: 'refill' });
       if (result.ok) app.marketGen++;
@@ -904,6 +906,7 @@ function render() {
   if (app.battle) fresh = renderBattle(app.battle);
   else if (isOver(app.run)) renderOver();
   else renderKitchen();
+  paintChalk();
   if (keep) {
     root.querySelectorAll('img').forEach((img) => {
       const old = keep.get(img.outerHTML)?.pop();
@@ -1408,6 +1411,141 @@ function chalkboard(): string {
   return `<div class="chalkboard" style="${box(LAYOUT.chalkboard)}"><div class="chalk-title">flavors 2·4·6·8</div>${lines}</div>`;
 }
 
+// ---------- easter egg: chalk ----------
+// The stick of chalk on the chalkboard's tray can be picked up: press on it and it follows the pointer, drawing
+// wherever it touches the board (over the flavor lines); let go and it drops back onto the tray. The felt eraser wipes
+// the board. The drawing is kept in this browser only.
+
+const CHALK_KEY = 'buffetbattle.chalk';
+const [CB_X, CB_Y, CB_W, CB_H] = LAYOUT.chalkboard;
+/** The chalk's spot on the tray (stage pixels). */
+const CHALK_SPOT: Rect = [596, 131, 17, 8];
+/** The drawing itself, kept off screen: the board's canvas is redrawn from it after every render. */
+const chalkArt = document.createElement('canvas');
+chalkArt.width = CB_W;
+chalkArt.height = CB_H;
+/** The chalk in your hand while you hold it (it follows the pointer), and the last point drawn (board pixels). */
+let chalkHand: HTMLElement | null = null;
+let chalkLast: [number, number] | null = null;
+try {
+  const saved = localStorage.getItem(CHALK_KEY);
+  if (saved) {
+    const img = new Image();
+    img.onload = () => {
+      chalkArt.getContext('2d')!.drawImage(img, 0, 0);
+      paintChalk();
+    };
+    img.src = saved;
+  }
+} catch {
+  // No storage: the board starts clean.
+}
+
+function chalkLayer(): string {
+  return `<canvas class="chalk-art" width="${CB_W}" height="${CB_H}" style="${box(LAYOUT.chalkboard)}"></canvas>
+    <div class="chalk-stick ${chalkHand ? 'held' : ''}" style="${box(CHALK_SPOT)}"><i></i></div>
+    <button class="chalk-eraser" style="${box([492, 130, 18, 9])}" data-action="erase" aria-label="eraser"></button>`;
+}
+
+/** Copies the drawing onto the board's canvas (a render makes a new one). */
+function paintChalk() {
+  const c = root.querySelector<HTMLCanvasElement>('canvas.chalk-art');
+  if (!c) return;
+  const g = c.getContext('2d')!;
+  g.clearRect(0, 0, CB_W, CB_H);
+  g.drawImage(chalkArt, 0, 0);
+}
+
+/** A chalky speck: a pixel or two, a little uneven, like chalk on a board. */
+function chalkDot(x: number, y: number) {
+  const g = chalkArt.getContext('2d')!;
+  g.fillStyle = `rgba(243, 247, 241, ${0.55 + Math.random() * 0.45})`;
+  g.fillRect(x, y, 1, 1);
+  if (Math.random() < 0.5) g.fillRect(x + (Math.random() < 0.5 ? 1 : 0), y + 1, 1, 1);
+}
+
+/** The chalk's tip moved here: a line from the last point while it is on the board; off the board the stroke breaks. */
+function chalkTo(e: PointerEvent) {
+  const [sx, sy] = stagePoint(e);
+  const [x, y] = [sx - CB_X, sy - CB_Y];
+  const [tx, ty, tw, th] = CHALK_SPOT;
+  const onTray = sx >= tx && sx < tx + tw && sy >= ty && sy < ty + th;
+  if (onTray || x < 0 || y < 0 || x >= CB_W || y >= CB_H) {
+    chalkLast = null;
+    return;
+  }
+  const [x0, y0] = chalkLast ?? [x, y];
+  const n = Math.max(Math.abs(x - x0), Math.abs(y - y0), 1);
+  for (let k = 0; k <= n; k++) if (Math.random() < 0.9) chalkDot(Math.round(x0 + ((x - x0) * k) / n), Math.round(y0 + ((y - y0) * k) / n));
+  chalkLast = [x, y];
+  paintChalk();
+}
+
+function saveChalk() {
+  try {
+    localStorage.setItem(CHALK_KEY, chalkArt.toDataURL());
+  } catch {
+    // Not kept: fine, it's chalk.
+  }
+}
+
+/** The chalk in your hand: the same stick, tilted like it's being held, its tip at the pointer. */
+function moveChalkHand(e: PointerEvent) {
+  if (!chalkHand) return;
+  chalkHand.style.transform = `translate(${e.clientX}px, ${e.clientY}px) rotate(-40deg) scale(${stageScale()})`;
+}
+
+/** The eraser: the drawing fades off the board. */
+function eraseChalk() {
+  const clear = () => {
+    chalkArt.getContext('2d')!.clearRect(0, 0, CB_W, CB_H);
+    saveChalk();
+    paintChalk();
+  };
+  sfx('page');
+  const c = root.querySelector<HTMLCanvasElement>('canvas.chalk-art');
+  if (!c) return clear();
+  c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'steps(5, jump-end)' }).finished.then(clear, clear);
+}
+
+root.addEventListener('pointerdown', (e) => {
+  const spot = (e.target as HTMLElement).closest<HTMLElement>('.chalk-stick');
+  if (!spot || chalkHand || app.battle) return;
+  e.preventDefault();
+  sfx('pick');
+  spot.classList.add('held');
+  chalkHand = document.createElement('div');
+  chalkHand.className = 'chalk-hand';
+  document.body.append(chalkHand);
+  chalkLast = null;
+  moveChalkHand(e);
+  chalkTo(e);
+});
+window.addEventListener('pointermove', (e) => {
+  if (!chalkHand) return;
+  moveChalkHand(e);
+  chalkTo(e);
+});
+window.addEventListener('pointerup', () => {
+  const hand = chalkHand;
+  if (!hand) return;
+  chalkHand = null;
+  chalkLast = null;
+  saveChalk();
+  // Let go: the chalk drops back onto the tray.
+  const home = root.querySelector<HTMLElement>('.chalk-stick i')?.getBoundingClientRect();
+  const done = () => {
+    hand.remove();
+    root.querySelector('.chalk-stick')?.classList.remove('held');
+    sfx('place');
+  };
+  if (!home) return done();
+  hand.animate(
+    [{ transform: hand.style.transform }, { transform: `translate(${home.left}px, ${home.bottom}px) rotate(0deg) scale(${stageScale()})` }],
+    { duration: 260, easing: 'steps(6, jump-end)', fill: 'forwards' },
+  ).finished.then(done, done);
+});
+
 // ---------- the tip jar: gold and interest ----------
 // The jar is a measuring jar. Coins fill it to a height set by your gold (drawn behind the jar sprite, so they show
 // through its glass), and a line for each step of interest (5, 10, 15 gold...) is marked +1, +2, +3 on its side,
@@ -1631,6 +1769,7 @@ function renderKitchen() {
         ${orderTickets()}
         ${spiceJars()}
         ${chalkboard()}
+        ${chalkLayer()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
           ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r) for <b>${cost ? `${cost} gold` : 'nothing'}</b>, as often as you like.</p><p class="dim">The odds of each rarity are on the card beside it. The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
         ${buffetZone()}
@@ -2254,7 +2393,7 @@ let tipTarget: string | null = null;
 function updateTip() {
   const stage = root.querySelector<HTMLElement>('.stage');
   const old = root.querySelector('.tipbox');
-  const el = pointer && !drag?.ghost ? document.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>('[data-tip]') : null;
+  const el = pointer && !drag?.ghost && !chalkHand ? document.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>('[data-tip]') : null;
   const html = el?.dataset.tip ?? null;
   if (!el || !html || !stage) {
     old?.remove();
