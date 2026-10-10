@@ -1086,11 +1086,20 @@ function onAction(action: string, el: HTMLElement) {
       app.seasoning = undefined;
       return render();
     case 'new-run':
-      if (!isOver(run) && !app.battle && !confirm('Abandon this run and start a new one?')) return;
+      // A run in progress asks first, on a card of our own (a browser confirm() is unstyled and blocks everything).
+      if (!isOver(run) && !app.battle && !confirmingNewRun) {
+        confirmingNewRun = true;
+        sfx('select');
+        return render();
+      }
+      confirmingNewRun = false;
       if (app.server) return void newServerRun();
       Object.assign(app, freshApp(), { battle: undefined });
       forceWipe = true;
       save();
+      return render();
+    case 'new-run-cancel':
+      confirmingNewRun = false;
       return render();
     case 'chef':
       if (!app.battle) void openChef();
@@ -1379,6 +1388,23 @@ function settingsButton(cls: string): string {
 let settingsOpen = false;
 
 /** Settings: a volume slider and an on/off switch for music and for sound effects. */
+/** Asking before a run in progress is abandoned for a new one (the New run button). */
+let confirmingNewRun = false;
+
+function newRunModal(): string {
+  const run = app.run;
+  return `
+    <div class="modal" data-k="newrun-dim" data-in="fade" data-action="new-run-cancel"></div>
+    <div class="modal-card newrun-card" data-k="newrun-card" data-in="pop">
+      <div class="pg-title">Start a new run?</div>
+      <p>This run ends here: day ${run.turn}, ${run.courses} of ${COURSES_TO_WIN} courses served, ${run.lives} ${run.lives === 1 ? 'life' : 'lives'} left.</p>
+      <div class="newrun-buttons">
+        <button type="button" class="alt-btn" data-action="new-run-cancel">keep cooking</button>
+        <button type="button" class="big-btn" data-action="new-run">start over ›</button>
+      </div>
+    </div>`;
+}
+
 function settingsModal(): string {
   const a = audioSettings();
   const row = (label: string, vol: 'music' | 'sfx', on: 'musicOn' | 'sfxOn') => `
@@ -2365,6 +2391,7 @@ function renderKitchen() {
         ${app.message ? `<div class="toast" style="${box(LAYOUT.toast)};animation-delay:-${toastAge}ms" data-k="toast:${toast.id}" data-in="rise"><span>${app.message}</span></div>` : ''}
         ${app.seasoning ? seasoningModal() : ''}
         ${settingsOpen ? settingsModal() : ''}
+        ${confirmingNewRun ? newRunModal() : ''}
         ${app.wonWith ? wonWithPage(app.wonWith) : ''}
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
@@ -3334,6 +3361,10 @@ document.addEventListener('keydown', (e) => {
     return render();
   }
   if (chalkHand && e.key === 'Escape') return dropChalk();
+  if (confirmingNewRun && e.key === 'Escape') {
+    confirmingNewRun = false;
+    return render();
+  }
   if (settingsOpen && e.key === 'Escape') {
     settingsOpen = false;
     return render();

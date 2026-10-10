@@ -317,6 +317,12 @@ body.dragging .slot.empty {
 .modal-card .row { display: flex; gap: 4px; }
 /* Settings popup: label, slider and switch per row. */
 .settings-card { width: 300px; gap: 5px; align-items: stretch; }
+/* Asking before abandoning a run for a new one. */
+.newrun-card { width: 230px; gap: 6px; padding: 8px 12px 10px; }
+.newrun-card .pg-title { font-size: 14px; line-height: 14px; }
+.newrun-card p { margin: 0; font: 400 10px/11px var(--pixel); color: #3a2a22; text-align: center; }
+.newrun-buttons { display: flex; gap: 8px; margin-top: 2px; }
+.newrun-buttons .big-btn { margin-top: 0; }
 .settings-card .pg-title { text-align: center; font-size: 14px; line-height: 14px; }
 .settings-card .row { justify-content: center; margin-top: 3px; }
 .set-row { display: grid; grid-template-columns: 74px 1fr auto; align-items: center; gap: 6px; }
