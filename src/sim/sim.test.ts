@@ -126,15 +126,15 @@ describe('battle', () => {
       run.turn = 2;
       endDay(run);
       expect(flavorsOf(rice)).toEqual(['spicy']);
-      // Its powers are over its neighbours: Sour seasons them, Salty wraps them, Spicy follows their attacks.
+      // Its powers are over its neighbours: Spicy and Sour follow their attacks, Salty Chills whoever hits them.
       const r = simulateBattle(
         plate({ 0: unit('cheese', { attack: 3, hp: 200 }), 1: unit('rice', { extraFlavors: ['spicy', 'sour', 'salty'], hp: 200 }) }),
         plate({ 0: wall({ attack: 5 }), 1: wall() }),
         1,
       );
-      expect(text(r)).toContain('Rice seasons Cheese: abilities +1');
-      expect(text(r)).toContain('Rice wraps Cheese: it blocks the next hit');
+      expect(text(r)).toContain('Rice: enemy Cheese -1 attack');
       expect(text(r)).toContain('Rice hits enemy Cheese for 1');
+      expect(r.frames.filter((f) => f.text.includes('Rice: enemy Cheese is Chilled 1')).length).toBe(1); // once, at level 1
       // Sweet: a neighbour about to be eaten holds on at 1 HP.
       const s = simulateBattle(plate({ 0: unit('lemon', { hp: 1 }), 1: unit('rice', { extraFlavors: ['sweet'], hp: 200 }) }), plate({ 0: unit('cheese', { attack: 9, hp: 200 }) }), 1);
       expect(text(s)).toContain('Rice holds Lemon together at 1 HP');
@@ -269,7 +269,7 @@ describe('food data', () => {
           expect(ab.summon && ids.has(ab.summon.id), `${u.id} summons an unknown food`).toBe(true);
           expect(UNITS.find((t) => t.id === ab.summon!.id)!.token, `${u.id} should summon a token`).toBe(true);
         }
-        if (ab.target === 'attacker') expect(['hit', 'friendAheadHit', 'friendAheadAttacks', 'neighbourAttacks', 'crustBlock'], `${u.id}: 'attacker' needs a hit or friend-ahead trigger`).toContain(ab.trigger);
+        if (ab.target === 'attacker') expect(['hit', 'friendAheadHit', 'friendAheadAttacks', 'neighbourAttacks', 'neighbourHit', 'crustBlock'], `${u.id}: 'attacker' needs a hit or friend-ahead trigger`).toContain(ab.trigger);
         if (ab.target === 'summoned') expect(ab.trigger, `${u.id}: 'summoned' needs friendSummoned`).toBe('friendSummoned');
         if (ab.effect === 'bonusDamage') expect(ab.trigger, `${u.id}: bonusDamage needs firstAttack`).toBe('firstAttack');
         const kitchen = ['buy', 'sell', 'friendSold', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];

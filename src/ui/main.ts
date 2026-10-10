@@ -2026,7 +2026,7 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   }
   // Rice: the power each flavor gives it, lit for the flavors it has.
   const powers = d.plain ? plainPowers(d, level, u ? flavorsOf(u) : []) : '';
-  if (d.plain && u) notes.push(app.run.turn % 2 === 0 ? 'Soaks up a flavor tonight, from a friend next to it.' : 'Soaks up a flavor tomorrow night.');
+  if (d.plain && u) notes.push(app.run.turn % 2 === 0 ? 'Soaks a flavor tonight.' : 'Soaks a flavor tomorrow night.');
   return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
@@ -2034,10 +2034,10 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
 function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
   const n = d.values[level - 1] * (level === 3 ? 2 : 1);
   const what: Record<Flavor, string> = {
-    spicy: `hits their target ${n}`,
+    spicy: `grain hits for ${n}`,
     sweet: `saves ${n} at 1 HP`,
-    sour: `abilities +${n}`,
-    salty: `wraps ${n} (block a hit)`,
+    sour: `target -${n} attack`,
+    salty: `hit: Chill attacker (${n}x)`,
     savory: `one +${n}/+${n} nightly`,
   };
   // The powers it has, a line each; the rest as icons to hover (the page has no room for all five).

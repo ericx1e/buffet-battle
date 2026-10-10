@@ -144,8 +144,8 @@ export const UNITS: UnitDef[] = [
     flavorAbilities: {
       spicy: { trigger: 'neighbourAttacks', effect: 'damage', target: 'attacker', thrown: true },
       sweet: { trigger: 'startOfBattle', effect: 'sticky' },
-      sour: { trigger: 'startOfBattle', effect: 'season', target: 'adjacentFriends', early: true },
-      salty: { trigger: 'startOfBattle', effect: 'wrap', target: 'adjacentFriends' },
+      sour: { trigger: 'neighbourAttacks', effect: 'debuff', target: 'attacker' },
+      salty: { trigger: 'neighbourHit', effect: 'chill', target: 'attacker', fixed: 1, limitToAmount: true },
       savory: { trigger: 'endTurn', effect: 'buff', target: 'adjacentFriends', count: 1 },
     },
     abilities: [{ trigger: 'endTurn', effect: 'soakFlavor', every: 2, values: [1, 1, 1] }] },
