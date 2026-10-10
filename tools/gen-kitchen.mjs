@@ -151,13 +151,6 @@ for (let i = 0; i < 8; i++) {
   // Where the ceiling meets the back wall, a line of shadow; where the floor meets it, a darker seam.
   rect(x0 + d, y0 + d, w - 2 * d, 1, tone.dark);
   rect(x0 + d, y0 + h - d - 1, w - 2 * d, 1, tone.dark);
-  if (special) {
-    // Two little four-point sparkles on the velvet floor (single specks read as dirt, not shine).
-    for (const [sx, sy] of [[ox + 7, 97], [ox + 36, 96]]) {
-      px(sx, sy, '#fff6c8');
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(sx + dx, sy + dy, '#e6bd52');
-    }
-  }
   frame(ox - 1, 35, 46, 66, P.outline);
   panel(ox - 1, 98, 46, 6, P.woodLight, P.woodHi, P.wood); // shelf lip
 }

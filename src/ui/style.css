@@ -970,7 +970,25 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .controls .chip .pix { vertical-align: middle; }
 
 /* Projectiles (thrown attacks), one look per food. */
-.bit.proj { z-index: 72; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #7cc04a; border-radius: 1px; }
+.bit.proj { z-index: 72; width: 4px; height: 4px; margin: -2px 0 0 -2px; background: #7cc04a; border-radius: 1px; box-shadow: 0 0 0 1px rgba(42, 27, 20, 0.55); }
+/* The copies trailing a projectile or cast spark: smaller and fainter, the further back. */
+.bit.trail { box-shadow: none !important; filter: brightness(1.25); }
+.bit.trail1 { opacity: 0.6; scale: 0.7; }
+.bit.trail2 { opacity: 0.35; scale: 0.5; }
+/* Where something lands: a ring flashing out, in the colour of what it brings. */
+.fx-ring { position: absolute; z-index: 96; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 2px solid currentColor; border-radius: 50%; pointer-events: none; color: #e4502a; box-shadow: 0 0 0 1px rgba(42, 27, 20, 0.25); }
+.fx-ring.k-heal, .fx-ring.k-buff { color: #6fd06f; }
+.fx-ring.k-burn { color: #f07a26; }
+.fx-ring.k-rot { color: #86a83a; }
+.fx-ring.k-chill { color: #8fd0ee; }
+.fx-ring.k-debuff { color: #a77bea; }
+.fx-ring.k-crust { color: #e2b043; }
+.fx-ring.k-summon { color: #ffd23f; }
+/* A status landing on a food: its badge pops up over it (see statusPop). */
+.status-pop { position: absolute; z-index: 98; pointer-events: none; display: flex; align-items: center; gap: 1px; transform: translate(-50%, -50%); }
+/* Growth in the kitchen: a big green number over the food that grew. */
+.floater.callout.grow { color: #7ee06a; font-size: 14px; }
+.floater.callout.grow.gold { color: #ffd23f; }
 .bit.proj-edamame { background: #8fd05a; width: 5px; height: 4px; }
 .bit.proj-olive { background: #4a3a52; width: 5px; height: 6px; margin: -3px 0 0 -3px; }
 .bit.proj-peppercorn { background: #3a2a22; width: 3px; height: 3px; margin: -1px 0 0 -1px; box-shadow: 0 0 0 1px #e4502a; }

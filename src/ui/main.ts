@@ -55,7 +55,7 @@ import { pickOpponent, saveGhost } from './ghosts';
 import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
-import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, isTurned, localPoint, localRect, orb, play, screenScale, setTurned, stagePos, wipe } from './motion';
+import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, isTurned, localPoint, localRect, orb, play, ring, screenScale, setTurned, shoot, stagePos, wipe } from './motion';
 import { type AudioSettings, type Sfx, audioSettings, isMuted, setAudio, sfx, toggleMute, unlockAudio } from './sound';
 import { syncMusic } from './music';
 
@@ -798,8 +798,17 @@ function playGrowth(delay = 0): number {
     lastGo = go;
     const t = delay + i * 280 + pause;
     const at = stagePos(root, el);
-    if (src) orb(stage, stagePos(root, src), at, 'k-buff', { delay: t, ms: 260 });
-    burst(stage, [at[0], at[1] - 8], g.attack || g.hp ? 'star' : 'coin-spark', { delay: t + 160, count: 4, spread: 12 });
+    // The food giving it casts (a hop and a glow) and sends a sparkle; where it lands, a ring, stars, and the gain itself
+    // in big numbers over the food that grew (green for stats, gold for sell value).
+    if (src) {
+      src.animate([{ translate: '0 0', filter: 'brightness(1)' }, { translate: '0 -4px', filter: 'brightness(1.5) drop-shadow(0 0 2px #7ee06a)', offset: 0.4 }, { translate: '0 0', filter: 'brightness(1)' }], { duration: 300, delay: Math.max(0, t - 80), easing: 'steps(6, jump-end)' });
+      orb(stage, stagePos(root, src), at, 'k-buff', { delay: t, ms: 280 });
+    }
+    const stats = g.attack || g.hp;
+    ring(stage, at, stats ? 'k-buff' : 'k-summon', { delay: t + 200 });
+    burst(stage, [at[0], at[1] - 8], stats ? 'star' : 'coin-spark', { delay: t + 160, count: 7, spread: 16 });
+    const gain = stats ? `+${g.attack}/+${g.hp}` : g.sell ? `+${g.sell}g` : '';
+    if (gain) floater(stage, at[0], at[1] - 20, gain, `callout grow ${stats ? '' : 'gold'}`, 1, t + 180);
     sfx('grow', t + 160);
     setTimeout(() => {
       const now = root.querySelector<HTMLElement>(`[data-k="u:${g.uid}"]`);
@@ -2604,6 +2613,21 @@ function battleSounds(f: BattleFrame, delay: number, after: number, speed: numbe
  * A thrown attack: the thrower recoils, and a projectile (bean, pit, peppercorn, ball) arcs to
  * every food it hits, landing as the hit shows (contactDelay).
  */
+/** A status landing on a food: its badge (with the amount) pops up over it and floats off. */
+function statusPop(stage: HTMLElement, at: [number, number], kind: 'burn' | 'rot' | 'chill', amount: number, delay: number, speed: number) {
+  if (delay > 0) return void setTimeout(() => statusPop(stage, at, kind, amount, 0, speed), delay);
+  const el = document.createElement('div');
+  el.className = 'status-pop';
+  el.style.left = `${at[0]}px`;
+  el.style.top = `${at[1]}px`;
+  el.innerHTML = statBadge(kind, amount, 2);
+  stage.appendChild(el);
+  el.animate(
+    [{ transform: 'translate(-50%, -50%) scale(0.4)', opacity: 0 }, { transform: 'translate(-50%, -50%) scale(1.2)', opacity: 1, offset: 0.2 }, { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.35 }, { transform: 'translate(-50%, -90%) scale(1)', opacity: 1, offset: 0.8 }, { transform: 'translate(-50%, -110%) scale(1)', opacity: 0 }],
+    { duration: 800 / speed, easing: 'steps(10, jump-end)', fill: 'both' },
+  ).finished.then(() => el.remove(), () => el.remove());
+}
+
 function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: number) {
   const shooter = f.marks.find((m) => m.kind === 'shoot');
   if (!shooter) return;
@@ -2624,7 +2648,7 @@ function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: 
     seen.set(key, n + 1);
     if (m.kind === 'crust' && n > 0) return;
     const [tx, ty] = fighterPoint(m.side, m.slot);
-    fling(stage, from, [tx + (n % 2 ? 6 : 0), ty - n * 3], `proj proj-${defId}`, { speed, delay: delay + i * 40 / speed, ms: 280, arc });
+    shoot(stage, from, [tx + (n % 2 ? 6 : 0), ty - n * 3], `proj proj-${defId}`, m.kind === 'blocked' ? 'k-blocked' : 'k-hit', { speed, delay: delay + i * 40 / speed, ms: 300, arc });
   });
   sfx('pew', delay);
 }
@@ -2685,12 +2709,17 @@ function battleEffects(b: PendingBattle, delay: number) {
   if (src && !pairs.length) {
     // Friends get a dotted line from the food that reached them; ability effects on enemies are lobbed as a spark.
     for (const m of linkedTargets(f, src)) orb(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay, ms: 280 });
+    // Ability effects on enemies are cast as a spark in the effect's colour, trailing, landing with a ring; a status
+    // it brings (Burn, Rot, Chill) pops up over the target as its badge, with the amount.
     const seen = new Set<string>();
     for (const m of f.marks) {
       const key = `${m.side}:${m.slot}`;
       if (!SPARK_KINDS.has(m.kind) || seen.has(key) || m.side === src.side) continue;
       seen.add(key);
-      fling(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `spark k-${m.kind}`, { speed, delay, ms: 200, arc: 10 });
+      const to = fighterPoint(m.side, m.slot);
+      shoot(stage, fighterPoint(src.side, src.slot), to, `spark k-${m.kind}`, `k-${m.kind}`, { speed, delay, ms: 260, arc: 12 });
+      const status = f.marks.find((s) => s.side === m.side && s.slot === m.slot && (s.kind === 'burn' || s.kind === 'rot' || s.kind === 'chill') && (s.amount ?? 0) > 0);
+      if (status) statusPop(stage, [to[0], to[1] - 30], status.kind as 'burn' | 'rot' | 'chill', status.amount!, delay + 240 / speed, speed);
     }
   }
   const after = delay + (contactDelay(f) * 1000) / speed;

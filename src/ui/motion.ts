@@ -190,9 +190,9 @@ export function stagePos(root: HTMLElement, el: Element): [number, number] {
 }
 
 /** Small pixel bits flying from one stage point to another along an arc (sparks, coins). */
-export function fling(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, opts: { speed?: number; delay?: number; ms?: number; arc?: number } = {}) {
+export function fling(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, opts: { speed?: number; delay?: number; ms?: number; arc?: number; steps?: number } = {}) {
   if (reduced) return;
-  const { speed = 1, delay = 0, ms = 260, arc = 12 } = opts;
+  const { speed = 1, delay = 0, ms = 260, arc = 12, steps = 8 } = opts;
   if (delay > 0) return void setTimeout(() => fling(stage, from, to, cls, { ...opts, delay: 0 }), delay);
   const b = document.createElement('div');
   b.className = `bit ${cls}`;
@@ -209,8 +209,37 @@ export function fling(stage: HTMLElement, from: [number, number], to: [number, n
       { transform: `translate(${x1}px, ${y1}px)`, opacity: 1, offset: 0.9 },
       { transform: `translate(${x1}px, ${y1}px) scale(2)`, opacity: 0 },
     ],
-    { duration: ms / speed, delay, easing: 'steps(8, jump-end)', fill: 'both' },
+    { duration: ms / speed, delay, easing: `steps(${steps}, jump-end)`, fill: 'both' },
   ).finished.then(() => b.remove(), () => b.remove());
+}
+
+/**
+ * Something thrown or cast from one food at another, so you can follow it: the projectile (`cls`) flies smoothly with
+ * two smaller copies trailing it, and where it lands a ring (`ringCls`, a colour class) flashes out.
+ */
+export function shoot(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, ringCls: string, opts: { speed?: number; delay?: number; ms?: number; arc?: number } = {}) {
+  if (reduced) return;
+  const { speed = 1, delay = 0, ms = 300, arc = 12 } = opts;
+  fling(stage, from, to, cls, { speed, delay, ms, arc, steps: 14 });
+  for (let i = 1; i <= 2; i++) fling(stage, from, to, `${cls} trail trail${i}`, { speed, delay: delay + (i * 34) / speed, ms, arc, steps: 14 });
+  ring(stage, to, ringCls, { speed, delay: delay + (ms * 0.9) / speed });
+}
+
+/** A ring flashing out from a point: where something lands. */
+export function ring(stage: HTMLElement, at: [number, number], cls: string, opts: { speed?: number; delay?: number } = {}) {
+  if (reduced) return;
+  const { speed = 1, delay = 0 } = opts;
+  if (delay > 0) return void setTimeout(() => ring(stage, at, cls, { speed }), delay);
+  const r = document.createElement('div');
+  r.className = `fx-ring ${cls}`;
+  r.style.left = `${at[0]}px`;
+  r.style.top = `${at[1]}px`;
+  stage.appendChild(r);
+  r.animate([{ transform: 'scale(0.3)', opacity: 1 }, { transform: 'scale(1)', opacity: 1, offset: 0.5 }, { transform: 'scale(1.5)', opacity: 0 }], {
+    duration: 300 / speed,
+    easing: 'steps(6, jump-end)',
+    fill: 'both',
+  }).finished.then(() => r.remove(), () => r.remove());
 }
 
 /** A dotted line drawn from one stage point to another, dot by dot, that then fades: a food reaching a friend. */
@@ -244,8 +273,9 @@ export function beam(stage: HTMLElement, from: [number, number], to: [number, nu
 export function orb(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, opts: { speed?: number; delay?: number; ms?: number } = {}) {
   if (reduced) return;
   const { speed = 1, delay = 0, ms = 280 } = opts;
-  for (let i = 0; i < 3; i++) fling(stage, from, to, `orb orb${i} ${cls}`, { speed, delay: delay + (i * 40) / speed, ms, arc: 18 });
+  for (let i = 0; i < 3; i++) fling(stage, from, to, `orb orb${i} ${cls}`, { speed, delay: delay + (i * 40) / speed, ms, arc: 18, steps: 12 });
   burst(stage, to, `spark ${cls}`, { speed, delay: delay + (ms * 0.9) / speed, count: 8, spread: 14 });
+  ring(stage, to, cls, { speed, delay: delay + (ms * 0.85) / speed });
 }
 
 /** Bits bursting out from a point (crumbs when a food is eaten, a puff when one is summoned). */
