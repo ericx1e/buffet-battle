@@ -411,34 +411,43 @@ function wonWithPage(w: NonNullable<App['wonWith']>): string {
 // with next and skip. Shown once per browser; buying the first food moves past the first card on its own.
 
 const TUTORIAL_KEY = 'buffetbattle.tutorial';
-/** Where the cards sit: over the counter tray, clear of the plate, the buffet and the bell. */
-const CARD_AT: Rect = [246, 150, 214, 0];
-const TUTORIAL: { target: Rect; card: Rect; title: string; text: string }[] = [
+/**
+ * The tour: a welcome card in the middle, then a card beside each part of the kitchen it's about (`card` is where it
+ * sits: x, y and width, in stage pixels), with that part ringed.
+ */
+const TUTORIAL: { target?: Rect; card: Rect; title: string; text: string }[] = [
+  {
+    card: [200, 112, 240, 0],
+    title: 'Welcome, chef!',
+    text: "Buffet Battle is a food fight: you build a plate of dishes in your kitchen, and it battles other chefs' plates on its own. Want a quick tour of your first day?",
+  },
   {
     target: LAYOUT.buffet as Rect,
-    card: CARD_AT,
+    card: [250, 116, 214, 0],
     title: 'Buy a dish',
-    text: 'Drag a dish from the buffet onto your plate. Its price is under it; your gold is in the jar. The front column (right) attacks, the back column supports.',
+    text: 'Drag a dish from the buffet onto your plate (its price is under it). Every dish has its own ability: click and hold one to read it. The front column (right) attacks, the back column supports.',
   },
   {
     target: LAYOUT.chalkboard as Rect,
-    card: CARD_AT,
+    card: [452, 142, 182, 0],
     title: 'Flavors',
-    text: 'Every food has a flavor. Two foods of a flavor on your plate unlock its bonus, and it grows at 4, 6 and 8. The chalkboard keeps count: hover a line to see the bonus.',
+    text: 'Every dish has a flavor. Two of a flavor on your plate unlock its bonus, and it grows at 4, 6 and 8. The chalkboard keeps count: hover a line to see the bonus.',
   },
   {
     target: LAYOUT.magnets as Rect,
-    card: CARD_AT,
+    card: [66, 226, 196, 0],
     title: 'How to win',
     text: 'Win a battle to serve a course: ten courses wins the run. A loss costs a life (the first two days are free), and five lost lives close the kitchen.',
   },
   {
     target: PROPS.bell as Rect,
-    card: CARD_AT,
+    card: [196, 166, 214, 0],
     title: 'Ring the bell',
     text: "When your plate is ready, ring the bell to serve. Your plate battles another chef's on its own. Then it's a new day, more gold, and a fresh buffet.",
   },
 ];
+/** The card that waits for a dish on the plate (it moves on by itself once there is one). */
+const BUY_STEP = 1;
 
 function tutorialDone(): boolean {
   try {
@@ -468,7 +477,7 @@ function stepTutorial() {
     return;
   }
   if (!kitchen || app.run.turn > 1) return endTutorial();
-  if (app.tutorial === 0 && app.run.plate.some(Boolean)) app.tutorial = 1;
+  if (app.tutorial === BUY_STEP && app.run.plate.some(Boolean)) app.tutorial = BUY_STEP + 1;
 }
 
 function tutorialCard(): string {
@@ -476,15 +485,17 @@ function tutorialCard(): string {
   if (i === undefined || app.naming || app.chef || app.wonWith || settingsOpen) return '';
   const t = TUTORIAL[i];
   const [x, y, w] = t.card;
+  const welcome = i === 0;
   const last = i === TUTORIAL.length - 1;
+  const ring = t.target ? `<div class="coach-ring" style="${box(t.target)}" data-k="coach-ring:${i}" data-in="pop"></div>` : '';
   return `
-    <div class="coach-ring" style="${box(t.target)}" data-k="coach-ring:${i}" data-in="pop"></div>
-    <div class="coach" style="left:${x}px;top:${y}px;width:${w}px" data-k="coach:${i}" data-in="pop">
-      <div class="coach-title">${t.title}<span>${i + 1}/${TUTORIAL.length}</span></div>
+    ${ring}
+    <div class="coach ${welcome ? 'welcome' : ''}" style="left:${x}px;top:${y}px;width:${w}px" data-k="coach:${i}" data-in="pop">
+      <div class="coach-title">${t.title}${welcome ? '' : `<span>${i}/${TUTORIAL.length - 1}</span>`}</div>
       <p>${t.text}</p>
       <div class="coach-buttons">
         <button type="button" class="alt-btn" data-action="tutorial-skip">skip tutorial</button>
-        <button type="button" class="big-btn" data-action="tutorial-next">${last ? 'got it' : 'next ›'}</button>
+        <button type="button" class="big-btn" data-action="tutorial-next">${welcome ? 'show me ›' : last ? 'got it' : 'next ›'}</button>
       </div>
     </div>`;
 }
