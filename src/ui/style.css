@@ -1030,6 +1030,9 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .over-buttons .big-btn { margin-top: 0; }
 .mag-course small { font-size: 10px; margin-left: 1px; }
 .mag-course { cursor: pointer; pointer-events: auto; }
+/* The desktop app signs in through the browser: our own button, and a note while it waits. */
+.google-chip { padding: 0 8px; }
+.signin-wait { display: flex; align-items: center; gap: 4px; font: 400 10px/10px var(--pixel); color: #8a7568; }
 /* Foods won with: every food in a grid, lit if it has been on a winning plate, a shadow if not. */
 .won-card { width: 470px; gap: 4px; }
 .won-card .pg-title { font-size: 14px; line-height: 14px; }

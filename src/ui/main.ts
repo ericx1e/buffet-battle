@@ -113,6 +113,10 @@ interface App {
   chef?: { me?: api.Me; error?: string; busy?: boolean };
   /** The page of foods won with is open (`foods` once loaded). */
   wonWith?: { foods?: Record<string, number>; error?: string };
+  /** The website, opened by the desktop app to sign it in (?link=code): `done` once it has, with the chef's name. */
+  linking?: { code: string; done?: string; error?: string };
+  /** The desktop app waiting for the browser sign-in to finish. */
+  browserSignIn?: { code: string; poll: string };
   /** Watching a battle from the dev site: nothing is saved and the run isn't touched. */
   spectate?: boolean;
 }
@@ -259,6 +263,12 @@ function dispatch(a: Action): ActionResult {
 /** At start-up: a new chef picks a name; a returning one picks up their run from the server. */
 async function connect() {
   if (!api.online() || app.spectate) return;
+  // Opened by the desktop app to sign it in: only that, nothing changes for this browser's chef.
+  const link = new URLSearchParams(location.search).get('link');
+  if (link) {
+    app.linking = { code: link };
+    return render();
+  }
   if (!api.savedPlayer()) return openNaming(false);
   await syncRun(false);
 }
@@ -408,8 +418,8 @@ function chefCard(c: NonNullable<App['chef']>): string {
     : me.google
       ? `<p class="chef-google">Linked to Google: sign in on any device to cook as ${esc(me.name)}.</p>
          <button class="chip" data-action="sign-out" ${c.busy ? 'disabled' : ''}>sign out</button>`
-      : api.googleReady()
-        ? '<p class="chef-google">Sign in with Google to keep this chef and its trophies on every device.</p><div class="google-slot" data-width="200" style="--w:200"></div>'
+      : signInOffered()
+        ? `<p class="chef-google">Sign in with Google to keep this chef and its trophies on every device.</p>${signInControl(200)}`
         : '';
   return `
     <div class="over-dim name-dim" data-k="chef-dim" data-in="fade" data-action="chef-close"></div>
@@ -431,25 +441,95 @@ function chefCard(c: NonNullable<App['chef']>): string {
 
 /** Google's button answered: this device's chef is linked to the account, or becomes the account's chef. */
 async function googleSignedIn(credential: string) {
+  if (app.linking) return void finishLink(credential);
   const before = api.savedPlayer()?.playerId;
   try {
-    const p = await api.googleSignIn(credential);
-    app.naming = undefined;
-    sfx('bell');
-    if (p.playerId === before) {
-      app.message = `Signed in: ${p.name} is linked to your Google account.`;
-      if (app.chef) return void openChef();
-      return render();
-    }
-    // Another chef: theirs is the run to play.
-    app.chef = undefined;
-    app.message = `Welcome back, ${p.name}.`;
-    await syncRun(true);
+    await signedIn(await api.googleSignIn(credential), before);
   } catch (e) {
     sfx('deny');
     app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}`;
     render();
   }
+}
+
+/** The website signs the desktop app in. */
+async function finishLink(credential: string) {
+  const l = app.linking!;
+  try {
+    l.done = (await api.finishLink(credential, l.code)).name;
+    l.error = undefined;
+    sfx('bell');
+  } catch (e) {
+    l.error = e instanceof api.Offline ? "Can't reach the kitchen server." : (e as Error).message;
+    sfx('deny');
+  }
+  render();
+}
+
+/** The website's card for signing the desktop app in. */
+function linkCard(l: NonNullable<App['linking']>): string {
+  return `
+    <div class="over-dim name-dim" data-k="link-dim" data-in="fade"></div>
+    <div class="over-card name-card chef-card" style="${box([170, 100, 300, 112])}" data-k="link-card" data-in="drop">
+      <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${l.done ? 'All set!' : 'Sign in'}</span></div>
+      ${l.done
+        ? `<p class="chef-google">The game on your computer is signed in as <b>${esc(l.done)}</b>. You can close this tab and go back to it.</p>`
+        : `<p class="chef-google">Sign in with Google to sign in Buffet Battle on your computer.</p>
+           ${l.error ? `<p class="chef-google name-error">${esc(l.error)}</p>` : ''}
+           <div class="google-slot" data-width="200" style="--w:200"></div>`}
+    </div>`;
+}
+
+/** The desktop app: sign in through the browser, then wait for the chef to come back. */
+async function startBrowserSignIn() {
+  try {
+    const { code, poll } = await api.startLink();
+    app.browserSignIn = { code, poll };
+    window.open(api.linkUrl(code), '_blank');
+    sfx('select');
+    render();
+    const before = api.savedPlayer()?.playerId;
+    const until = Date.now() + 10 * 60_000;
+    while (app.browserSignIn?.code === code && Date.now() < until) {
+      await new Promise((r) => setTimeout(r, 2000));
+      if (app.browserSignIn?.code !== code) return;
+      const p = await api.collectLink(code, poll);
+      if (p) {
+        app.browserSignIn = undefined;
+        return await signedIn(p, before);
+      }
+    }
+    if (app.browserSignIn?.code === code) app.browserSignIn = undefined;
+    render();
+  } catch (e) {
+    app.browserSignIn = undefined;
+    sfx('deny');
+    app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}`;
+    render();
+  }
+}
+
+/** The sign-in options on the name and chef cards: Google's button on the website, a browser sign-in in the app. */
+function signInControl(width: number): string {
+  if (app.browserSignIn) return '<span class="signin-wait">finish signing in in your browser... <button type="button" class="chip" data-action="browser-sign-in-cancel">cancel</button></span>';
+  if (api.browserSignIn()) return '<button type="button" class="chip google-chip" data-action="browser-sign-in">sign in with Google</button>';
+  return api.googleReady() ? `<div class="google-slot" data-width="${width}" style="--w:${width}"></div>` : '';
+}
+const signInOffered = () => api.googleReady() || api.browserSignIn();
+
+/** Signed in as `p`: the same chef (now linked), or another one whose run is the one to play. */
+async function signedIn(p: api.Player, before: string | undefined) {
+  app.naming = undefined;
+  sfx('bell');
+  if (p.playerId === before) {
+    app.message = `Signed in: ${p.name} is linked to your Google account.`;
+    if (app.chef) return void openChef();
+    return render();
+  }
+  // Another chef: theirs is the run to play.
+  app.chef = undefined;
+  app.message = `Welcome back, ${p.name}.`;
+  await syncRun(true);
 }
 
 /** Signs this device out of a Google-linked chef: the kitchen starts over, as a new chef or another sign-in. */
@@ -890,6 +970,11 @@ function onAction(action: string, el: HTMLElement) {
     case 'chef':
       if (!app.battle) void openChef();
       return;
+    case 'browser-sign-in':
+      return void startBrowserSignIn();
+    case 'browser-sign-in-cancel':
+      app.browserSignIn = undefined;
+      return render();
     case 'won-with':
       if (!app.battle) void openWonWith();
       return;
@@ -2074,6 +2159,7 @@ function renderKitchen() {
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
         ${app.chef ? chefCard(app.chef) : ''}
+        ${app.linking ? linkCard(app.linking) : ''}
       </main>
     </div>`;
   if (app.naming) fillNamingCard(app.naming);
@@ -2101,7 +2187,7 @@ function namingCard(n: Naming): string {
     : '';
   return `
     <div class="over-dim name-dim" data-k="name-dim" data-in="fade"></div>
-    <form class="over-card name-card" style="${box(!n.renaming && api.googleReady() ? [170, 50, 300, 222] : [170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
+    <form class="over-card name-card" style="${box(!n.renaming && signInOffered() ? [170, 50, 300, 222] : [170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
       <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
       <p class="over-sub">${n.renaming ? 'Pick a new name.' : 'Pick your chef name. Other chefs see it when they meet your plate.'}</p>
       <div class="name-row">
@@ -2116,7 +2202,7 @@ function namingCard(n: Naming): string {
         <button type="button" class="newrun name-alt" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
         <button type="submit" class="big-btn" ${n.busy ? 'disabled' : ''}>${n.busy ? 'one moment...' : n.renaming ? 'rename ›' : 'open the kitchen ›'}</button>
       </div>
-      ${!n.renaming && api.googleReady() ? '<div class="name-google"><span>chef already?</span><div class="google-slot" data-width="170" style="--w:170"></div></div>' : ''}
+      ${!n.renaming && signInOffered() ? `<div class="name-google"><span>chef already?</span>${signInControl(170)}</div>` : ''}
       ${menu}
     </form>`;
 }

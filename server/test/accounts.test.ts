@@ -121,3 +121,39 @@ describe('endless and the win counter', () => {
     expect((await call('POST', '/runs/won-run/endless', { token: p.token })).status).toBe(409);
   });
 });
+
+describe('signing the desktop app in through the browser', () => {
+  const collect = (code: string, poll: string) => call('POST', '/auth/link/collect', { body: { code, poll } });
+
+  it("links the app's chef, and the app collects the result once", async () => {
+    const app = await newPlayer('Desktop Chef');
+    const browser = await newPlayer('Browser Chef');
+    const { code, poll } = (await call('POST', '/auth/link', { token: app.token })).body;
+    expect((await collect(code, poll)).body).toEqual({ waiting: true });
+    expect((await collect(code, 'wrong-poll-secret-xxxxxxxx')).status).toBe(404);
+
+    const res = await call('POST', '/auth/google', { body: { credential: await idToken({ sub: 'g-desk' }), link: code }, token: browser.token });
+    expect(res.body).toEqual({ ok: true, name: 'Desktop Chef' });
+    // The app's chef was linked (it keeps its own token); the browser's chef wasn't touched.
+    expect((await collect(code, poll)).body).toEqual({ playerId: app.playerId, token: null, name: 'Desktop Chef', google: true });
+    expect((await collect(code, poll)).status).toBe(404);
+    expect((await call('GET', '/players/me', { token: browser.token })).body.google).toBe(false);
+    // The link is used up.
+    expect((await call('POST', '/auth/google', { body: { credential: await idToken({ sub: 'g-desk' }), link: code } })).status).toBe(404);
+  });
+
+  it('signs the app into an account that already has a chef', async () => {
+    const owner = await newPlayer('Owner');
+    await call('POST', '/auth/google', { body: { credential: await idToken({ sub: 'g-own' }) }, token: owner.token });
+    const { code, poll } = (await call('POST', '/auth/link')).body;
+    await call('POST', '/auth/google', { body: { credential: await idToken({ sub: 'g-own' }), link: code } });
+    const got = (await collect(code, poll)).body;
+    expect(got).toMatchObject({ playerId: owner.playerId, name: 'Owner', google: true });
+    expect((await call('GET', '/players/me', { token: got.token })).body.playerId).toBe(owner.playerId);
+  });
+
+  it('refuses unknown links', async () => {
+    expect((await call('POST', '/auth/google', { body: { credential: await idToken(), link: 'no-such-link' } })).status).toBe(404);
+    expect((await collect('no-such-link', 'x')).status).toBe(404);
+  });
+});

@@ -115,6 +115,31 @@ export const wonFoods = async () => (await request<{ foods: Record<string, numbe
 const GOOGLE_CLIENT_ID: string | undefined = import.meta.env.VITE_GOOGLE_CLIENT_ID || undefined;
 export const googleReady = () => online() && GOOGLE_CLIENT_ID !== undefined;
 
+// The desktop app can't show Google's button (Google doesn't allow it in an app window): it signs in through the
+// player's browser instead. It asks the server for a code, opens buffetbattle.com/?link=code, where the player signs in
+// with Google, and collects its chef from the server once that's done.
+
+const SITE_URL: string = import.meta.env.VITE_SITE_URL || 'https://buffetbattle.com';
+/** The desktop app, which signs in through the browser. */
+export const browserSignIn = () => online() && !!import.meta.env.VITE_DESKTOP;
+
+export const startLink = () => request<{ code: string; poll: string }>('POST', '/auth/link');
+export const linkUrl = (code: string) => `${SITE_URL}/?link=${encodeURIComponent(code)}`;
+
+/** The chef the browser signed in, once it has (null while still waiting). */
+export async function collectLink(code: string, poll: string): Promise<Player | null> {
+  const res = await request<{ waiting?: true; playerId: string; token: string | null; name: string }>('POST', '/auth/link/collect', { code, poll });
+  if (res.waiting) return null;
+  const token = res.token ?? savedPlayer()?.token;
+  if (!token) throw new Refused(500, 'Sign-in went wrong. Try again.');
+  const p = { playerId: res.playerId, token, name: res.name };
+  keepPlayer(p);
+  return p;
+}
+
+/** The website's side: signs in with Google for the desktop app's code (this browser's own chef isn't touched). */
+export const finishLink = (credential: string, link: string) => request<{ ok: true; name: string }>('POST', '/auth/google', { credential, link });
+
 /** Signs in with an ID token from Google's button: this device's chef is linked to the account, or becomes the account's chef. */
 export async function googleSignIn(credential: string): Promise<Player> {
   const res = await request<{ playerId: string; token: string | null; name: string }>('POST', '/auth/google', { credential });

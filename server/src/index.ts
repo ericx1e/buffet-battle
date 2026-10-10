@@ -3,6 +3,9 @@
 //   POST  /auth/google         Sign in with Google: { credential } -> { playerId, token, name, google } (token null:
 //                              keep yours; the chef on this device was linked to the account)
 //   POST  /auth/signout        forget this device's token (a chef linked to Google)
+//   POST  /auth/link           the desktop app signs in through the browser: -> { code, poll } (the browser opens
+//                              buffetbattle.com/?link=code and sends { credential, link: code } to /auth/google)
+//   POST  /auth/link/collect   { code, poll } -> { waiting: true } or { playerId, token, name, google } once signed in
 //   GET   /players/me          { playerId, name, google, trophies, bestEndless }
 //   GET   /players/me/foods    the foods on the chef's winning plates: { foods: { [defId]: runs won with it } }
 //   PATCH /players/me          rename: { name }
@@ -37,23 +40,40 @@ async function route(req: Request, env: Env): Promise<Response> {
   }
 
   if (at('POST', '/auth/google')) {
-    const { sub } = await verifyGoogle(env, (await readBody(req)).credential);
-    // A chef already linked to this account: this device gets a token of its own for it.
-    const linked = await env.DB.prepare('SELECT id, name FROM players WHERE google_sub = ?').bind(sub).first<{ id: string; name: string }>();
-    if (linked) {
-      const token = randomId(32);
-      await env.DB.prepare('INSERT INTO sessions (token_hash, player_id, created_at) VALUES (?, ?, ?)').bind(await hashToken(token), linked.id, Date.now()).run();
-      return json({ playerId: linked.id, token, name: linked.name, google: true });
+    const body = await readBody(req);
+    const { sub } = await verifyGoogle(env, body.credential);
+    // Signing the desktop app in: the result waits for the app, and this browser's own chef isn't touched.
+    if (body.link !== undefined) {
+      const link = await openLink(env, body.link);
+      const current = link.player_id ? await playerById(env, link.player_id) : null;
+      const chef = await googleChef(req, env, sub, current);
+      const result = JSON.stringify({ playerId: chef.playerId, token: chef.token, name: chef.name });
+      await env.DB.prepare('UPDATE sign_in_links SET result = ? WHERE code = ?').bind(result, link.code).run();
+      return json({ ok: true, name: chef.name });
     }
-    // Otherwise the chef on this device (if it isn't linked to another account) becomes this account's.
-    const current = await optionalPlayer(req, env);
-    if (current && !current.google) {
-      await env.DB.prepare('UPDATE players SET google_sub = ? WHERE id = ?').bind(sub, current.id).run();
-      return json({ playerId: current.id, token: null, name: current.name, google: true });
-    }
-    // No chef here: a new one, with a name from the word lists (it can be changed).
+    const { created, ...chef } = await googleChef(req, env, sub, await optionalPlayer(req, env));
+    return json({ ...chef, google: true }, created ? 201 : 200);
+  }
+
+  if (at('POST', '/auth/link')) {
     await limitSignups(req, env);
-    return json({ ...(await newChef(env, randomName(), sub)), google: true }, 201);
+    const code = randomId(12);
+    const poll = randomId(24);
+    const current = await optionalPlayer(req, env);
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM sign_in_links WHERE created_at < ?').bind(Date.now() - LINK_MS),
+      env.DB.prepare('INSERT INTO sign_in_links (code, poll_hash, player_id, created_at) VALUES (?, ?, ?, ?)').bind(code, await hashToken(poll), current?.id ?? null, Date.now()),
+    ]);
+    return json({ code, poll }, 201);
+  }
+  if (at('POST', '/auth/link/collect')) {
+    const { code, poll } = await readBody(req);
+    if (typeof code !== 'string' || typeof poll !== 'string') throw new HttpError(400, 'A code and poll are required.');
+    const link = await env.DB.prepare('SELECT * FROM sign_in_links WHERE code = ? AND created_at > ?').bind(code, Date.now() - LINK_MS).first<LinkRow>();
+    if (!link || link.poll_hash !== (await hashToken(poll))) throw new HttpError(404, 'That sign-in has expired. Try again.');
+    if (!link.result) return json({ waiting: true });
+    await env.DB.prepare('DELETE FROM sign_in_links WHERE code = ?').bind(code).run();
+    return json({ ...JSON.parse(link.result), google: true });
   }
 
   const player = await requirePlayer(req, env);
@@ -101,6 +121,51 @@ async function route(req: Request, env: Env): Promise<Response> {
   if (sub === 'battles' && req.method === 'GET') return json({ battles: await battlesOf(env, player.id, runId) });
 
   throw new HttpError(404, 'Not found.');
+}
+
+/**
+ * The chef for a Google account: the one already linked to it (with a new token for this device); else the chef on
+ * this device, if it isn't linked to another account, becomes the account's (token null: it keeps its own); else a
+ * new chef with a name from the word lists (it can be changed).
+ */
+async function googleChef(req: Request, env: Env, sub: string, current: Player | null): Promise<{ playerId: string; token: string | null; name: string; created?: true }> {
+  const linked = await env.DB.prepare('SELECT id, name FROM players WHERE google_sub = ?').bind(sub).first<{ id: string; name: string }>();
+  if (linked) {
+    const token = randomId(32);
+    await env.DB.prepare('INSERT INTO sessions (token_hash, player_id, created_at) VALUES (?, ?, ?)').bind(await hashToken(token), linked.id, Date.now()).run();
+    return { playerId: linked.id, token, name: linked.name };
+  }
+  if (current && !current.google) {
+    await env.DB.prepare('UPDATE players SET google_sub = ? WHERE id = ?').bind(sub, current.id).run();
+    return { playerId: current.id, token: null, name: current.name };
+  }
+  await limitSignups(req, env);
+  return { ...(await newChef(env, randomName(), sub)), created: true };
+}
+
+/** How long a browser sign-in for the desktop app stays open. */
+const LINK_MS = 10 * 60_000;
+
+interface LinkRow {
+  code: string;
+  poll_hash: string;
+  player_id: string | null;
+  result: string | null;
+}
+
+/** A desktop sign-in still waiting for the browser, or 404. */
+async function openLink(env: Env, code: unknown): Promise<LinkRow> {
+  const link =
+    typeof code === 'string'
+      ? await env.DB.prepare('SELECT * FROM sign_in_links WHERE code = ? AND created_at > ? AND result IS NULL').bind(code, Date.now() - LINK_MS).first<LinkRow>()
+      : null;
+  if (!link) throw new HttpError(404, 'That sign-in link has expired. Start again from the game.');
+  return link;
+}
+
+async function playerById(env: Env, id: string): Promise<Player | null> {
+  const row = await env.DB.prepare('SELECT id, name, google_sub FROM players WHERE id = ?').bind(id).first<{ id: string; name: string; google_sub: string | null }>();
+  return row && { id: row.id, name: row.name, google: row.google_sub !== null, tokenHash: '' };
 }
 
 /** New chefs: at most a few a minute from one address. */

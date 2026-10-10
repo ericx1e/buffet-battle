@@ -683,6 +683,7 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
 - Signing in links the chef on this device to the Google account (`players.google_sub`). On another device the same sign-in gets a token of its own for that chef (`sessions` table), and the name card offers "chef already? Sign in". An account with no chef gets a new one with a word-list name.
 - Sign out forgets only that device's token, and only for a linked chef (an unlinked one would be lost).
 - The client ID is the repository variable `GOOGLE_CLIENT_ID`, passed to the game build and the Worker at deploy; without it the sign-in buttons are hidden.
+- The desktop app can't show Google's button (Google refuses sign-in inside an app window), so it signs in through the browser: it gets a code from `POST /auth/link`, opens buffetbattle.com/?link=code, where the player signs in with Google (the browser's own chef is untouched), and collects its chef with `POST /auth/link/collect` (polling every 2 s; links last 10 minutes). Steam login will replace this on Steam.
 - Foods won with: clicking the course note on the fridge (or the chef card's button) opens a grid of every food, lit with a count if it was on a plate that won a run (online from the server's won runs, `GET /players/me/foods`; offline, this device's own record).
 - Ranks come later.
 
