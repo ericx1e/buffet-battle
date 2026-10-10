@@ -1098,6 +1098,13 @@ function onAction(action: string, el: HTMLElement) {
       forceWipe = true;
       save();
       return render();
+    case 'rice-powers':
+      ricePowers = { defId: el.dataset.def!, level: Number(el.dataset.level) as 1 | 2 | 3, has: (el.dataset.has ?? '').split(',').filter(Boolean) as Flavor[] };
+      sfx('page');
+      return render();
+    case 'rice-powers-close':
+      ricePowers = null;
+      return render();
     case 'new-run-cancel':
       confirmingNewRun = false;
       return render();
@@ -1388,6 +1395,9 @@ function settingsButton(cls: string): string {
 let settingsOpen = false;
 
 /** Settings: a volume slider and an on/off switch for music and for sound effects. */
+/** Rice's powers card, open (from its cookbook page). */
+let ricePowers: { defId: string; level: 1 | 2 | 3; has: Flavor[] } | null = null;
+
 /** Asking before a run in progress is abandoned for a new one (the New run button). */
 let confirmingNewRun = false;
 
@@ -2218,21 +2228,41 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
+/** What each flavor gives a plain food (Rice), in full, at its number `n`. */
+const PLAIN_POWERS: Record<Flavor, (n: number) => string> = {
+  spicy: (n) => `When a food next to it attacks, Rice throws a grain at the same target for <b>${n}</b>.`,
+  sweet: (n) => `After each of its own attacks, Rice heals <b>${n}</b> HP.`,
+  sour: (n) => `Each time Rice is hit, it gains <b>+${n}</b> attack for the battle.`,
+  salty: (n) => `Every hit on Rice deals <b>${n}</b> less damage (always at least 1).`,
+  savory: (n) => `Each night, a random food next to it gains <b>+${n}/+${n}</b> permanently.`,
+};
+const plainNumber = (d: UnitDef, level: 1 | 2 | 3) => d.values[level - 1] * (level === 3 ? 2 : 1);
+
+/** Rice's powers card: every flavor's power in full, the ones it has marked. */
+function ricePowersModal(p: NonNullable<typeof ricePowers>): string {
+  const d = unitDef(p.defId);
+  const n = plainNumber(d, p.level);
+  const rows = FLAVORS.map((f) => {
+    const on = p.has.includes(f);
+    return `<div class="rp-row ${on ? 'on' : ''}"><span class="rp-flavor">${pix(f)}${f}</span><span class="rp-text">${PLAIN_POWERS[f](n)}</span><span class="rp-has">${on ? '<i class="rp-check"></i>' : ''}</span></div>`;
+  }).join('');
+  return `
+    <div class="modal" data-k="rp-dim" data-in="fade" data-action="rice-powers-close"></div>
+    <div class="modal-card rp-card" data-k="rp-card" data-in="pop">
+      <div class="pg-title">${p.level === 3 ? d.cookedName : d.name}'s powers</div>
+      <p class="rp-intro">It has no flavor of its own. Every other night it soaks up the flavor of a food next to it, with no limit, and each flavor it has gives it one of these powers${p.level === 3 ? ' (doubled, cooked)' : ''}:</p>
+      ${rows}
+      <div class="row"><button class="big-btn" data-action="rice-powers-close">got it</button></div>
+    </div>`;
+}
+
 /** The power each flavor gives a plain food (Rice) over its neighbours, at its level's number (doubled once cooked). */
 function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
-  const n = d.values[level - 1] * (level === 3 ? 2 : 1);
-  const what: Record<Flavor, string> = {
-    spicy: `grain hits for ${n}`,
-    sweet: `attacks: +${n} HP`,
-    sour: `hit: +${n} attack`,
-    salty: `hits on it -${n}`,
-    savory: `one +${n}/+${n} nightly`,
-  };
-  // All five flavors in a row, lit for the ones it has soaked up (hover any for its power), then the powers it has
-  // spelled out, a line each.
-  const row = FLAVORS.map((f) => `<span class="pp-icon ${has.includes(f) ? 'on' : ''}" ${tip(`<p>${flavorTag(f)}: ${what[f]}.</p>`)}>${pix(f)}</span>`).join('');
-  const owned = FLAVORS.filter((f) => has.includes(f)).map((f) => `<p class="plain-power">${pix(f)} ${what[f]}</p>`);
-  return `<div class="pp-row">${row}</div>${owned.join('') || '<p class="plain-power dim">no flavors yet</p>'}`;
+  const n = plainNumber(d, level);
+  // All five flavors in a row, lit for the ones it has soaked up (hover any for its power), and under it the button
+  // to the card with every power in full.
+  const row = FLAVORS.map((f) => `<span class="pp-icon ${has.includes(f) ? 'on' : ''}" ${tip(`<p>${flavorTag(f)}: ${PLAIN_POWERS[f](n)}</p>`)}>${pix(f)}</span>`).join('');
+  return `<div class="pp-row">${row}</div><button type="button" class="chip pp-more" data-action="rice-powers" data-def="${d.id}" data-level="${level}" data-has="${has.join(',')}">all powers ›</button>`;
 }
 
 /** The cookbook's pages now, and as they were before the last turn (the turning leaf carries the old right page). */
@@ -2391,6 +2421,7 @@ function renderKitchen() {
         ${app.seasoning ? seasoningModal() : ''}
         ${settingsOpen ? settingsModal() : ''}
         ${confirmingNewRun ? newRunModal() : ''}
+        ${ricePowers ? ricePowersModal(ricePowers) : ''}
         ${app.wonWith ? wonWithPage(app.wonWith) : ''}
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
@@ -2674,7 +2705,7 @@ function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: 
     seen.set(key, n + 1);
     if (m.kind === 'crust' && n > 0) return;
     const [tx, ty] = fighterPoint(m.side, m.slot);
-    shoot(stage, from, [tx + (n % 2 ? 6 : 0), ty - n * 3], `proj proj-${defId}`, m.kind === 'blocked' ? 'k-blocked' : 'k-hit', { speed, delay: delay + i * 40 / speed, ms: 300, arc });
+    shoot(stage, from, [tx + (n % 2 ? 6 : 0), ty - n * 3], `proj proj-${defId}`, m.kind === 'blocked' ? 'k-blocked' : 'k-hit', { speed, delay: delay + i * 40 / speed, ms: pattern === 'lob' ? 380 : 320, arc });
   });
   sfx('pew', delay);
 }
@@ -2734,14 +2765,14 @@ function battleEffects(b: PendingBattle, delay: number) {
   }
   if (src && !pairs.length) {
     // Friends get a dotted line from the food that reached them; ability effects on enemies are lobbed as a spark.
-    for (const m of linkedTargets(f, src)) orb(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay, ms: 280 });
+    for (const m of linkedTargets(f, src)) orb(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay, ms: 340 });
     // Ability effects on enemies are cast as a spark in the effect's colour, trailing, landing with a ring.
     const seen = new Set<string>();
     for (const m of f.marks) {
       const key = `${m.side}:${m.slot}`;
       if (!SPARK_KINDS.has(m.kind) || seen.has(key) || m.side === src.side) continue;
       seen.add(key);
-      shoot(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `spark k-${m.kind}`, `k-${m.kind}`, { speed, delay, ms: 260, arc: 12 });
+      shoot(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `cast k-${m.kind}`, `k-${m.kind}`, { speed, delay, ms: 320, arc: 24 });
     }
   }
   const after = delay + (contactDelay(f) * 1000) / speed;
@@ -2835,9 +2866,18 @@ function inspectCard(side: 0 | 1, slot: number, u: UnitView): string {
       <p class="stat-line">${stats}</p>
       ${held}
       <p>${text}</p>
+      ${d.plain ? battlePowers(d, u.level, u.flavors) : ''}
       ${(u.uses ?? []).map(([left, all]) => `<p class="dim">${left}/${all} this battle</p>`).join('')}
       ${glossary(`${text} ${held} ${u.crust ? 'Crust' : ''} ${statusWords}`)}
     </div>`;
+}
+
+/** A plain food's powers in battle (Rice), one line each for the flavors it has. */
+function battlePowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
+  const n = plainNumber(d, level);
+  const owned = FLAVORS.filter((f) => has.includes(f));
+  if (owned.length === 0) return '<p class="dim">No flavors yet: no powers.</p>';
+  return owned.map((f) => `<p class="plain-power">${pix(f)} ${PLAIN_POWERS[f](n)}</p>`).join('');
 }
 
 const STATUS_NAME = { burn: 'Burn', rot: 'Rot', chill: 'Chill' } as const;
@@ -3341,6 +3381,10 @@ document.addEventListener('keydown', (e) => {
     return render();
   }
   if (chalkHand && e.key === 'Escape') return dropChalk();
+  if (ricePowers && e.key === 'Escape') {
+    ricePowers = null;
+    return render();
+  }
   if (confirmingNewRun && e.key === 'Escape') {
     confirmingNewRun = false;
     return render();

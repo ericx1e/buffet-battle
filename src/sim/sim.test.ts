@@ -153,6 +153,14 @@ describe('battle', () => {
       run.turn = 2;
       endDay(run);
       expect(flavorsOf(rice)).toEqual(['spicy']);
+      // It only soaks flavors it doesn't have: next to the same Chili, nothing new; next to a Lemon, sour.
+      run.turn = 4;
+      endDay(run);
+      expect(flavorsOf(rice)).toEqual(['spicy']);
+      run.plate[1] = unit('lemon');
+      run.turn = 6;
+      endDay(run);
+      expect(flavorsOf(rice)).toEqual(['spicy', 'sour']);
       // Spicy follows a neighbour's attack; Sour grows when it's hit; Salty takes damage off hits; Sweet heals as it attacks.
       const r = simulateBattle(
         plate({ 0: unit('cheese', { attack: 3, hp: 200 }), 1: unit('rice', { extraFlavors: ['spicy', 'sour', 'salty'], hp: 200 }) }),

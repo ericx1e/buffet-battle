@@ -206,11 +206,11 @@ export function fling(stage: HTMLElement, from: [number, number], to: [number, n
   const my = Math.min(y0, y1) - arc;
   b.animate(
     [
-      { transform: `translate(${x0}px, ${y0}px)`, opacity: 1 },
-      { transform: `translate(${(x0 + mx) / 2}px, ${(y0 + my) / 2 - arc / 3}px)`, offset: 0.3 },
-      { transform: `translate(${mx}px, ${my}px)`, offset: 0.55 },
-      { transform: `translate(${x1}px, ${y1}px)`, opacity: 1, offset: 0.9 },
-      { transform: `translate(${x1}px, ${y1}px) scale(2)`, opacity: 0 },
+      { translate: `${x0}px ${y0}px`, transform: 'none', opacity: 1 },
+      { translate: `${(x0 + mx) / 2}px ${(y0 + my) / 2 - arc / 3}px`, offset: 0.3 },
+      { translate: `${mx}px ${my}px`, offset: 0.55 },
+      { translate: `${x1}px ${y1}px`, transform: 'none', opacity: 1, offset: 0.9 },
+      { translate: `${x1}px ${y1}px`, transform: 'scale(2)', opacity: 0 },
     ],
     { duration: ms / speed, delay, easing: `steps(${steps}, jump-end)`, fill: 'both' },
   ).finished.then(() => b.remove(), () => b.remove());
@@ -276,9 +276,9 @@ export function beam(stage: HTMLElement, from: [number, number], to: [number, nu
 export function orb(stage: HTMLElement, from: [number, number], to: [number, number], cls: string, opts: { speed?: number; delay?: number; ms?: number } = {}) {
   if (reduced) return;
   const { speed = 1, delay = 0, ms = 280 } = opts;
-  for (let i = 0; i < 3; i++) fling(stage, from, to, `orb orb${i} ${cls}`, { speed, delay: delay + (i * 40) / speed, ms, arc: 18, steps: 12 });
-  burst(stage, to, `spark ${cls}`, { speed, delay: delay + (ms * 0.9) / speed, count: 8, spread: 14 });
-  ring(stage, to, cls, { speed, delay: delay + (ms * 0.85) / speed });
+  for (let i = 0; i < 3; i++) fling(stage, from, to, `orb orb${i} ${cls}`, { speed, delay: delay + (i * 45) / speed, ms, arc: 30, steps: 14 });
+  burst(stage, to, `spark ${cls}`, { speed, delay: delay + (ms * 0.9) / speed, count: 10, spread: 20 });
+  ring(stage, to, `big ${cls}`, { speed, delay: delay + (ms * 0.85) / speed });
 }
 
 /** Bits bursting out from a point (crumbs when a food is eaten, a puff when one is summoned). */

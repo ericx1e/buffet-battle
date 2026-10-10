@@ -997,6 +997,14 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .bit.trail { box-shadow: none !important; filter: brightness(1.25); }
 .bit.trail1 { opacity: 0.6; scale: 0.7; }
 .bit.trail2 { opacity: 0.35; scale: 0.5; }
+/* Thrown attacks drawn at twice their size, outlined, so you can follow them across the table. */
+.bit.proj { scale: 2; filter: drop-shadow(0.5px 0 0 #2a1b14) drop-shadow(-0.5px 0 0 #2a1b14) drop-shadow(0 0.5px 0 #2a1b14) drop-shadow(0 -0.5px 0 #2a1b14); }
+.bit.proj.trail { filter: brightness(1.25); }
+.bit.proj.trail1 { scale: 1.5; }
+.bit.proj.trail2 { scale: 1.1; }
+/* An ability cast at an enemy (Burn, Chill, a hit...): a big outlined diamond in the effect's colour. */
+.bit.cast { z-index: 74; width: 10px; height: 10px; margin: -5px 0 0 -5px; border: 2px solid #2a1b14; rotate: 45deg; box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.55); }
+.bit.cast.trail { border-color: transparent; }
 /* Where something lands: a ring flashing out, in the colour of what it brings. */
 .fx-ring { position: absolute; z-index: 96; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 2px solid currentColor; border-radius: 50%; pointer-events: none; color: #e4502a; box-shadow: 0 0 0 1px rgba(42, 27, 20, 0.25); }
 .fx-ring.k-heal, .fx-ring.k-buff { color: #6fd06f; }
@@ -1006,6 +1014,8 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .fx-ring.k-debuff { color: #a77bea; }
 .fx-ring.k-crust { color: #e2b043; }
 .fx-ring.k-summon { color: #ffd23f; }
+/* A buff or heal landing: a bigger ring than a hit's. */
+.fx-ring.big { width: 30px; height: 30px; margin: -15px 0 0 -15px; border-width: 3px; }
 /* Growth in the kitchen: a big green number over the food that grew. */
 .floater.callout.grow { color: #7ee06a; font-size: 14px; }
 .floater.callout.grow.gold { color: #ffd23f; }
@@ -1033,12 +1043,12 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 /* Buffs: a sparkle (with a trail) flies from the food that gave it and bursts, then the gain pops over the food. */
 /* A 4-pointed star with a dark outline, trailed by two smaller ones. */
 .bit.orb {
-  z-index: 75; width: 13px; height: 13px; margin: -6px 0 0 -6px; border: 0; background: #ffe066;
+  z-index: 75; width: 19px; height: 19px; margin: -9px 0 0 -9px; border: 0; background: #ffe066;
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
 }
 .orb-wrap { filter: drop-shadow(1px 0 0 #2a1b14) drop-shadow(-1px 0 0 #2a1b14) drop-shadow(0 1px 0 #2a1b14) drop-shadow(0 -1px 0 #2a1b14); }
-.bit.orb1 { width: 9px; height: 9px; margin: -4px 0 0 -4px; background: #fff3b0; }
-.bit.orb2 { width: 6px; height: 6px; margin: -3px 0 0 -3px; background: #fffbe0; }
+.bit.orb1 { width: 13px; height: 13px; margin: -6px 0 0 -6px; background: #fff3b0; }
+.bit.orb2 { width: 9px; height: 9px; margin: -4px 0 0 -4px; background: #fffbe0; }
 .bit.orb.k-heal { background: #ff8ab0; }
 .bit.orb1.k-heal, .bit.orb2.k-heal { background: #ffd0e0; }
 .bit.orb.k-crust { background: #f0c04a; }
@@ -1154,6 +1164,21 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .pp-row { display: flex; gap: 3px; margin: 1px 0 3px; }
 .pp-icon { display: flex; filter: grayscale(1); opacity: 0.35; cursor: help; }
 .pp-icon.on { filter: none; opacity: 1; }
+.pp-more { margin-top: 2px; align-self: flex-start; cursor: pointer; }
+/* Rice's powers card: each flavor's power in full, the ones it has lit. */
+.rp-card { width: 330px; gap: 4px; align-items: stretch; }
+.rp-card .pg-title { text-align: center; font-size: 14px; line-height: 14px; }
+.rp-intro { margin: 0 0 2px; font: 400 10px/11px var(--pixel); color: #6e5a4c; }
+.rp-row { display: grid; grid-template-columns: 52px 1fr 16px; gap: 4px; align-items: center; padding: 2px 3px; font: 400 10px/11px var(--pixel); color: #a89384; border: 1px solid transparent; }
+.rp-row.on { color: #3a2a22; background: #fff6dc; border-color: #e0c48a; }
+.rp-flavor { display: flex; align-items: center; gap: 2px; text-transform: capitalize; }
+.rp-row b { color: inherit; }
+.rp-row.on b { color: #b2401b; }
+.rp-has { display: flex; justify-content: center; }
+/* A pixel tick: the flavors it has. */
+.rp-check { display: block; width: 4px; height: 9px; margin-top: -3px; border: solid #3f9b4a; border-width: 0 3px 3px 0; rotate: 45deg; }
+.rp-card .row { justify-content: center; margin-top: 3px; }
+.rp-card .big-btn { margin-top: 0; }
 .set-links a { color: #8a7568; }
 .set-links a:hover { color: #b2401b; }
 /* The item cubby sits behind the thick divider on its left: its rarity gem moves in off the wood. */
