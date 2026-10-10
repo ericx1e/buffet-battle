@@ -2,3 +2,7 @@ node_modules
 dist
 .wrangler
 .dev.vars
+desktop/node_modules
+desktop/game
+desktop/release
+dist-desktop

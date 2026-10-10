@@ -2974,7 +2974,8 @@ window.visualViewport?.addEventListener('resize', rescale); // phone toolbars sl
 
 // Installed as an app (index.html links a manifest): a service worker keeps it playable offline. Single-page hosts
 // (the Artifact build) have no manifest and skip this.
-if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && import.meta.env.PROD) {
+// Not in the desktop app (its files are on disk already).
+if ('serviceWorker' in navigator && document.querySelector('link[rel="manifest"]') && import.meta.env.PROD && !import.meta.env.VITE_DESKTOP) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 

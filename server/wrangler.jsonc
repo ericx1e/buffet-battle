@@ -23,7 +23,7 @@
     { "name": "SIGNUP_LIMIT", "namespace_id": "1002", "simple": { "limit": 3, "period": 60 } }
   ],
   "vars": {
-    // Sites allowed to call the API from a browser, besides localhost.
-    "ALLOWED_ORIGINS": "https://buffetbattle.com,https://www.buffetbattle.com,https://ericx1e.github.io"
+    // Sites allowed to call the API from a browser, besides localhost (app://buffetbattle: the desktop app).
+    "ALLOWED_ORIGINS": "https://buffetbattle.com,https://www.buffetbattle.com,https://ericx1e.github.io,app://buffetbattle"
   }
 }

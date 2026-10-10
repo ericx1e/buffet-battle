@@ -1,0 +1,38 @@
+{
+  "name": "buffet-battle-desktop",
+  "productName": "Buffet Battle",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Buffet Battle for desktop (Steam): the web game in an Electron window.",
+  "main": "main.cjs",
+  "scripts": {
+    "build:game": "node build-game.mjs",
+    "start": "npm run build:game && electron .",
+    "dist": "npm run build:game && electron-builder"
+  },
+  "build": {
+    "appId": "com.buffetbattle.game",
+    "productName": "Buffet Battle",
+    "files": [
+      "main.cjs",
+      "game/**"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "dir"
+    },
+    "mac": {
+      "target": "dir",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": "dir"
+    }
+  },
+  "devDependencies": {
+    "electron": "^44.7.0",
+    "electron-builder": "^26.15.3"
+  }
+}
