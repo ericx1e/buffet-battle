@@ -1626,7 +1626,9 @@ function oddsStrip(): string {
   const cells = odds.map((o) => `<span class="odds-cell">${gemIcon(o.rarity)}${pct(o.chance)}</span>`).join('');
   const mythicNote = mythicOdds(app.run.turn) > 0
     ? 'Mythics can turn up in any food cubby now, and in the special cubby'
-    : `Mythics start turning up in the buffet on day ${MYTHIC_MARKET_DAY}, and in the special cubby on day ${MYTHIC_SPECIAL_DAY}`;
+    : MYTHIC_MARKET_DAY === MYTHIC_SPECIAL_DAY
+      ? `Mythics start turning up on day ${MYTHIC_MARKET_DAY}, in the buffet and in the special cubby`
+      : `Mythics start turning up in the buffet on day ${MYTHIC_MARKET_DAY}, and in the special cubby on day ${MYTHIC_SPECIAL_DAY}`;
   const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p><p class="dim">${mythicNote} (${pct(MYTHIC_SPECIAL_CHANCE)} of days). Half the time it is one you already own.</p>`;
   // Up to four a row, the rows as even as they go (seven: four over three).
   const cols = Math.ceil(odds.length / Math.ceil(odds.length / 4));

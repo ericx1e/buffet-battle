@@ -420,7 +420,7 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'The Burn also catches the enemies beside it.', abilities: [], thawSplash: true },
     abilities: [{ trigger: 'round', every: 2, effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
 
-  // Mythic: never in the market; delivered by the special cubby late in a run (7 gold)
+  // Mythic: from day 5, a rare find in a buffet cubby or the special cubby (10 gold)
   // Each mythic bends one rule, and where it sits decides who it reaches (see Aura in types.ts). Cooked, the rule
   // reaches further. No numbers to track beyond Black Garlic's opening Rot.
   { id: 'goldenTruffle', name: 'Golden Truffle', cookedName: 'Truffle Feast', emoji: '🍄', tier: 6, flavor: 'savory', attack: 6, hp: 16, values: [0, 0, 0],

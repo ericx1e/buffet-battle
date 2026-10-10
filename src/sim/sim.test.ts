@@ -973,14 +973,14 @@ describe('round 5 rules', () => {
     expect(sellPrice(run.plate[0]!)).toBe(15);
   });
 
-  it('mythics now and then show up on the buffet from day 6, never before', () => {
+  it('mythics now and then show up on the buffet from day 5, never before', () => {
     let early = 0;
     let late = 0;
     for (let seed = 0; seed < 400; seed++) {
       const run = newRun(seed);
       for (let day = 1; day <= 9; day++) {
         const mythics = run.market.filter((o) => o?.kind === 'unit' && rarityOf(unitDef(o.defId)) === 'mythic').length;
-        if (day < 6) early += mythics;
+        if (day < 5) early += mythics;
         else late += mythics;
         finishBattle(run, 'win');
       }

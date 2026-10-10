@@ -309,10 +309,10 @@ function rollMarket(run: RunState, premium = false) {
 }
 
 /** From this day, each buffet slot has a small chance of holding a mythic. */
-export const MYTHIC_MARKET_DAY = 6;
+export const MYTHIC_MARKET_DAY = 5;
 export const MYTHIC_MARKET_CHANCE = 0.005;
 /** From this day, the special cubby offers a mythic on this share of days. */
-export const MYTHIC_SPECIAL_DAY = 8;
+export const MYTHIC_SPECIAL_DAY = 5;
 export const MYTHIC_SPECIAL_CHANCE = 0.07;
 
 /** Mythics you own (plate, fridge, tray), so another copy of one can be offered: a mythic cooks at 3 copies. */
