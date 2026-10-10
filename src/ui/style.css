@@ -274,6 +274,8 @@ body.dragging .slot.empty {
    page waits under it until it lands. */
 /* The book's ruled lines (where the art draws them: every 12px from 14px down, 4px in from each side), so a page drawn
    over the art keeps them. */
+/* The bookmark ribbon (also in the art) lies over the pages, so a turning leaf passes under it. */
+.book-ribbon { position: absolute; left: 540px; top: 166px; width: 3px; height: 146px; z-index: 5; background: #8a2b24; pointer-events: none; }
 .page.page-old { z-index: 3; opacity: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0 11px, #e4dcc6 11px 12px) 4px 3px / 78px 100% no-repeat, #fbf2da; }
 .page-leaf { position: absolute; z-index: 4; opacity: 0; pointer-events: none; transform-style: preserve-3d; }
 .page-leaf .face {
@@ -1147,8 +1149,11 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .won-count { position: absolute; right: -1px; bottom: -1px; min-width: 9px; padding: 0 1px; font: 400 10px/9px var(--pixel); color: #fff; background: #b2401b; text-align: center; }
 .chef-tag { text-transform: none !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .name-dim { z-index: 59; }
-.plain-power { margin: 0; display: flex; align-items: center; gap: 2px; }
-.plain-power.on { color: #3a2a22; }
+.plain-power { margin: 0; display: flex; align-items: center; gap: 2px; color: #3a2a22; }
+/* Rice's flavors: all five in a row, the ones it has soaked up lit. */
+.pp-row { display: flex; gap: 3px; margin: 1px 0 3px; }
+.pp-icon { display: flex; filter: grayscale(1); opacity: 0.35; cursor: help; }
+.pp-icon.on { filter: none; opacity: 1; }
 .set-links a { color: #8a7568; }
 .set-links a:hover { color: #b2401b; }
 /* The item cubby sits behind the thick divider on its left: its rarity gem moves in off the wood. */

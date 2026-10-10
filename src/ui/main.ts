@@ -2214,7 +2214,7 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   }
   // Rice: the power each flavor gives it, lit for the flavors it has.
   const powers = d.plain ? plainPowers(d, level, u ? flavorsOf(u) : []) : '';
-  if (d.plain && u) notes.push(app.run.turn % 2 === 0 ? 'Soaks a flavor tonight.' : 'Soaks a flavor tomorrow night.');
+  if (d.plain && u) notes.push(app.run.turn % 2 === 0 ? 'Soaks tonight.' : 'Soaks tomorrow.');
   return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 
@@ -2228,13 +2228,11 @@ function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
     salty: `hits on it -${n}`,
     savory: `one +${n}/+${n} nightly`,
   };
-  // The powers it has, a line each; the rest as icons to hover (the page has no room for all five).
-  const owned = FLAVORS.filter((f) => has.includes(f)).map((f) => `<p class="plain-power on">${pix(f)} ${what[f]}</p>`);
-  const rest = FLAVORS.filter((f) => !has.includes(f));
-  const more = rest.length
-    ? `<p class="plain-power dim">${has.length ? 'more:' : 'soak:'} ${rest.map((f) => `<span ${tip(`<p>${flavorTag(f)}: ${what[f]}.</p>`)}>${pix(f)}</span>`).join('')}</p>`
-    : '';
-  return owned.join('') + more;
+  // All five flavors in a row, lit for the ones it has soaked up (hover any for its power), then the powers it has
+  // spelled out, a line each.
+  const row = FLAVORS.map((f) => `<span class="pp-icon ${has.includes(f) ? 'on' : ''}" ${tip(`<p>${flavorTag(f)}: ${what[f]}.</p>`)}>${pix(f)}</span>`).join('');
+  const owned = FLAVORS.filter((f) => has.includes(f)).map((f) => `<p class="plain-power">${pix(f)} ${what[f]}</p>`);
+  return `<div class="pp-row">${row}</div>${owned.join('') || '<p class="plain-power dim">no flavors yet</p>'}`;
 }
 
 /** The cookbook's pages now, and as they were before the last turn (the turning leaf carries the old right page). */
@@ -2318,6 +2316,7 @@ function cookbook(): string {
   return `<div class="page" style="${box(LAYOUT.pageLeft)}" data-vk="pgL" data-v="${sig}" data-va="pageLand">${left}</div>
     <div class="page page-old" style="${box(LAYOUT.pageLeft)}" data-k="old:${sig}" data-in="pageHold" data-out="none">${bookBefore.left}</div>
     <div class="page" style="${box(LAYOUT.pageRight)}">${right}</div>
+    <div class="book-ribbon"></div>
     <div class="page-leaf" style="${box([spine, top, reach, h])}" data-k="leaf:${sig}" data-in="pageTurn" data-out="none">
       <div class="page face front" style="padding-left:${LAYOUT.pageRight[0] - spine + 4}px;padding-right:${spine + reach - (LAYOUT.pageRight[0] + LAYOUT.pageRight[2]) + 4}px">${bookBefore.right}</div>
       <div class="page face back" style="padding-left:${LAYOUT.pageLeft[0] - (spine - reach) + 4}px;padding-right:${spine - (LAYOUT.pageLeft[0] + LAYOUT.pageLeft[2]) + 4}px">${left}</div>

@@ -710,8 +710,10 @@ const foods = {
     s.shadow(17, 29, 12, 2);
     // A heaped bowl of white rice in a dark blue bowl, a few grains catching the light.
     const grain = R('#f7f4ec');
-    s.ball(16, 17, 10, 6, grain, { clip: (x, y) => y <= 19, tone: (nx, ny, x, y) => ((x * 3 + y * 7) % 11 === 0 ? 2 : 0) });
+    // The bowl first, then the heap piled over its back half (so the back rim is hidden behind the rice and only the
+    // front rim shows).
     bowl(s, 16, 19, 12, 3, 8, R('#3f6f9a'), (x, y) => ((x * 5 + y) % 7 === 0 ? grain[2] : grain[1]));
+    s.ball(16, 17, 10, 6, grain, { clip: (x, y) => y <= 19, tone: (nx, ny, x, y) => ((x * 3 + y * 7) % 11 === 0 ? 2 : 0) });
     s.rect(6, 23, 21, 1, R('#3f6f9a')[1]);
   },
   popsicle(s) {
