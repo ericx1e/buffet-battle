@@ -274,10 +274,10 @@ body.dragging .slot.empty {
    page waits under it until it lands. */
 /* The book's ruled lines (where the art draws them: every 12px from 14px down, 4px in from each side), so a page drawn
    over the art keeps them. */
-/* The bookmark ribbon (also in the art) lies over the pages, so a turning leaf passes under it. */
-.book-ribbon { position: absolute; left: 540px; top: 166px; width: 3px; height: 146px; z-index: 5; background: #8a2b24; pointer-events: none; }
+/* The bookmark ribbon (also in the art) lies in the gutter over the resting pages; a turning leaf passes over it. */
+.book-ribbon { position: absolute; left: 540px; top: 166px; width: 3px; height: 146px; z-index: 4; background: #8a2b24; pointer-events: none; }
 .page.page-old { z-index: 3; opacity: 0; pointer-events: none; background: repeating-linear-gradient(to bottom, transparent 0 11px, #e4dcc6 11px 12px) 4px 3px / 78px 100% no-repeat, #fbf2da; }
-.page-leaf { position: absolute; z-index: 4; opacity: 0; pointer-events: none; transform-style: preserve-3d; }
+.page-leaf { position: absolute; z-index: 5; opacity: 0; pointer-events: none; transform-style: preserve-3d; }
 .page-leaf .face {
   position: absolute; inset: 0;
   background: repeating-linear-gradient(to bottom, transparent 0 11px, #e4dcc6 11px 12px) 4px 3px / 78px 100% no-repeat, #fbf2da;
@@ -823,7 +823,9 @@ body[data-screen='battle'] {
   font: 400 10px/9px var(--pixel); color: #2a1b14; background: #ffd23f; border: 1px solid #2a1b14; cursor: help;
 }
 .unit.special { outline: 1px solid #ffd23f; outline-offset: -1px; animation: bonus-glint 1.4s steps(1) infinite; }
-.unit.item.special .u-art { top: 4px; }
+.unit.item.special .u-art { top: 7px; }
+/* Packs and boxes sit on the cubby floor with the same dark down-right edge the consumables have. */
+.unit.item.special .u-art .sprite { filter: drop-shadow(1px 1px 0 rgba(26, 14, 8, 0.75)); }
 .bundle-tag {
   position: absolute; right: 0; top: 0; z-index: 2; height: 9px; padding: 0 1px;
   font: 400 10px/9px var(--pixel); color: #fff; background: #3f9b4a; border: 1px solid #2a1b14;
