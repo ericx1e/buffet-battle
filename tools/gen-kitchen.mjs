@@ -470,9 +470,21 @@ for (const y of [185, 257]) {
   rect(9, y, 54, 3, P.glassDark);
   rect(9, y, 54, 1, P.glassHi);
 }
-panel(13, 276, 46, 60, P.glass, P.glassHi, P.glassDark); // crisper drawer
-rect(24, 280, 24, 3, P.glassDark);
 for (let k = 0; k < 16; k++) px(10 + k, 300 - k, P.glassHi); // reflections
+// A paper note held on the door by a magnet: the game writes lives and courses on it (LAYOUT.magnets).
+{
+  const [x, y, w, h] = SLOTS.magnets;
+  rect(x + 1, y + 1, w, h, P.glassDark); // its shadow on the glass
+  panel(x, y, w, h, P.paper, '#fffaf0', P.paperShade);
+  for (let ly = y + 14; ly < y + h - 3; ly += 7) rect(x + 3, ly, w - 6, 1, P.paperLine); // ruled lines
+  rect(x + 3, y + 3, 1, h - 6, '#f0c4b8'); // the margin
+  // the magnet: a little red dome pinning the top
+  const mx = x + Math.floor(w / 2);
+  ellipse(mx, y + 1, 4, 3, P.outline);
+  ellipse(mx, y + 1, 3, 2, P.red);
+  rect(mx - 2, y, 2, 1, P.redHi);
+  rect(mx - 2, y + 3, 5, 1, P.redDark);
+}
 for (let k = 0; k < 24; k++) px(54 + Math.floor(k / 3), 200 - k, P.glassHi);
 panel(67, 130, 6, 100, P.steel, P.steelHi, P.steelDark); // door handle
 for (let x = 8; x < 72; x += 4) rect(x, 350, 2, 6, P.fridgeDark); // kick grille

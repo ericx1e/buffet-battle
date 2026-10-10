@@ -162,7 +162,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .newrun:hover { background: rgba(42, 27, 20, 0.8) !important; }
 
 /* Freezer magnets */
-.magnets { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 2px; pointer-events: none; }
+.magnets { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 9px 3px 0 6px; pointer-events: none; }
 .mag-stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px 2px; }
 .mag-star { display: inline-flex; }
 .mag-course { display: flex; align-items: center; gap: 2px; font: 400 10px/1 var(--pixel); color: #3a2a22; }

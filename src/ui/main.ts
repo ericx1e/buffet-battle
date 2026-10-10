@@ -1076,14 +1076,16 @@ function marketSlots(): string {
   const items = run.market.map((o, i) => ({ o, i })).filter(({ o }) => o?.kind === 'item');
   // The last teal cubby is the special one (see specialSlot).
   const placed = [
-    ...foods.slice(0, LAYOUT.marketFoodSlots).map((m, k) => ({ ...m, pos: LAYOUT.market[k] })),
-    ...items.slice(0, LAYOUT.market.length - LAYOUT.marketFoodSlots - 1).map((m, k) => ({ ...m, pos: LAYOUT.market[LAYOUT.marketFoodSlots + k] })),
+    ...foods.slice(0, LAYOUT.marketFoodSlots).map((m, k) => ({ ...m, cubby: k })),
+    ...items.slice(0, LAYOUT.market.length - LAYOUT.marketFoodSlots - 1).map((m, k) => ({ ...m, cubby: LAYOUT.marketFoodSlots + k })),
   ];
   return placed
-    .map(({ o, i, pos }) => {
+    .map(({ o, i, cubby }) => {
       if (!o) return '';
+      const pos = LAYOUT.market[cubby];
       const src: OfferSource = { area: 'market', index: i };
-      const key = `${app.run.turn}:${app.marketGen}:${i}`;
+      // Keyed by cubby, not market index: a food thawed in ahead of the item shifts the item's index, not its cubby.
+      const key = `${app.run.turn}:${app.marketGen}:${cubby}`;
       const attrs = `data-drag="offer:market:${i}" data-k="m:${key}" data-in="drop" data-out="drop-out"`;
       return `<div class="slot" style="${at(pos)}" data-offer="market:${i}" data-drop="buffet">${offerTile(o, attrs, isSelectedSrc(src))}</div>
         <div class="price ${offerCost(o) > app.run.gold ? 'dear' : ''}" style="${at([pos[0] + 6, pos[1] + 49])}" data-k="p:${key}" data-in="fade" data-out="drop-out">${pix('coin')}${offerCost(o)}</div>`;
@@ -1370,7 +1372,7 @@ function flavorTip(f: Flavor, n: number): string {
   const rows = FLAVOR_BONUS_LONG[f].map((b, i) => `<p class="tier ${n >= TIER_AT[i] ? 'on' : ''}"><b>${TIER_AT[i]}</b>${b}</p>`).join('');
   const next = tier < 4 ? `<p class="tip-next">${TIER_AT[tier] - n} more different ${f} food${TIER_AT[tier] - n === 1 ? '' : 's'} for the next bonus.${tier >= 2 ? ' Rich foods (Curry, Fudge, Lime, Rice Ball, Miso), Bouillon Cubes, foods with two flavors and Flavor Packets get you there.' : ''}</p>` : '<p class="tip-next">Every bonus is active!</p>';
   const saffron = app.run.plate.some((u) => u && unitDef(u.defId).aura === 'infuse') ? '<p class="dim">Foods next to Saffron count twice.</p>' : '';
-  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}<p class="dim">Each different food counts once (a rich food as its level number, a Bouillon Cube adds one): copies don't add more.</p>`);
+  return tipBox(`${pix(f)} ${f[0].toUpperCase()}${f.slice(1)} on your plate: ${n}`, `<p class="dim">${FLAVOR_ROLE[f]}</p>${rows}${next}${saffron}`);
 }
 
 /** The glass of a spice jar, inside its prop box: where the spice fills from (bottom) toward the lid (top). */
@@ -2521,7 +2523,9 @@ window.addEventListener('pointerup', (e) => {
   const target = dropTargetAt(e, d.lift);
   // The next render animates from here: the food lands where it was let go (or flies home).
   const r = d.ghost.getBoundingClientRect();
-  const t = target?.getBoundingClientRect();
+  // Dropped on the buffet (a thaw): what lands anywhere on the shelf slides from the drop point.
+  const shelf = target?.dataset.drop === 'buffet' ? root.querySelector<HTMLElement>('.buffet-zone') : null;
+  const t = (shelf ?? target)?.getBoundingClientRect();
   pendingDrop = {
     key: d.el.dataset.k ?? '',
     rect: { left: r.left, top: r.top, width: r.width, height: r.height },
