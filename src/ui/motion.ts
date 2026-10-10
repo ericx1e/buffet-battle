@@ -75,9 +75,43 @@ export function animate(el: Element, name: string, speed = 1, delay = 0): Animat
 
 const values = new Map<string, string>();
 
+// Phones held upright show the stage turned a quarter turn (see the rotated class in main.ts). Positions are then
+// measured along the stage's own axes: localRect and localPoint map the screen into the stage's frame (relative to
+// its top-left corner, in screen pixels), which is just the screen, shifted, when it isn't turned.
+let turned = false;
+export function setTurned(on: boolean) {
+  turned = on;
+}
+export const isTurned = () => turned;
+
+function frame(): DOMRect | null {
+  return document.querySelector('.stage')?.getBoundingClientRect() ?? null;
+}
+
+/** A screen rect in the stage's frame. */
+export function localRect(r: Rect): Rect {
+  const f = frame();
+  if (!f) return { left: r.left, top: r.top, width: r.width, height: r.height };
+  if (!turned) return { left: r.left - f.left, top: r.top - f.top, width: r.width, height: r.height };
+  // Turned clockwise: the stage's x runs down the screen and its y runs from right to left.
+  return { left: r.top - f.top, top: f.right - (r.left + r.width), width: r.height, height: r.width };
+}
+
+/** A screen point in the stage's frame. */
+export function localPoint(x: number, y: number): [number, number] {
+  const f = frame();
+  if (!f) return [x, y];
+  return turned ? [y - f.top, f.right - x] : [x - f.left, y - f.top];
+}
+
+/** Screen pixels per stage pixel. */
+export function screenScale(): number {
+  const f = frame();
+  return f ? (turned ? f.height : f.width) / STAGE_W : 1;
+}
+
 function rectOf(el: Element): Rect {
-  const r = el.getBoundingClientRect();
-  return { left: r.left, top: r.top, width: r.width, height: r.height };
+  return localRect(el.getBoundingClientRect());
 }
 
 export function capture(root: HTMLElement): Snapshot {
@@ -315,7 +349,7 @@ export function play(root: HTMLElement, before: Snapshot, opts: PlayOpts = {}) {
       const d = Number(v) - Number(prev);
       if (d) {
         const [x, y] = stagePos(root, el);
-        floater(stage, x, y - el.getBoundingClientRect().height / s / 2 - 9,d > 0 ? `+${d}` : `${d}`, d > 0 ? 'up' : 'down', speed, base);
+        floater(stage, x, y - rectOf(el).height / s / 2 - 9,d > 0 ? `+${d}` : `${d}`, d > 0 ? 'up' : 'down', speed, base);
       }
     }
   });

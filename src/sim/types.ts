@@ -65,6 +65,7 @@ export type Target =
   | 'enemyFrontRow'
   | 'allEnemies'
   | 'randomBackEnemy' // random back-row enemy, front row if the back is empty
+  | 'randomEnemies' // the level's number of random enemies (with `fixed` for the effect's own number)
   | 'crustedFriends' // every friend that has Crust
   | 'highestAttackEnemy'
   | 'nearestEnemyLanes' // front-row enemies in the N lanes nearest this one (N = the ability's amount)
@@ -131,6 +132,8 @@ export interface AbilityDef {
   once?: boolean;
   /** hit trigger: at most `amount` times per battle (Popcorn). */
   limitToAmount?: boolean;
+  /** The effect's own number, when the level's number counts something else (randomEnemies: how many). */
+  fixed?: number;
   /** randomFriends: how many; summon: how many; kitchen adjacentFriends: at most this many, at random. */
   count?: number;
   /** summon: which token, and fixed stats (otherwise attack/HP = amount). */
@@ -192,10 +195,10 @@ export interface AbilityDef {
  *   (those that need a place, like adjacent friends, do nothing there); cooked, fridge foods also grow +1/+1 a day;
  * tower (Chicken Tender Tower): the friend in its lane comes back once when eaten, with 50/75/100% of its starting HP (every friend, once cooked);
  * ferment (Black Garlic): enemies in its lane and the lanes beside it take double damage from Burn and Rot (every enemy, triple, once cooked).
- * Chill: brainFreeze (Popsicle): Chilled enemies' abilities don't go off; shatter (Sorbet): an enemy whose Chill wears
- * off takes damage (its level number); coldPack (Frozen Peas): your Chilled foods take no damage from hits.
+ * Chill: brainFreeze (Popsicle): Chilled enemies' abilities don't go off; shatter (Sorbet): every time a Chilled enemy
+ * skips a turn takes damage (its level number).
  */
-export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower' | 'brainFreeze' | 'shatter' | 'coldPack';
+export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower' | 'brainFreeze' | 'shatter';
 
 /** How special a food is. Mythic foods never appear in the market. */
 /** One rarity per buffet tier (1 common ... 6 exotic), and mythic for the special-cubby foods. */
@@ -236,10 +239,8 @@ export interface UnitDef {
     spreadFull?: boolean;
     /** siphon also takes HP: the enemy front row takes damage and your front row gains HP (Fondue). */
     siphonHp?: boolean;
-    /** A shattering enemy Chills the one behind it (Sorbet). */
-    shatterBehind?: boolean;
-    /** Your Chilled foods take no Burn or Rot either (Frozen Peas). */
-    coldPackStatus?: boolean;
+    /** Shatter also hits the enemies beside the shattering one, for half (Sorbet). */
+    shatterSplash?: boolean;
   };
   /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
   rarity?: Rarity;

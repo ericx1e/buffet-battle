@@ -897,21 +897,8 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
   /* Landscape notches and home bars: keep the stage clear of them (stageScale() subtracts this padding). */
   body { min-height: 0 !important; padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
 }
-/* Held upright, the 640x360 scene would be tiny: ask for the phone to be turned sideways. */
-.rotate { display: none; }
-@media (pointer: coarse) and (orientation: portrait) {
-  .rotate {
-    display: grid; place-content: center; justify-items: center; gap: 18px;
-    position: fixed; inset: 0; z-index: 2000; background: #1d1410; color: #fffaf0;
-    font: 400 26px/1 var(--pixel); text-align: center;
-  }
-  .rotate small { font-size: 18px; color: #c9b8a6; }
-  .rotate i {
-    width: 36px; height: 60px; border: 4px solid #fffaf0; border-radius: 6px; box-shadow: 4px 4px 0 #e0642f;
-    animation: rotate-phone 2.4s steps(1) infinite;
-  }
-}
-@keyframes rotate-phone { 50% { rotate: 90deg; } }
+/* A phone held upright plays sideways all the same: the stage is turned a quarter turn to fill the screen (main.ts, updateTurn). */
+html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(90deg); }
 
 /* Cooked bonus: a chip on the cookbook page (lit once cooked), a line on the battle card, a flaming callout. */
 .cook-chip { display: flex; align-items: center; gap: 2px; width: max-content; padding: 0 2px; margin-top: 2px; color: #a89384; border: 1px dashed #c9b8a6; cursor: help; }

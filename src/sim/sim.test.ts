@@ -79,17 +79,30 @@ describe('battle', () => {
       expect(appleHeals(simulateBattle(plate({ 0: unit('popsicle', { copies: 3, hp: 200 }) }), apple(), 1))).toBe(0);
     });
 
-    it('Sorbet shatters an enemy as its Chill wears off', () => {
-      const r = simulateBattle(plate({ 0: unit('iceCream', { hp: 200 }), 3: unit('sorbet') }), plate({ 0: wall() }), 1);
-      expect(text(r)).toContain('Sorbet: enemy Cheese shatters for 4');
+    it('Sorbet shatters a Chilled enemy every turn it skips', () => {
+      const r = simulateBattle(plate({ 0: unit('iceCream', { copies: 3, hp: 200 }), 3: unit('sorbet') }), plate({ 0: wall() }), 1);
+      // Ice Cream at level 2 Chills it 2: two skipped turns, two shatters.
+      expect(r.frames.filter((f) => f.text.includes('Sorbet: enemy Cheese shatters for 3')).length).toBe(2);
     });
 
-    it('Frozen Peas: a Chilled friend takes no damage from hits', () => {
-      const front = unit('cheese', { attack: 1, hp: 20 });
-      const r = simulateBattle(plate({ 0: front, 3: unit('frozenPeas', { copies: 3 }) }), plate({ 0: unit('cheese', { attack: 8, hp: 200 }) }), 1);
-      // Chilled 2: the first two turns' hits do nothing.
-      const hp = r.frames.filter((f) => f.round >= 1 && f.round <= 2).map((f) => f.plates[0][0]?.hp);
-      expect(hp.every((h) => h === 20)).toBe(true);
+    it('Frozen Peas Chill random enemies every 2 turns', () => {
+      const r = simulateBattle(plate({ 0: wall(), 3: unit('frozenPeas', { copies: 3 }) }), plate({ 0: wall(), 1: wall(), 2: wall() }), 1);
+      const chills = r.frames.filter((f) => f.text.startsWith('Frozen Peas:'));
+      expect(chills.length).toBeGreaterThan(1);
+      expect(chills.every((f) => f.round % 2 === 0)).toBe(true);
+      expect(chills[0].text).toMatch(/enemy Cheese, enemy Cheese are Chilled 1/);
+    });
+
+    it('a food that lobs in reaction throws each lob on its own', () => {
+      // Two friends eaten at once: Cherries lob twice, as two moments.
+      const r = simulateBattle(
+        plate({ 0: unit('lemon', { hp: 1 }), 1: unit('lemon', { hp: 1 }), 5: unit('cherry', { hp: 200 }) }),
+        plate({ 0: unit('cheese', { attack: 9, hp: 200 }), 1: unit('cheese', { attack: 9, hp: 200 }), 3: wall(), 4: wall() }),
+        1,
+      );
+      const lobs = r.frames.filter((f) => f.text.startsWith('Cherries'));
+      expect(lobs.length).toBeGreaterThanOrEqual(2);
+      expect(lobs.every((f) => !f.text.includes('(x2)'))).toBe(true);
     });
 
     it('Habanero Salsa spreads the most Burn to the enemies beside', () => {

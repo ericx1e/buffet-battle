@@ -55,7 +55,7 @@ import { pickOpponent, saveGhost } from './ghosts';
 import LAYOUT from './kitchen-layout.json';
 import BATTLE from './battle-layout.json';
 import battleUrl from '../../art/scenes/battle.png';
-import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, orb, play, stagePos, wipe } from './motion';
+import { type DropFx, EMPTY, WIPE_MS, animate, burst, capture, fling, floater, isTurned, localPoint, localRect, orb, play, screenScale, setTurned, stagePos, wipe } from './motion';
 import { type AudioSettings, type Sfx, audioSettings, isMuted, setAudio, sfx, toggleMute, unlockAudio } from './sound';
 import { syncMusic } from './music';
 
@@ -1301,8 +1301,21 @@ function screenRoom(): [number, number] {
 /** The stage fills the window (as large as fits, keeping its shape), on phones and PCs alike. */
 function stageScale(): number {
   const [w, h] = screenRoom();
-  return Math.min(w / LAYOUT.size[0], h / LAYOUT.size[1]);
+  const [across, down] = isTurned() ? [h, w] : [w, h];
+  return Math.min(across / LAYOUT.size[0], down / LAYOUT.size[1]);
 }
+
+/**
+ * A phone held upright still plays in landscape: the stage is turned a quarter turn to fill the screen (iPhones can't
+ * lock the orientation, so the game turns itself). Pointer and layout maths go through motion.ts's localPoint and
+ * localRect, which follow the turn.
+ */
+const portrait = window.matchMedia('(pointer: coarse) and (orientation: portrait)');
+function updateTurn() {
+  setTurned(portrait.matches);
+  document.documentElement.classList.toggle('turned', portrait.matches);
+}
+updateTurn();
 
 interface UnitData {
   defId: string;
@@ -1821,7 +1834,7 @@ function saveChalk() {
 /** The chalk in your hand: the same stick, tilted like it's being held, its tip at the pointer. */
 function moveChalkHand(e: PointerEvent) {
   if (!chalkHand) return;
-  chalkHand.style.transform = `translate(${e.clientX}px, ${e.clientY}px) rotate(-40deg) scale(${stageScale()})`;
+  chalkHand.style.transform = `translate(${e.clientX}px, ${e.clientY}px) rotate(${isTurned() ? 50 : -40}deg) scale(${stageScale()})`;
 }
 
 /** The eraser: the drawing fades off the board. */
@@ -1862,7 +1875,7 @@ function dropChalk() {
   if (!home) return done();
   sfx('place');
   hand.animate(
-    [{ transform: hand.style.transform }, { transform: `translate(${home.left}px, ${home.bottom}px) rotate(0deg) scale(${stageScale()})` }],
+    [{ transform: hand.style.transform }, { transform: isTurned() ? `translate(${home.left}px, ${home.top}px) rotate(90deg) scale(${stageScale()})` : `translate(${home.left}px, ${home.bottom}px) rotate(0deg) scale(${stageScale()})` }],
     { duration: 260, easing: 'steps(6, jump-end)', fill: 'forwards' },
   ).finished.then(done, done);
 }
@@ -2831,10 +2844,9 @@ function updateTip() {
     stage.appendChild(box);
   }
   // Below the thing hovered, or above it when there's no room; kept inside the stage.
-  const s = stage.getBoundingClientRect();
-  const k = s.width / LAYOUT.size[0];
-  const r = el.getBoundingClientRect();
-  const x0 = (r.left - s.left) / k, y0 = (r.top - s.top) / k, w0 = r.width / k, h0 = r.height / k;
+  const k = screenScale();
+  const r = localRect(el.getBoundingClientRect());
+  const x0 = r.left / k, y0 = r.top / k, w0 = r.width / k, h0 = r.height / k;
   const w = box.offsetWidth, h = box.offsetHeight;
   const left = Math.round(Math.max(4, Math.min(LAYOUT.size[0] - w - 4, x0 + w0 / 2 - w / 2)));
   const below = y0 + h0 + 3;
@@ -2969,8 +2981,6 @@ interface DragState {
   el: HTMLElement;
   startX: number;
   startY: number;
-  /** Touch drags carry the food above the finger, where it can be seen. */
-  lift: number;
   ghost?: HTMLElement;
   over?: HTMLElement;
 }
@@ -2995,26 +3005,19 @@ root.addEventListener('pointerdown', (e) => {
   }
   const el = (e.target as HTMLElement).closest<HTMLElement>('[data-drag]');
   if (!el) return;
-  drag = { source: parseDrag(el.dataset.drag!), el, startX: e.clientX, startY: e.clientY, lift: e.pointerType === 'touch' ? 34 : 0 };
+  drag = { source: parseDrag(el.dataset.drag!), el, startX: e.clientX, startY: e.clientY };
 });
 
 /** Pointer position in stage pixels (the stage is scaled with a CSS transform). */
 function stagePoint(e: PointerEvent): [number, number] {
-  const stage = root.querySelector<HTMLElement>('.stage');
-  if (!stage) return [e.clientX, e.clientY];
-  const r = stage.getBoundingClientRect();
-  const s = r.width / LAYOUT.size[0];
-  return [Math.round((e.clientX - r.left) / s), Math.round((e.clientY - r.top) / s)];
+  const [x, y] = localPoint(e.clientX, e.clientY);
+  const s = screenScale();
+  return [Math.round(x / s), Math.round(y / s)];
 }
 
-/**
- * Where a drag drops: under the carried food, not the finger. On touch screens the food rides above the finger
- * (drag.lift) so it stays visible, and you line the food up with the slot, so that is the point that counts.
- */
-function dropTargetAt(e: PointerEvent, lift: number): HTMLElement | undefined {
-  const stage = root.querySelector<HTMLElement>('.stage');
-  const scale = stage ? stage.getBoundingClientRect().width / LAYOUT.size[0] : 1;
-  return document.elementFromPoint(e.clientX, e.clientY - lift * scale)?.closest<HTMLElement>('[data-drop]') ?? undefined;
+/** Where a drag drops: under the pointer (the carried food sits under the finger too). */
+function dropTargetAt(e: PointerEvent): HTMLElement | undefined {
+  return document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-drop]') ?? undefined;
 }
 
 window.addEventListener('pointermove', (e) => {
@@ -3036,9 +3039,9 @@ window.addEventListener('pointermove', (e) => {
   }
   const [x, y] = stagePoint(e);
   drag.ghost.style.left = `${x - 20}px`;
-  drag.ghost.style.top = `${y - 24 - drag.lift}px`;
+  drag.ghost.style.top = `${y - 24}px`;
   // Recompute (a render may have replaced the element we were over).
-  const over = dropTargetAt(e, drag.lift);
+  const over = dropTargetAt(e);
   if (over !== drag.over || (over && !over.classList.contains('drop-hover'))) {
     drag.over?.classList.remove('drop-hover');
     over?.classList.add('drop-hover');
@@ -3080,12 +3083,12 @@ window.addEventListener('pointerup', (e) => {
   const d = drag;
   drag = null;
   if (!d?.ghost) return;
-  const target = dropTargetAt(e, d.lift);
+  const target = dropTargetAt(e);
   // The next render animates from here: the food lands where it was let go (or flies home).
-  const r = d.ghost.getBoundingClientRect();
+  const r = localRect(d.ghost.getBoundingClientRect());
   // Dropped on the buffet (a thaw): what lands anywhere on the shelf slides from the drop point.
   const shelf = target?.dataset.drop === 'buffet' ? root.querySelector<HTMLElement>('.buffet-zone') : null;
-  const t = (shelf ?? target)?.getBoundingClientRect();
+  const t = (shelf ?? target) ? localRect((shelf ?? target)!.getBoundingClientRect()) : undefined;
   pendingDrop = {
     key: d.el.dataset.k ?? '',
     rect: { left: r.left, top: r.top, width: r.width, height: r.height },
@@ -3164,7 +3167,11 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-const rescale = () => root.querySelector<HTMLElement>('.stage-wrap')?.style.setProperty('--s', String(stageScale()));
+const rescale = () => {
+  updateTurn();
+  root.querySelector<HTMLElement>('.stage-wrap')?.style.setProperty('--s', String(stageScale()));
+};
+portrait.addEventListener('change', rescale);
 window.addEventListener('resize', rescale);
 window.visualViewport?.addEventListener('resize', rescale); // phone toolbars sliding in and out
 
