@@ -1,4 +1,4 @@
-import { abilitiesOf, flavorTally, flavorsOf, unitDef } from './data';
+import { abilitiesOf, flavorAbilities, flavorTally, flavorsOf, unitDef } from './data';
 import { Rng } from './rng';
 import {
   type AbilityDef,
@@ -64,6 +64,8 @@ interface BattleUnit {
   burn: number;
   rot: number;
   chill: number;
+  /** The turn it last skipped for Chill: it stays frozen for the rest of that turn (see frozen). */
+  frozeIn: number;
   /** Attack gained from rally auras this battle (capped). */
   rallied: number;
   /** Sweet x8 already saved it once this battle. */
@@ -225,11 +227,15 @@ class Battle {
   /** A battle unit from an owned food. */
   private fromInstance(inst: UnitInstance, side: Side, slot: number): BattleUnit {
     const def = unitDef(inst.defId);
+    const flavors = flavorsOf(inst);
+    const level = levelOf(inst.copies);
     return {
       ...this.blank(side, slot, inst.defId, Math.max(1, inst.attack + (inst.tempAttack ?? 0)), inst.hp),
-      level: levelOf(inst.copies),
-      flavor: inst.flavorOverride ?? def.flavor,
-      flavors: flavorsOf(inst),
+      level,
+      flavor: def.plain ? (flavors[0] ?? def.flavor) : (inst.flavorOverride ?? def.flavor),
+      flavors,
+      // A plain food (Rice) does what its gained flavors say.
+      extra: flavorAbilities(def, level, flavors),
       item: inst.item,
       token: !!def.token,
       lives: def.lives ?? 0,
@@ -243,7 +249,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, rallied: 0, rushed: false, towered: false,
+      burn: 0, rot: 0, chill: 0, frozeIn: 0, rallied: 0, rushed: false, towered: false,
     };
   }
 
@@ -257,6 +263,9 @@ class Battle {
 
     for (this.round = 1; this.round <= MAX_ROUNDS && !this.over(); this.round++) {
       if (this.stepUp()) this.snap('The back row steps up.');
+      this.startOfRound();
+      this.resolve();
+      if (this.over()) break;
       this.shootStep();
       this.resolve();
       if (this.over()) break;
@@ -489,8 +498,10 @@ class Battle {
           if (this.over()) return;
           if (u.chill > 0) {
             u.chill--;
+            u.frozeIn = this.round;
             this.mark(u, 'chill', 0);
             this.snap(`${this.name(u)} is chilled and skips a throw`);
+            if (u.chill === 0) this.shatter([u]);
             continue;
           }
           const enemy = (1 - side) as Side;
@@ -555,6 +566,7 @@ class Battle {
         if (!attacker || this.throws(attacker)) continue;
         if (attacker.chill > 0) {
           attacker.chill--;
+          attacker.frozeIn = this.round;
           chilled.push(attacker);
           continue;
         }
@@ -567,6 +579,7 @@ class Battle {
     if (chilled.length > 0) {
       for (const u of chilled) this.mark(u, 'chill', 0);
       this.snap(`${chilled.map((u) => this.name(u)).join(', ')} ${chilled.length > 1 ? 'are' : 'is'} chilled and skip${chilled.length > 1 ? '' : 's'} an attack`);
+      this.shatter(chilled.filter((u) => u.chill === 0));
     }
 
     for (let lane = 0; lane < 3; lane++) {
@@ -619,6 +632,16 @@ class Battle {
     }
   }
 
+  /** Start of each turn, before anything is thrown or attacks: abilities that set up the turn (Salt-Crusted Fish). */
+  private startOfRound() {
+    const lines: string[] = [];
+    for (const side of [0, 1] as Side[]) for (const u of this.units(side)) {
+      const line = this.fire(u, 'roundStart', {});
+      if (line) lines.push(line);
+    }
+    if (lines.length > 0) this.snap(joinLines(lines));
+  }
+
   /** End of each turn: every-turn abilities and flavor bonuses, shown one plate at a time so each line stays short. */
   private endOfRound() {
     for (const side of [0, 1] as Side[]) {
@@ -658,7 +681,9 @@ class Battle {
       const sticks = this.bonus[enemy].burnSticks;
       const twice = this.units(enemy).some((f) => f.level === 3 && !!unitDef(f.defId).cooked?.burnTwice);
       const fade = (u: BattleUnit) => (u.burn = sticks ? u.burn - 1 : Math.floor(u.burn / 2));
+      const iced = this.units(side).some((f) => f.level === 3 && !!unitDef(f.defId).cooked?.coldPackStatus);
       for (const u of this.units(side)) {
+        if (iced && this.frozen(u)) continue; // cooked Frozen Peas: no Burn or Rot while Chilled
         const mult = this.fermented(u);
         const dmg = (u.burn + u.rot) * mult;
         if (dmg <= 0) continue;
@@ -894,6 +919,8 @@ class Battle {
     // times). Each repeat waits for its own moment (see resolve); an echo doesn't echo.
     const repeats = echoOf === undefined && this.onPlate(u) ? this.echoesOn(u) : 0;
     const times = 1;
+    // Brain freeze (Popsicle): a Chilled food's abilities don't go off.
+    if (this.frozen(u) && this.units((1 - u.side) as Side).some((f) => unitDef(f.defId).aura === 'brainFreeze')) return;
     const def = unitDef(u.defId);
     const own = abilitiesOf(def, u.level);
     [...own, ...u.extra].forEach((ab, index) => {
@@ -954,6 +981,8 @@ class Battle {
     if (ab.perFriend) amount += this.countFlavor(u.side, ab.perFriend, u);
     if (ab.perDistinctFlavor) amount *= this.distinctFlavors(u.side);
     if (ab.perLevel3) amount += this.units(u.side).filter((f) => !f.token && f.level === 3).length;
+    if (ab.timesFlavor) amount *= Math.floor(this.countFlavor(u.side, ab.timesFlavor, u) / (ab.perPair ? 2 : 1));
+    if (ab.perOwnFlavor) amount *= u.flavors.length;
     return amount;
   }
 
@@ -985,6 +1014,7 @@ class Battle {
       case 'sellValue':
       case 'freeReroll':
       case 'gainFlavor':
+      case 'soakFlavor':
       case 'buyBonus':
         return; // kitchen and attack-step effects are handled elsewhere
       case 'split': {
@@ -998,7 +1028,7 @@ class Battle {
         return `${name} splits into ${n} pieces`;
       }
     }
-    if (targets.length === 0) return;
+    if (targets.length === 0 || amount <= 0) return;
     this.mark(u, ab.thrown ? 'shoot' : 'ability');
 
     switch (ab.effect) {
@@ -1063,6 +1093,35 @@ class Battle {
       case 'bequeath':
         for (const t of targets) this.buff(t, u.attack, u.startHp);
         return `${name} passes its strength to ${names(targets)}: +${u.attack}/+${u.startHp}`;
+      case 'spreadBurn': {
+        // The enemy with the most Burn passes some (cooked: all of it) to each enemy beside it.
+        const top = Math.max(...targets.map((t) => t.burn));
+        if (top <= 0) return;
+        const from = targets.filter((t) => t.burn === top).sort((a, b) => a.slot - b.slot)[0];
+        const near = this.adjacent(from);
+        if (near.length === 0) return;
+        const n = u.level === 3 && unitDef(u.defId).cooked?.spreadFull ? from.burn : amount;
+        for (const t of near) this.addStatus(t, 'burn', n);
+        return `${name}: ${this.name(from)}'s Burn spreads, ${names(near)} ${near.length > 1 ? 'Burn' : 'Burns'} ${n}`;
+      }
+      case 'doubleCrust': {
+        const crusted = targets.filter((t) => t.crust > 0);
+        if (crusted.length === 0) return;
+        for (const t of crusted) this.giveCrust(t, t.crust);
+        if (crusted.length === 1 && crusted[0] === u) return `${name}: its Crust doubles to ${u.crust}`;
+        return `${name}: ${names(crusted)}' Crust doubles`;
+      }
+      case 'siphon': {
+        // The enemy front row loses attack (cooked: and HP), and your front row gains it.
+        const hp = u.level === 3 && unitDef(u.defId).cooked?.siphonHp ? 3 : 0;
+        for (const t of targets) {
+          this.debuff(t, amount);
+          if (hp) this.hit(t, hp, u, true, true);
+        }
+        const mine = this.units(u.side).filter((t) => rowOf(t.slot) === 0);
+        for (const t of mine) this.buff(t, amount, hp);
+        return `${name}: ${names(targets)} -${amount} attack${hp ? `, -${hp} HP` : ''}; your front row +${amount} attack${hp ? `, +${hp} HP` : ''}`;
+      }
     }
   }
 
@@ -1122,6 +1181,8 @@ class Battle {
         return [u, this.plates[u.side][slotAt(lane, 1 - rowOf(u.slot))]].filter((t): t is BattleUnit => !!t && this.onPlate(t));
       case 'frontRowFriends':
         return this.units(u.side).filter((t) => rowOf(t.slot) === 0);
+      case 'backRowFriends':
+        return this.units(u.side).filter((t) => rowOf(t.slot) === 1);
       case 'allFriends':
         return this.units(u.side);
       case 'randomFriends':
@@ -1153,6 +1214,11 @@ class Battle {
     const foe = source && source.side !== target.side ? source : undefined;
     if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
     if (foe && target.chill > 0) amount += this.chillBite(foe.side); // cooked Ice Cream
+    // Cold pack (Frozen Peas): a Chilled food takes no damage from hits.
+    if (this.frozen(target) && this.units(target.side).some((f) => unitDef(f.defId).aura === 'coldPack')) {
+      this.mark(target, 'blocked');
+      return;
+    }
     if (target.item === 'tupperware' && !target.tupperwareUsed) {
       target.tupperwareUsed = true;
       this.mark(target, 'blocked');
@@ -1200,6 +1266,35 @@ class Battle {
       if (wagyu) this.later.push({ unit: u, bonus: { from: wagyu, hp: amount } });
     }
     return amount;
+  }
+
+  /** Chilled, or skipped this turn for Chill (Chill counts down as the turn starts, but the food stays frozen all turn). */
+  private frozen(u: BattleUnit): boolean {
+    return u.chill > 0 || u.frozeIn === this.round;
+  }
+
+  /**
+   * Shatter (Sorbet): enemies whose Chill just wore off take damage (the best Sorbet's level number, past Crust);
+   * cooked, each Chills the food behind it 1.
+   */
+  private shatter(thawed: BattleUnit[]) {
+    const lines: string[] = [];
+    for (const u of thawed) {
+      const sorbets = this.units((1 - u.side) as Side).filter((f) => unitDef(f.defId).aura === 'shatter');
+      if (sorbets.length === 0 || !this.onPlate(u)) continue;
+      const best = sorbets.reduce((a, b) => (this.levelValue(b) > this.levelValue(a) ? b : a));
+      const n = this.levelValue(best);
+      this.mark(best, 'ability');
+      this.hit(u, n, best, true, true);
+      let line = `${this.name(best)}: ${this.name(u)} shatters for ${n}`;
+      const behind = rowOf(u.slot) === 0 ? this.plates[u.side][slotAt(laneOf(u.slot), 1)] : null;
+      if (behind && sorbets.some((f) => f.level === 3 && unitDef(f.defId).cooked?.shatterBehind)) {
+        this.addStatus(behind, 'chill', 1);
+        line += `, ${this.name(behind)} is Chilled 1`;
+      }
+      lines.push(line);
+    }
+    if (lines.length > 0) this.snap(joinLines(lines));
   }
 
   private addStatus(u: BattleUnit, status: 'burn' | 'rot' | 'chill', amount: number) {

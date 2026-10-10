@@ -5,7 +5,7 @@ import { NAME_FIRST, NAME_SECOND, nameProblem, randomName, tidyName } from '../n
 import * as api from './api';
 import type { ServerRun } from './api';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { MARKET_UNITS, MYTHIC_UNITS, RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, echoable, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { MARKET_UNITS, MYTHIC_UNITS, RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, echoable, flavorCap, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -29,7 +29,6 @@ import {
   INCOME,
   INTEREST_STEP,
   cellarFoods,
-  MAX_FLAVORS,
   isOver,
   isWon,
   goEndless,
@@ -47,7 +46,7 @@ import {
   serveBlocker,
   specialCost,
 } from '../sim/run';
-import { type AttackPattern, FLAVORS, type Rarity, type Tier, type Flavor, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf, slotAt } from '../sim/types';
+import { type AttackPattern, FLAVORS, type Rarity, type Tier, type Flavor, type UnitDef, type HeldItemId, type Plate, type UnitInstance, laneOf, levelOf, rowOf, slotAt } from '../sim/types';
 import kitchenUrl from '../../art/scenes/kitchen.png';
 import { PROP_URLS, itemArt, propArt, specialArt, unitArt } from './art';
 import { gemIcon, gridUrl, pix, statBadge } from './icons';
@@ -856,7 +855,7 @@ function onDropSlot(loc: Loc) {
     if (offer.itemId === 'seasoning') {
       const into = getUnit(run, loc);
       if (!into) return report({ ok: false, error: 'Use items on a unit.' });
-      if (unitDef(into.defId).allFlavors || flavorsOf(into).length >= MAX_FLAVORS) return report({ ok: false, error: `It already has ${MAX_FLAVORS} flavors.` });
+      if (unitDef(into.defId).allFlavors || flavorsOf(into).length >= flavorCap(unitDef(into.defId))) return report({ ok: false, error: `It already has ${flavorsOf(into).length} flavors.` });
       app.seasoning = { src: sel.src, loc };
       return render();
     }
@@ -1322,7 +1321,10 @@ interface UnitData {
  * or more (Tofu that soaked up flavor, Saffron) shows them smaller, two to a row, so the tile stays clear.
  */
 function flavorDots(u: UnitData): string {
-  const all = unitDef(u.defId).allFlavors ? [...FLAVORS] : (u.flavors?.length ? u.flavors : [u.flavor]);
+  const def = unitDef(u.defId);
+  const all = def.allFlavors ? [...FLAVORS] : u.flavors?.length ? u.flavors : def.plain ? [] : [u.flavor];
+  // Plain Rice before it has soaked anything up: no flavor yet.
+  if (all.length === 0) return `<div class="u-flavors icons" ${tip('<p>No flavor yet: it soaks one up from a friend next to it at the end of each day.</p>')}></div>`;
   const tipText = tip(`Counts as ${all.map((f) => flavorTag(f)).join(' ')}`);
   return `<div class="u-flavors icons ${all.length > 2 ? 'many' : ''}" ${tipText}>${all.map((f) => pix(f)).join('')}</div>`;
 }
@@ -1338,7 +1340,7 @@ function unitTile(u: UnitData, attrs: string, extra = '', uid?: number): string 
     ? `<div class="u-pips" ${vk('cp', u.copies)}>${[1, 2, 3, 4, 5, 6].map((i) => `<i class="${i <= u.copies! ? 'on' : ''}"></i>`).join('')}</div>`
     : '';
   return `
-    <div class="unit flavor-${u.flavor} ${u.level === 3 ? 'cooked' : ''} ${extra}" ${attrs} ${vk('lvl', u.level, 'data-va="levelup"')}>
+    <div class="unit flavor-${unitDef(u.defId).plain && !u.flavors?.length ? 'plain' : u.flavor} ${u.level === 3 ? 'cooked' : ''} ${extra}" ${attrs} ${vk('lvl', u.level, 'data-va="levelup"')}>
       <div class="u-art">${unitArt(u.defId, u.level === 3)}</div>
       ${u.level > 1 ? `<div class="u-lvl">${u.level === 3 ? pix('starSmall') : u.level}</div>` : ''}
       ${u.item ? `<div class="u-item" ${tipBox(itemDef(u.item).name, `<p>${itemDef(u.item).text}</p>`)} ${uid === undefined ? '' : `data-k="item:${uid}"`}>${pix(HELD_ICON[u.item])}</div>` : ''}
@@ -2001,7 +2003,7 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
     const all = ab.max ?? (ab.limitToAmount ? (ab.values ?? d.values)[level - 1] : 0);
     if (all) notes.push(`${all}/${all} this battle`);
   }
-  if (u?.extraFlavors?.length) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
+  if (u?.extraFlavors?.length && !d.plain) notes.push(`Soaked up ${u.extraFlavors.join(' and ')}.`);
   // Sweet Potato's root cellar: a fridge food it keeps going says so.
   if (u && cellarFoods(app.run).includes(u)) notes.push('In the root cellar: its kitchen abilities keep going.');
   // Bento Box: whether the food ahead can be echoed, shown on both of them.
@@ -2022,7 +2024,22 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
       notes.push(echoable(d, level) ? 'The Bento Box behind echoes its abilities.' : "The Bento Box behind can't echo it: it only attacks.");
     }
   }
-  return notes.map((n) => `<p class="dim">${n}</p>`).join('');
+  // Rice: the power each flavor gives it, lit for the flavors it has.
+  const powers = d.plain ? plainPowers(d, level, u ? flavorsOf(u) : []) : '';
+  return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
+}
+
+/** What each flavor does for a plain food (Rice), at its level's number (doubled once cooked). */
+function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
+  const n = d.values[level - 1] * (level === 3 ? 2 : 1);
+  const what: Record<Flavor, string> = {
+    spicy: `Burns across ${n}`,
+    sweet: `weakest +${n} HP/turn`,
+    sour: `attackers Rot ${n}`,
+    salty: `+${n} Crust`,
+    savory: `+${n}/+${n} per flavor`,
+  };
+  return FLAVORS.map((f) => `<p class="plain-power ${has.includes(f) ? 'on' : 'dim'}">${pix(f)} ${what[f]}</p>`).join('');
 }
 
 function cookbook(): string {
@@ -2864,7 +2881,7 @@ function foodText(text: string, value: number, days?: number): string {
 /** Battle captions: food names get their flavor icon, flavor counts get theirs. */
 const CAPTION_FOODS = (() => {
   const flavorOf = new Map<string, Flavor>();
-  for (const u of UNITS) {
+  for (const u of UNITS.filter((d) => !d.plain)) {
     flavorOf.set(u.name, u.flavor);
     flavorOf.set(u.cookedName, u.flavor);
   }

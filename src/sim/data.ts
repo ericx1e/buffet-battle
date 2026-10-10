@@ -54,7 +54,15 @@ export const UNITS: UnitDef[] = [
     attackPattern: 'shot', throwDamage: 2,
     text: 'Start of battle, shoots {v} random enemies for 2.',
     cooked: { text: 'Shoots twice at the start of battle.', abilities: [{ trigger: 'startOfBattle', effect: 'extraAttacks', values: [1, 1, 1] }] },
-    abilities: [] },
+    abilities: [] },  { id: 'jalapeno', name: 'Jalapeño', cookedName: 'Jalapeño Popper', emoji: '🌶️', tier: 1, flavor: 'spicy', attack: 3, hp: 4, values: [2, 3, 4],
+    text: 'Eaten: every enemy in its lane Burns {v}.',
+    cooked: { text: 'Eaten: every other enemy Burns 2 as well.', abilities: [{ trigger: 'faint', effect: 'burn', target: 'allEnemies', values: [2, 2, 2] }] },
+    abilities: [{ trigger: 'faint', effect: 'burn', target: 'enemyLane' }] },
+  { id: 'cranberry', name: 'Cranberry', cookedName: 'Cranberry Sauce', emoji: '🫐', tier: 1, flavor: 'sour', attack: 3, hp: 4, values: [1, 2, 3],
+    text: 'Start of battle: the enemy across Rots {v}.',
+    cooked: { text: 'Start of battle: every enemy in its lane Rots 2 more.', abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyLane', values: [2, 2, 2] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'rot', target: 'enemyInLane' }] },
+
   // Tier 2 (3 gold)
   { id: 'popcorn', name: 'Popcorn', cookedName: 'Kettle Corn', emoji: '🍿', tier: 2, flavor: 'salty', attack: 2, hp: 8, values: [1, 2, 3],
     text: 'Hit or eaten: summon a 2/2 Kernel.',
@@ -124,7 +132,23 @@ export const UNITS: UnitDef[] = [
   { id: 'croutons', name: 'Croutons', cookedName: 'Garlic Croutons', emoji: '🍞', tier: 2, flavor: 'salty', attack: 3, hp: 7, values: [1, 2, 3],
     text: 'Every 2 turns: friends with Crust gain +{v} attack.',
     cooked: { text: 'Every 2 turns: friends with Crust gain 2 more Crust.', abilities: [{ trigger: 'round', every: 2, effect: 'crust', target: 'crustedFriends', values: [2, 2, 2] }] },
-    abilities: [{ trigger: 'round', every: 2, effect: 'buff', target: 'crustedFriends', hp: 0, max: 3 }] },
+    abilities: [{ trigger: 'round', every: 2, effect: 'buff', target: 'crustedFriends', hp: 0, max: 3 }] },  { id: 'frozenPeas', name: 'Frozen Peas', cookedName: 'Pea Ice Pack', emoji: '🫛', tier: 2, flavor: 'savory', attack: 2, hp: 7, values: [1, 2, 3],
+    aura: 'coldPack',
+    text: 'Start of battle: the friend ahead (or itself) is Chilled {v}. Your Chilled foods take no damage from hits.',
+    cooked: { text: 'Your Chilled foods take no Burn or Rot either.', abilities: [], coldPackStatus: true },
+    abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'friendAheadOrSelf' }] },
+  { id: 'rice', name: 'Rice', cookedName: 'Fried Rice', emoji: '🍚', tier: 2, flavor: 'savory', plain: true, attack: 2, hp: 6, values: [1, 2, 3],
+    text: "Plain: soaks up a neighbour's flavor each night, no limit. Each flavor is a power ({v}):",
+    cooked: { text: 'Its flavor effects are doubled.', abilities: [] },
+    flavorAbilities: {
+      spicy: { trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' },
+      sweet: { trigger: 'round', effect: 'heal', target: 'lowestHpFriend' },
+      sour: { trigger: 'hit', effect: 'rot', target: 'attacker' },
+      salty: { trigger: 'startOfBattle', effect: 'crust' },
+      savory: { trigger: 'startOfBattle', effect: 'buff', perOwnFlavor: true },
+    },
+    abilities: [{ trigger: 'endTurn', effect: 'soakFlavor', values: [1, 1, 1] }] },
+
   // Tier 3 (4 gold)
   { id: 'cherry', name: 'Cherries', cookedName: 'Cherry Pie', emoji: '🍒', tier: 3, flavor: 'sweet', attack: 4, hp: 8, values: [2, 3, 4],
     text: 'Friend eaten: lobs a pit at a random back-row enemy for {v}.',
@@ -194,6 +218,11 @@ export const UNITS: UnitDef[] = [
     text: 'Friend eaten: the enemy across Burns {v}.',
     cooked: { text: 'Enemy Burn ticks twice a turn (halving after each tick).', abilities: [], burnTwice: true },
     abilities: [{ trigger: 'anyFriendEaten', effect: 'burn', target: 'enemyInLane' }] },
+  { id: 'popsicle', name: 'Popsicle', cookedName: 'Popsicle Bouquet', emoji: '🍡', tier: 3, flavor: 'sweet', attack: 3, hp: 6, values: [1, 2, 3],
+    aura: 'brainFreeze',
+    text: "Start of battle: the enemy across is Chilled {v}. Brain freeze: Chilled enemies' abilities don't go off.",
+    cooked: { text: 'Every 3 turns: the enemy across is Chilled 1 again.', abilities: [{ trigger: 'round', every: 3, effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'enemyInLane' }] },
 
   // Tier 4 (4 gold)
   { id: 'cremeBrulee', name: 'Crème Brûlée', cookedName: 'Torched Brûlée', emoji: '🍮', tier: 4, flavor: 'sweet', attack: 3, hp: 7, values: [1, 2, 3],
@@ -252,7 +281,12 @@ export const UNITS: UnitDef[] = [
     text: 'Interest cap +{v}.',
     interestCap: [1, 2, 3],
     cooked: { text: 'End of day: +2 gold tomorrow.', abilities: [{ trigger: 'endTurn', effect: 'gold', values: [2, 2, 2] }] },
+    abilities: [] },  { id: 'sorbet', name: 'Sorbet', cookedName: 'Sorbet Trio', emoji: '🍧', tier: 4, flavor: 'sour', flavor2: 'sweet', attack: 5, hp: 9, values: [4, 6, 8],
+    aura: 'shatter',
+    text: "Shatter: when an enemy's Chill wears off, it takes {v} damage.",
+    cooked: { text: 'A shattering enemy Chills the one behind it 1.', abilities: [], shatterBehind: true },
     abilities: [] },
+
   // Rich foods: one flavor, counted several times over.
   { id: 'curry', name: 'Curry', cookedName: 'Katsu Curry', emoji: '🍛', tier: 4, flavor: 'spicy', attack: 5, hp: 9, values: [2, 3, 4], rich: true,
     text: 'Rich: counts as {v} Spicy foods for flavors.',
@@ -307,7 +341,23 @@ export const UNITS: UnitDef[] = [
     attackPattern: 'volley',
     text: 'Every turn, from any row, instead of attacking: throws {v} balls at random enemies for its attack.',
     cooked: { text: 'Throws one more ball each turn, for half its attack.', abilities: [], halfThrow: true },
-    abilities: [] },
+    abilities: [] },  { id: 'habaneroSalsa', name: 'Habanero Salsa', cookedName: 'Salsa Roja', emoji: '🌶️', tier: 5, flavor: 'spicy', attack: 6, hp: 11, values: [2, 3, 4],
+    text: 'Every turn: the enemy with the most Burn spreads {v} Burn to each enemy beside it.',
+    cooked: { text: 'It spreads its full Burn.', abilities: [], spreadFull: true },
+    abilities: [{ trigger: 'round', effect: 'spreadBurn', target: 'allEnemies' }] },
+  { id: 'macarons', name: 'Macarons', cookedName: 'Macaron Tower', emoji: '🍪', tier: 5, flavor: 'sweet', attack: 4, hp: 10, values: [1, 2, 3],
+    text: 'Start of battle: back-row friends gain +{v}/+{v} for every two Sweet friends.',
+    cooked: { text: 'The front row gains it too (+3/+3 for every two Sweet friends).', abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'frontRowFriends', timesFlavor: 'sweet', perPair: true, values: [3, 3, 3] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'buff', target: 'backRowFriends', timesFlavor: 'sweet', perPair: true }] },
+  { id: 'balsamic', name: 'Balsamic Vinegar', cookedName: 'Aged Balsamic', emoji: '🍶', tier: 5, flavor: 'sour', attack: 5, hp: 10, values: [1, 2, 3],
+    text: 'Every turn: Rotting enemies Rot {v} more.',
+    cooked: { text: 'Every turn: Rotting enemies lose 3 attack.', abilities: [{ trigger: 'round', effect: 'debuff', target: 'rottingEnemies', values: [3, 3, 3] }] },
+    abilities: [{ trigger: 'round', effect: 'rot', target: 'rottingEnemies' }] },
+  { id: 'saltFish', name: 'Salt-Crusted Fish', cookedName: 'Salt-Baked Sea Bass', emoji: '🐟', tier: 5, flavor: 'salty', attack: 5, hp: 12, values: [4, 6, 8],
+    text: 'Start of battle: gains {v} Crust. Every turn, before attacks, its Crust doubles.',
+    cooked: { text: "Every turn, adjacent friends' Crust doubles too.", abilities: [{ trigger: 'roundStart', effect: 'doubleCrust', target: 'adjacentFriends', values: [1, 1, 1] }] },
+    abilities: [{ trigger: 'startOfBattle', effect: 'crust' }, { trigger: 'roundStart', effect: 'doubleCrust', values: [1, 1, 1] }] },
+
   // Tier 6 (5 gold)
   { id: 'pizza', name: 'Pizza', cookedName: 'Deep Dish', emoji: '🍕', tier: 6, flavor: 'savory', attack: 5, hp: 11, values: [1, 2, 3],
     text: 'Start of battle: your friends gain +{v}/{v} per flavor on your plate.',
@@ -347,6 +397,14 @@ export const UNITS: UnitDef[] = [
     text: 'End of day: 3 random friends gain +{v}/+{v}.',
     cooked: { text: 'End of day: all your foods gain +1/+2.', abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'allFriends', hp: 2, values: [1, 1, 1] }] },
     abilities: [{ trigger: 'endTurn', effect: 'buff', target: 'randomFriends', count: 3 }] },
+  { id: 'fondue', name: 'Fondue', cookedName: 'Fondue Feast', emoji: '🫕', tier: 6, flavor: 'savory', flavor2: 'salty', attack: 5, hp: 14, values: [1, 2, 3],
+    text: 'Every turn: the enemy front row loses {v} attack, and your front row gains {v} attack.',
+    cooked: { text: 'It takes HP the same way: the enemy front row takes 3 damage, your front row gains 3 HP.', abilities: [], siphonHp: true },
+    abilities: [{ trigger: 'round', effect: 'siphon', target: 'enemyFrontRow' }] },
+  { id: 'croquembouche', name: 'Croquembouche', cookedName: 'Grand Croquembouche', emoji: '🧁', tier: 6, flavor: 'sweet', attack: 5, hp: 12, values: [3, 4, 6],
+    text: 'Friend eaten: it gains +{v}/+{v}.',
+    cooked: { text: 'Friend eaten: your other friends gain +1/+1 too.', abilities: [{ trigger: 'anyFriendEaten', effect: 'buff', target: 'allFriends', values: [1, 1, 1] }] },
+    abilities: [{ trigger: 'anyFriendEaten', effect: 'buff' }] },
 
   // Mythic: never in the market; delivered by the special cubby late in a run (7 gold)
   // Each mythic bends one rule, and where it sits decides who it reaches (see Aura in types.ts). Cooked, the rule
@@ -446,6 +504,22 @@ export function echoable(def: UnitDef, level: Level): boolean {
 }
 
 /** A food's abilities at a level: its own, plus its cooked bonus at level 3 (always after its own, so indexes hold). */
+/** How many flavors a food can have: three, or every one for a plain food (Rice), which has no cap. */
+export const flavorCap = (def: UnitDef) => (def.plain ? FLAVORS.length : 3);
+
+/**
+ * A plain food's battle abilities from the flavors it has gained (Rice), each at its level's number; doubled once
+ * cooked.
+ */
+export function flavorAbilities(def: UnitDef, level: Level, flavors: Flavor[]): AbilityDef[] {
+  if (!def.flavorAbilities) return [];
+  const n = def.values[level - 1] * (level === 3 ? 2 : 1);
+  return flavors.flatMap((f) => {
+    const ab = def.flavorAbilities![f];
+    return ab ? [{ ...ab, values: [n, n, n] as [number, number, number] }] : [];
+  });
+}
+
 export function abilitiesOf(def: UnitDef, level: Level): AbilityDef[] {
   return level === 3 && def.cooked ? [...def.abilities, ...def.cooked.abilities] : def.abilities;
 }
@@ -460,9 +534,11 @@ export const PAIRS: { what: string; makes: string[]; uses: string[] }[] = [
   { what: 'selling', makes: ['coinChocolate', 'sugar'], uses: ['sourdough'] },
   { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'gravy'] },
   { what: 'HP gains', makes: ['apple', 'mochi', 'peanutButter', 'honey', 'breadDough'], uses: ['hotCocoa', 'cake'] },
-  { what: 'Crust', makes: ['pretzel', 'anchovy', 'ramen'], uses: ['porkCrackling', 'croutons', 'baguette', 'cremeBrulee'] },
-  { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni'], uses: ['ghostPepper'] },
-  { what: 'Rot', makes: ['cabbage', 'blueCheese', 'durian', 'kimchi'], uses: ['sweetSour', 'grapefruit'] },
+  { what: 'Crust', makes: ['pretzel', 'anchovy', 'ramen', 'saltFish'], uses: ['porkCrackling', 'croutons', 'baguette', 'cremeBrulee'] },
+  { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni', 'jalapeno'], uses: ['ghostPepper', 'habaneroSalsa'] },
+  { what: 'Rot', makes: ['cabbage', 'blueCheese', 'durian', 'kimchi', 'cranberry'], uses: ['sweetSour', 'grapefruit', 'balsamic'] },
+  { what: 'Chill', makes: ['iceCream', 'popsicle', 'frozenPeas'], uses: ['sorbet'] },
+  { what: 'friends eaten', makes: ['egg', 'popcorn', 'watermelon', 'jalapeno'], uses: ['cherry', 'pepperoni', 'croquembouche'] },
   { what: 'extra attacks', makes: ['coffee', 'kebab', 'spaghetti'], uses: ['spaghetti', 'kebab', 'nachos'] },
 ];
 
@@ -509,6 +585,8 @@ export function unitCost(def: UnitDef): number {
 /** Every flavor a food counts as: its (possibly seasoned) flavor, any second flavor, and flavors it gained. */
 export function flavorsOf(u: { defId: string; flavorOverride?: Flavor; extraFlavors?: Flavor[] }): Flavor[] {
   const def = unitDef(u.defId);
+  // A plain food (Rice) has only the flavors it has gained.
+  if (def.plain) return [...new Set([...(u.flavorOverride ? [u.flavorOverride] : []), ...(u.extraFlavors ?? [])])];
   const main = u.flavorOverride ?? def.flavor;
   return [...new Set([main, ...(def.flavor2 ? [def.flavor2] : []), ...(u.extraFlavors ?? [])])];
 }

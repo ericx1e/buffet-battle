@@ -62,6 +62,73 @@ describe('battle', () => {
     expect(frameText(once, 'then burns')).toBe(false);
   });
 
+  describe('the October 2026 foods', () => {
+    const wall = (o: Partial<UnitInstance> = {}) => unit('cheese', { attack: 1, hp: 200, ...o });
+    const text = (r: ReturnType<typeof simulateBattle>) => r.frames.map((f) => f.text).join('\n');
+
+    it('Jalapeño Burns its lane when eaten; Cranberry Rots the enemy across', () => {
+      const j = simulateBattle(plate({ 0: unit('jalapeno', { hp: 1 }), 1: wall() }), plate({ 0: unit('cheese', { attack: 9, hp: 200 }), 3: wall() }), 1);
+      expect(text(j)).toContain('Jalapeño: enemy Cheese, enemy Cheese Burn 2');
+      expect(text(simulateBattle(plate({ 0: unit('cranberry') }), plate({ 0: wall() }), 1))).toContain('Cranberry: enemy Cheese Rots 1');
+    });
+
+    it("Popsicle Chills the enemy across, and a Chilled enemy's abilities don't go off", () => {
+      const apple = () => plate({ 0: unit('apple', { hp: 200 }) });
+      const appleHeals = (r: ReturnType<typeof simulateBattle>) => r.frames.filter((f) => f.round === 1 && f.text.includes('enemy Apple:')).length;
+      expect(appleHeals(simulateBattle(plate({ 0: wall() }), apple(), 1))).toBeGreaterThan(0);
+      expect(appleHeals(simulateBattle(plate({ 0: unit('popsicle', { copies: 3, hp: 200 }) }), apple(), 1))).toBe(0);
+    });
+
+    it('Sorbet shatters an enemy as its Chill wears off', () => {
+      const r = simulateBattle(plate({ 0: unit('iceCream', { hp: 200 }), 3: unit('sorbet') }), plate({ 0: wall() }), 1);
+      expect(text(r)).toContain('Sorbet: enemy Cheese shatters for 4');
+    });
+
+    it('Frozen Peas: a Chilled friend takes no damage from hits', () => {
+      const front = unit('cheese', { attack: 1, hp: 20 });
+      const r = simulateBattle(plate({ 0: front, 3: unit('frozenPeas', { copies: 3 }) }), plate({ 0: unit('cheese', { attack: 8, hp: 200 }) }), 1);
+      // Chilled 2: the first two turns' hits do nothing.
+      const hp = r.frames.filter((f) => f.round >= 1 && f.round <= 2).map((f) => f.plates[0][0]?.hp);
+      expect(hp.every((h) => h === 20)).toBe(true);
+    });
+
+    it('Habanero Salsa spreads the most Burn to the enemies beside', () => {
+      const r = simulateBattle(plate({ 0: unit('chili', { hp: 200 }), 3: unit('habaneroSalsa') }), plate({ 0: wall(), 1: wall(), 3: wall() }), 1);
+      expect(text(r)).toContain("Habanero Salsa: enemy Cheese's Burn spreads");
+    });
+
+    it('Macarons buff the back row per Sweet friend; Balsamic grows Rot', () => {
+      const m = simulateBattle(plate({ 0: unit('apple'), 1: wall(), 3: unit('macarons'), 4: unit('honey') }), plate({ 0: wall() }), 1);
+      expect(text(m)).toContain('Macarons: Macarons, Honey +1/+1');
+      const b = simulateBattle(plate({ 0: unit('cranberry', { hp: 200 }), 3: unit('balsamic') }), plate({ 0: wall() }), 1);
+      expect(text(b)).toContain('Balsamic Vinegar: enemy Cheese Rots 1');
+    });
+
+    it('Salt-Crusted Fish doubles its Crust before attacks; Fondue drains the enemy front row', () => {
+      const f = simulateBattle(plate({ 0: unit('saltFish') }), plate({ 0: wall() }), 1);
+      expect(text(f)).toContain('Salt-Crusted Fish: its Crust doubles to 8');
+      const d = simulateBattle(plate({ 0: wall(), 3: unit('fondue') }), plate({ 0: wall({ attack: 6 }) }), 1);
+      expect(text(d)).toContain('Fondue: enemy Cheese -1 attack; your front row +1 attack');
+    });
+
+    it('Croquembouche grows when a friend is eaten', () => {
+      const r = simulateBattle(plate({ 0: unit('lemon', { hp: 1 }), 4: unit('croquembouche') }), plate({ 0: unit('cheese', { attack: 9, hp: 200 }) }), 1);
+      expect(text(r)).toContain('Croquembouche: Croquembouche +3/+3');
+    });
+
+    it('Rice soaks up a neighbour\'s flavor (no cap) and does what its flavors say', () => {
+      const run = newRun(1);
+      const rice = unit('rice');
+      run.plate = [rice, unit('chili'), null, null, null, null];
+      expect(flavorsOf(rice)).toEqual([]);
+      endDay(run);
+      expect(flavorsOf(rice)).toEqual(['spicy']);
+      const r = simulateBattle(plate({ 0: unit('rice', { extraFlavors: ['spicy', 'sour', 'salty', 'savory'], hp: 200 }) }), plate({ 0: wall() }), 1);
+      expect(text(r)).toContain('Rice: enemy Cheese Burns 1');
+      expect(text(r)).toContain('Rice: Rice +4/+4');
+    });
+  });
+
   it('front foods trade hits in their lane until one is eaten', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { attack: 5, hp: 10 }) }), plate({ 0: unit('lemon', { attack: 1, hp: 4 }) }), 1);
     expect(r.outcome).toBe('win');
@@ -186,7 +253,7 @@ describe('food data', () => {
         if (ab.target === 'summoned') expect(ab.trigger, `${u.id}: 'summoned' needs friendSummoned`).toBe('friendSummoned');
         if (ab.effect === 'bonusDamage') expect(ab.trigger, `${u.id}: bonusDamage needs firstAttack`).toBe('firstAttack');
         const kitchen = ['buy', 'sell', 'friendSold', 'levelUp', 'reroll', 'startTurn', 'endTurn', 'fridgeTurn'];
-        if (['gold', 'sellValue', 'freeReroll', 'gainFlavor', 'buyBonus'].includes(ab.effect)) expect(kitchen, `${u.id}: ${ab.effect} is a kitchen effect`).toContain(ab.trigger);
+        if (['gold', 'sellValue', 'freeReroll', 'gainFlavor', 'soakFlavor', 'buyBonus'].includes(ab.effect)) expect(kitchen, `${u.id}: ${ab.effect} is a kitchen effect`).toContain(ab.trigger);
       }
       expect(u.text.includes('{v}') || u.abilities.every((a) => a.values || a.limitToAmount || a.summon?.attack !== undefined), `${u.id}: text should show {v} (a limitToAmount count shows in the hover instead)`).toBe(true);
     }

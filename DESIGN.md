@@ -169,9 +169,11 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
 | Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack) |
 | HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack: once a day in the kitchen, every time in battle), Birthday Cake (+1 to every gain) |
-| Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
-| Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (its attacks Burn, then double the Burn) |
-| Rot | Cabbage, Blue Cheese, Durian, Kimchi | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn) |
+| Crust | Pretzel, Anchovy, Ramen, Salt-Crusted Fish | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
+| Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni, Jalapeño | Ghost Pepper (its attacks Burn, then double the Burn), Habanero Salsa (the most Burn spreads to its neighbours) |
+| Rot | Cabbage, Blue Cheese, Durian, Kimchi, Cranberry | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn), Balsamic Vinegar (Rotting enemies Rot more every turn) |
+| Chill | Ice Cream, Popsicle, Frozen Peas (your own foods) | Sorbet (an enemy shatters for damage when its Chill wears off), Popsicle (Chilled enemies' abilities don't go off), Frozen Peas (your Chilled foods take no hits) |
+| Friends eaten | Egg, Popcorn, Watermelon (summons to lose), Jalapeño (wants to be eaten) | Cherries, Pepperoni, Croquembouche (+3/+3 per friend eaten) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
 
 Popcorn and Watermelon also summon when they're eaten: on a full plate there's no room for a summon until something leaves, and the summoner's own slot is the first to open.
@@ -587,6 +589,25 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | Mythic | Black Garlic | Sour + Spicy | 6/15 | 10 | Enemies in its lane and the lanes beside it take double Burn and Rot. Start of battle: the front enemy in each of those lanes Rots 1/2/3. *(aura: ferment)* | **Black Garlic Ramen**: Every enemy takes triple damage from Burn and Rot. |
 | Mythic | Sweet Potato | Sweet + Savory | 6/16 | 10 | Root cellar: up to 1/2/2 of your fridge foods keep their kitchen abilities going, as if on your plate. *(aura: cellar)* | **Candied Yams**: Foods in your fridge also grow +1/+1 every day. |
 | Mythic | Chicken Tender Tower | Savory + Salty | 7/18 | 10 | The friend in its lane comes back once when eaten, with 50/75/100% of its HP. *(aura: tower)* | **Tender Skyscraper**: Every friend comes back once when eaten. |
+
+**Added October 2026** (filling thin tiers and flavors, and opening the Chill and friends-eaten lines):
+
+| Tier | Food | Flavor | Stats | Ability (level 1/2/3) | Cooked |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Jalapeño | Spicy | 3/4 | Eaten: every enemy in its lane Burns 2/3/4. | **Jalapeño Popper**: Eaten: every other enemy Burns 2 as well. |
+| 1 | Cranberry | Sour | 3/4 | Start of battle: the enemy across Rots 1/2/3. | **Cranberry Sauce**: Start of battle: every enemy in its lane Rots 2 more. |
+| 2 | Frozen Peas | Savory | 2/7 | Start of battle: the friend ahead (or itself) is Chilled 1/2/3. Your Chilled foods take no damage from hits. *(aura: coldPack)* | **Pea Ice Pack**: Your Chilled foods take no Burn or Rot either. |
+| 2 | Rice | None (plain) | 2/6 | Soaks up a neighbour's flavor each night, no flavor limit. Each flavor is a power at 1/2/3: Spicy, the enemy across Burns; Sweet, the weakest friend gains HP every turn; Sour, attackers Rot; Salty, Crust; Savory, +n/+n per flavor it has. | **Fried Rice**: Its flavor powers are doubled. |
+| 3 | Popsicle | Sweet | 3/6 | Start of battle: the enemy across is Chilled 1/2/3. Brain freeze: Chilled enemies' abilities don't go off. *(aura: brainFreeze)* | **Popsicle Bouquet**: Every 3 turns: the enemy across is Chilled 1 again. |
+| 4 | Sorbet | Sour + Sweet | 5/9 | Shatter: when an enemy's Chill wears off, it takes 4/6/8 damage (past Crust). *(aura: shatter)* | **Sorbet Trio**: A shattering enemy Chills the one behind it 1. |
+| 5 | Habanero Salsa | Spicy | 6/11 | Every turn: the enemy with the most Burn spreads 2/3/4 Burn to each enemy beside it. | **Salsa Roja**: It spreads its full Burn. |
+| 5 | Macarons | Sweet | 4/10 | Start of battle: back-row friends gain +1/+1, +2/+2 or +3/+3 for every two Sweet friends. | **Macaron Tower**: The front row gains it too (+3/+3 for every two). |
+| 5 | Balsamic Vinegar | Sour | 5/10 | Every turn: Rotting enemies Rot 1/2/3 more. | **Aged Balsamic**: Every turn: Rotting enemies lose 3 attack. |
+| 5 | Salt-Crusted Fish | Salty | 5/12 | Start of battle: gains 4/6/8 Crust. Every turn, before attacks, its Crust doubles. | **Salt-Baked Sea Bass**: Adjacent friends' Crust doubles too. |
+| 6 | Fondue | Savory + Salty | 5/14 | Every turn: the enemy front row loses 1/2/3 attack, and your front row gains it. | **Fondue Feast**: It takes HP the same way (3 damage, +3 HP). |
+| 6 | Croquembouche | Sweet | 5/12 | Friend eaten: it gains +3/+3, +4/+4 or +6/+6. | **Grand Croquembouche**: Friend eaten: your other friends gain +1/+1 too. |
+
+New rules they brought: a food that skips its attack for Chill stays **frozen for the rest of that turn** (Chill counts down as the turn starts, so Chilled 1 means one frozen turn, for Frozen Peas' protection and Popsicle's silence alike); a **start-of-turn** trigger that fires before throws and attacks (Salt-Crusted Fish); and **plain** foods (Rice), whose `flavor` is only colour: they have only the flavors they gain, with no cap, and a `flavorAbilities` power for each.
 
 Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summoner's flavor but don't count toward synergies.
 

@@ -6,6 +6,7 @@ export type Trigger =
   | 'startOfBattle'
   | 'hit'
   | 'round'
+  | 'roundStart' // every turn, before throws and attacks
   | 'faint'
   | 'friendSummoned'
   | 'firstAttack'
@@ -73,6 +74,7 @@ export type Target =
   | 'aheadElseAdjacent' // back row: the friend ahead; front row: adjacent friends
   | 'laneFriends' // this food and the friend in its lane
   | 'frontRowFriends'
+  | 'backRowFriends'
   | 'allFriends'
   | 'randomFriends' // `count` random friends (shop: on the plate)
   | 'lowestHpFriend'
@@ -101,10 +103,14 @@ export type Effect =
   | 'rot' // +amount Rot
   | 'chill' // +amount Chill
   | 'cleanse' // removes up to amount Burn and Rot
+  | 'spreadBurn' // the enemy with the most Burn passes amount Burn to each enemy beside it (Habanero Salsa)
+  | 'doubleCrust' // the targets' Crust doubles (Salt-Crusted Fish)
+  | 'siphon' // the targets lose amount attack and your front row gains amount attack (Fondue)
   // kitchen
   | 'sellValue' // +amount sell value, for good
   | 'freeReroll' // your next amount restocks this turn are free
   | 'gainFlavor' // gains a random flavor it doesn't have yet (up to 3 flavors)
+  | 'soakFlavor' // gains the flavor of a friend next to it that it doesn't have yet (Rice)
   | 'buyBonus'; // everything you buy for the rest of this turn gets +amount/+amount
 
 export interface AbilityDef {
@@ -163,6 +169,12 @@ export interface AbilityDef {
   days?: [number, number, number];
   /** Kitchen: +1 to the amount next to a friend of this flavor. */
   moreNextTo?: Flavor;
+  /** Amount x the number of friends of this flavor (Macarons). */
+  timesFlavor?: Flavor;
+  /** With timesFlavor: per two friends of that flavor instead of each. */
+  perPair?: boolean;
+  /** Amount x the number of flavors this food has (Rice). */
+  perOwnFlavor?: boolean;
 }
 
 /**
@@ -177,8 +189,10 @@ export interface AbilityDef {
  *   (those that need a place, like adjacent friends, do nothing there); cooked, fridge foods also grow +1/+1 a day;
  * tower (Chicken Tender Tower): the friend in its lane comes back once when eaten, with 50/75/100% of its starting HP (every friend, once cooked);
  * ferment (Black Garlic): enemies in its lane and the lanes beside it take double damage from Burn and Rot (every enemy, triple, once cooked).
+ * Chill: brainFreeze (Popsicle): Chilled enemies' abilities don't go off; shatter (Sorbet): an enemy whose Chill wears
+ * off takes damage (its level number); coldPack (Frozen Peas): your Chilled foods take no damage from hits.
  */
-export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower';
+export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower' | 'brainFreeze' | 'shatter' | 'coldPack';
 
 /** How special a food is. Mythic foods never appear in the market. */
 /** One rarity per buffet tier (1 common ... 6 exotic), and mythic for the special-cubby foods. */
@@ -215,9 +229,21 @@ export interface UnitDef {
     echoAll?: boolean;
     /** Enemy Burn ticks twice a turn, halving after each tick (Pepperoni). */
     burnTwice?: boolean;
+    /** spreadBurn spreads the whole Burn of the most-Burning enemy (Habanero Salsa). */
+    spreadFull?: boolean;
+    /** siphon also takes HP: the enemy front row takes damage and your front row gains HP (Fondue). */
+    siphonHp?: boolean;
+    /** A shattering enemy Chills the one behind it (Sorbet). */
+    shatterBehind?: boolean;
+    /** Your Chilled foods take no Burn or Rot either (Frozen Peas). */
+    coldPackStatus?: boolean;
   };
   /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
   rarity?: Rarity;
+  /** No flavor of its own (its `flavor` is only for colour): it has the flavors it gains, with no cap (Rice). */
+  plain?: boolean;
+  /** A plain food's battle abilities, one for each flavor it has gained (see flavorAbilities in data.ts). */
+  flavorAbilities?: Partial<Record<Flavor, AbilityDef>>;
   /** Summoned tokens never appear in the market and don't count for synergies. */
   token?: boolean;
 

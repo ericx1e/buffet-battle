@@ -28,7 +28,7 @@ function fit(defId: string, plate: Plate): number {
   const others = plate.filter((u): u is UnitInstance => !!u && u.defId !== defId);
   const tally = flavorTally(others);
   let v = def.tier * 6;
-  for (const f of [def.flavor, def.flavor2]) {
+  for (const f of def.plain ? [] : [def.flavor, def.flavor2]) {
     if (!f) continue;
     const n = tally.get(f) ?? 0;
     v += (flavorTier(n + 1) - flavorTier(n)) * 9 + n * 2;

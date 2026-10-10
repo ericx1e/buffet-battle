@@ -1058,3 +1058,5 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .won-count { position: absolute; right: -1px; bottom: -1px; min-width: 9px; padding: 0 1px; font: 400 10px/9px var(--pixel); color: #fff; background: #b2401b; text-align: center; }
 .chef-tag { text-transform: none !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .name-dim { z-index: 59; }
+.plain-power { margin: 0; display: flex; align-items: center; gap: 2px; }
+.plain-power.on { color: #3a2a22; }

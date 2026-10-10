@@ -1,5 +1,5 @@
 import type { Outcome } from './battle';
-import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
+import { ITEMS, MARKET_UNITS, MYTHIC_UNITS, abilitiesOf, flavorCap, flavorsOf, itemDef, rarityOf, unitCost, unitDef } from './data';
 import { Rng } from './rng';
 import {
   type AbilityDef,
@@ -531,7 +531,7 @@ function merge(run: RunState, target: UnitInstance, incoming: UnitInstance, oneC
   if (incoming.extraFlavors) {
     const own = flavorsOf({ ...target, extraFlavors: [] });
     const extra = [...new Set([...(target.extraFlavors ?? []), ...incoming.extraFlavors])].filter((f) => !own.includes(f));
-    target.extraFlavors = extra.slice(0, Math.max(0, MAX_FLAVORS - own.length));
+    target.extraFlavors = extra.slice(0, Math.max(0, flavorCap(unitDef(target.defId)) - own.length));
   }
   if (incoming.gains) {
     const gains = { ...target.gains };
@@ -614,7 +614,7 @@ export function moveUnit(run: RunState, from: Loc, to: Loc): ActionResult {
 /** Gives a food a random flavor it doesn't have yet; null if it already has the most it can hold. */
 function gainFlavor(run: RunState, u: UnitInstance): Flavor | null {
   const have = flavorsOf(u);
-  if (have.length >= MAX_FLAVORS || unitDef(u.defId).allFlavors) return null;
+  if (have.length >= flavorCap(unitDef(u.defId)) || unitDef(u.defId).allFlavors) return null;
   const options = FLAVORS.filter((f) => !have.includes(f));
   const f = withRng(run, (rng) => rng.pick(options));
   u.extraFlavors = [...(u.extraFlavors ?? []), f];
@@ -726,6 +726,18 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
       case 'gainFlavor': {
         const f = gainFlavor(run, unit);
         if (f) parts.push(`${def.name} soaks up ${f}`);
+        return;
+      }
+      case 'soakFlavor': {
+        // Rice: a flavor of a friend next to it that it doesn't have yet.
+        if (slot === null) return;
+        const have = flavorsOf(unit);
+        const near = run.plate.flatMap((o, i) => (o && o !== unit && isAdjacent(i, slot) ? (unitDef(o.defId).allFlavors ? [...FLAVORS] : flavorsOf(o)) : []));
+        const options = [...new Set(near)].filter((f) => !have.includes(f));
+        if (options.length === 0 || have.length >= flavorCap(def)) return;
+        const f = withRng(run, (rng) => rng.pick(options));
+        unit.extraFlavors = [...(unit.extraFlavors ?? []), f];
+        parts.push(`${def.name} soaks up ${f}`);
         return;
       }
       case 'buff': {
@@ -894,7 +906,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'seasoning': {
       if (!flavor) return fail('Pick a flavor.');
       const have = flavorsOf(unit!);
-      if (unitDef(unit!.defId).allFlavors || have.length >= MAX_FLAVORS) return fail(`It already has ${MAX_FLAVORS} flavors.`);
+      if (unitDef(unit!.defId).allFlavors || have.length >= flavorCap(unitDef(unit!.defId))) return fail(`It already has ${have.length} flavors.`);
       if (have.includes(flavor)) return fail(`It is already ${flavor}.`);
       unit!.extraFlavors = [...(unit!.extraFlavors ?? []), flavor];
       result = ok(`${unitDef(unit!.defId).name} now also tastes ${flavor}.`);

@@ -669,6 +669,145 @@ const foods = {
     s.line(17, 27, 27, 20, '#a9d77c');
     for (const [x, y] of [[8, 19], [11, 25], [24, 19], [21, 25], [13, 22], [19, 22]]) s.px(x, y, '#a9d77c');
   },
+  jalapeno(s) {
+    s.shadow(17, 29, 9, 2);
+    // A plump dark-green pepper curving down to a blunt tip, with a thick stem and a shine along its back.
+    const green = R('#3d8f2c');
+    s.tube([[12, 9], [13, 16], [16, 23], [21, 27]], (t) => 4.2 - t * 2.2, green);
+    s.tube([[12, 9], [11, 6], [13, 3]], 1.1, R('#6a8f3a'));
+    s.ball(12, 9, 3, 1.5, R('#5f8f34'));
+    s.line(11, 12, 12, 18, green[0]);
+  },
+  cranberry(s) {
+    s.shadow(17, 28, 11, 2);
+    // A little heap of deep red berries, each with a dark star where the blossom was and a bright glint.
+    const red = R('#b8143c');
+    for (const [x, y, r] of [[10, 21, 5], [21, 22, 5], [15, 15, 5], [23, 14, 4], [16, 24, 4]]) {
+      s.ball(x, y, r, r - 0.4, red);
+      s.px(x + 1, y + 1, red[4]);
+      s.px(x - 2, y - 2, '#ffd6de');
+    }
+  },
+  frozenPeas(s) {
+    s.shadow(17, 29, 11, 2);
+    // A frosty freezer bag of peas: a crimped top, a window of green peas, frost on the plastic.
+    const bag = R('#8fc8ea');
+    s.poly([[7, 10], [25, 10], [27, 28], [5, 28]], (x) => (x < 9 ? bag[1] : x > 24 ? bag[3] : bag[2]));
+    s.rect(7, 7, 19, 3, bag[3]);
+    for (let x = 7; x <= 25; x += 2) s.px(x, 7, bag[4]);
+    s.ball(16, 19, 8, 6, R('#e6f4fb'));
+    // The peas through the window: round, lit from the top left.
+    for (const [x, y] of [[11, 18], [16, 16], [21, 18], [13, 22], [19, 22], [16, 20]]) {
+      s.ball(x, y, 2.3, 2.3, R('#5fb03a'));
+      s.px(x - 1, y - 1, '#c8ec9c');
+    }
+    for (const [x, y] of [[9, 13], [22, 13], [24, 25], [8, 24], [12, 12]]) s.px(x, y, '#ffffff');
+  },
+  rice(s) {
+    s.shadow(17, 29, 12, 2);
+    // A heaped bowl of white rice in a dark blue bowl, a few grains catching the light.
+    const grain = R('#f7f4ec');
+    s.ball(16, 17, 10, 6, grain, { clip: (x, y) => y <= 19, tone: (nx, ny, x, y) => ((x * 3 + y * 7) % 11 === 0 ? 2 : 0) });
+    bowl(s, 16, 19, 12, 3, 8, R('#3f6f9a'), (x, y) => ((x * 5 + y) % 7 === 0 ? grain[2] : grain[1]));
+    s.rect(6, 23, 21, 1, R('#3f6f9a')[1]);
+  },
+  popsicle(s) {
+    s.shadow(16, 30, 6, 1);
+    // An ice pop on a stick: a strawberry top over a cream base, a bite out of one corner, frost glints.
+    const pink = R('#ef6a9a'), cream = R('#f7ecd8');
+    s.rect(15, 22, 3, 8, C.wood[2]);
+    s.rect(15, 22, 1, 8, C.wood[1]);
+    s.fill(10, 4, 22, 23, (x, y) => {
+      if (y < 7 && ((x - 16) / 6) ** 2 + ((y - 7) / 3) ** 2 > 1) return null;
+      if (x >= 19 && y <= 8 && (x - 22) ** 2 + (y - 5) ** 2 < 9) return null; // the bite
+      const r = y > 16 ? cream : pink;
+      return x < 12 ? r[1] : x > 20 ? r[3] : r[2];
+    });
+    s.line(11, 8, 11, 15, pink[0]);
+    for (const [x, y] of [[13, 10], [18, 13], [14, 19]]) s.px(x, y, '#ffffff');
+  },
+  sorbet(s) {
+    s.shadow(17, 30, 8, 1.5);
+    // Three scoops (lemon, raspberry, mint) in a glass coupe on a short stem.
+    const glass = R('#cfe6ee');
+    s.rect(15, 23, 3, 5, glass[2]);
+    s.ball(16, 28, 6, 1.5, glass);
+    bowl(s, 16, 19, 11, 2.5, 5, glass, () => R('#e84a6a')[3]);
+    // The scoops sit in the coupe: they cover its opening but not its front.
+    const scoop = (x, y, rx, ry, c) => s.ball(x, y, rx, ry, R(c), { clip: (px, py) => py <= 19 + (Math.abs(px - 16) > 8 ? -1 : 0) });
+    scoop(10, 16, 5, 4.5, '#f3dc5a');
+    scoop(22, 16, 5, 4.5, '#7fd09a');
+    scoop(16, 12, 5.5, 5, '#e84a6a');
+    for (const [x, y] of [[14, 9], [8, 14], [20, 14]]) s.px(x, y, '#ffffff');
+  },
+  habaneroSalsa(s) {
+    s.shadow(17, 29, 13, 2);
+    // A clay bowl of chunky red salsa, with a bright orange habanero leaning on it.
+    const salsa = R('#d4372a');
+    bowl(s, 14, 17, 11, 3, 8, R('#c27a45'), (x, y) => ((x * 7 + y * 3) % 9 === 0 ? '#f2e3c4' : (x + y * 5) % 8 === 0 ? '#5aa63a' : salsa[(x + y) % 3 === 0 ? 1 : 2]));
+    s.ball(25, 21, 4, 4.5, R('#f2801c'));
+    s.tube([[25, 17], [26, 14], [28, 13]], 1, C.stem);
+    s.px(23, 19, '#ffd8a0');
+  },
+  macarons(s) {
+    s.shadow(17, 29, 10, 2);
+    // Three macarons, two side by side and one on top: each a pair of domed shells with a cream filling and a
+    // ruffled "foot" where shell meets filling.
+    const macaron = (cx, cy, c) => {
+      const r = R(c);
+      s.ball(cx, cy + 2.5, 6, 2.6, r);
+      s.fill(cx - 6, cy - 0.5, cx + 6, cy + 0.5, (x) => (Math.abs(x - cx) <= 5.5 ? '#fbf3e4' : null));
+      s.ball(cx, cy - 2.5, 6, 2.8, r, { bias: 0.1 });
+      for (let x = cx - 5; x <= cx + 5; x += 2) s.px(x, cy - 1, r[3]);
+    };
+    macaron(10, 22, '#a6d28a');
+    macaron(22, 22, '#bba3e0');
+    macaron(16, 13, '#f08aa8');
+  },
+  balsamic(s) {
+    s.shadow(17, 30, 6, 1.5);
+    // A tall dark bottle of aged vinegar with a cream label, a cork, and a shine down one side.
+    const glass = R('#4a2533');
+    s.fill(10, 12, 22, 29, (x) => (x < 12 ? glass[1] : x > 20 ? glass[4] : glass[2]));
+    s.ball(16, 12, 6, 3, glass);
+    s.rect(14, 4, 5, 7, glass[2]);
+    s.rect(14, 2, 5, 3, R('#c9965a')[2]);
+    s.rect(11, 17, 11, 7, '#efe1c0');
+    s.rect(11, 19, 11, 1, '#a3452a');
+    s.line(12, 13, 12, 27, glass[0]);
+  },
+  saltFish(s) {
+    s.shadow(17, 29, 14, 2);
+    // A whole fish baked in a dome of white salt on a platter, the crust cracked open to show its head and tail.
+    const salt = R('#efe9dc');
+    s.ball(16, 26, 14, 3, R('#d9dee3'));
+    s.ball(16, 19, 11, 7, salt, { tone: (nx, ny, x, y) => ((x * 7 + y * 3) % 10 === 0 ? 2 : 0) });
+    s.ball(6, 20, 4, 3, C.fish);
+    s.px(5, 19, '#2a2a30');
+    s.poly([[25, 20], [30, 16], [30, 24]], C.fish[2]);
+    s.line(13, 14, 17, 18, salt[3]);
+    s.line(17, 18, 15, 22, salt[3]);
+  },
+  fondue(s) {
+    s.shadow(17, 29, 12, 2);
+    // A red enamel pot of molten cheese, and a fork dipping a bread cube in it.
+    bowl(s, 16, 16, 11, 3, 11, R('#c4442e'), (x, y) => ((x * 3 + y) % 8 === 0 ? C.cheese[1] : C.cheese[2]));
+    s.rect(4, 19, 3, 2, R('#7a2a1e')[2]);
+    s.rect(26, 19, 3, 2, R('#7a2a1e')[2]);
+    s.tube([[26, 2], [19, 13]], 0.7, R('#c9d1d6'));
+    s.ball(18, 13, 2.5, 2, R('#d9a55a'));
+    s.tube([[18, 14], [18, 17]], 0.9, C.cheese);
+  },
+  croquembouche(s) {
+    s.shadow(17, 30, 12, 2);
+    // A cone of golden cream puffs stacked on a plate, laced with threads of caramel.
+    const puff = R('#e1a24a');
+    s.ball(16, 28, 12, 2.5, R('#e6edf3'));
+    for (const [row, y] of [[4, 25], [3, 20], [3, 15], [2, 10], [1, 6]]) {
+      for (let i = 0; i < row; i++) s.ball(16 + (i - (row - 1) / 2) * 5.6, y, 3, 2.8, puff);
+    }
+    for (const [a, b] of [[[8, 24], [23, 9]], [[24, 24], [10, 11]], [[12, 27], [20, 6]]]) s.line(a[0], a[1], b[0], b[1], '#f6d27a');
+  },
   iceCream(s) {
     s.shadow(16, 30, 5, 1);
     // A waffle cone with a vanilla and a strawberry scoop.
