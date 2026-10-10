@@ -2655,21 +2655,6 @@ function battleSounds(f: BattleFrame, delay: number, after: number, speed: numbe
  * A thrown attack: the thrower recoils, and a projectile (bean, pit, peppercorn, ball) arcs to
  * every food it hits, landing as the hit shows (contactDelay).
  */
-/** A status landing on a food: its badge (with the amount) pops up over it and floats off. */
-function statusPop(stage: HTMLElement, at: [number, number], kind: 'burn' | 'rot' | 'chill', amount: number, delay: number, speed: number) {
-  if (delay > 0) return void setTimeout(() => statusPop(stage, at, kind, amount, 0, speed), delay);
-  const el = document.createElement('div');
-  el.className = 'status-pop';
-  el.style.left = `${at[0]}px`;
-  el.style.top = `${at[1]}px`;
-  el.innerHTML = statBadge(kind, amount, 2);
-  stage.appendChild(el);
-  el.animate(
-    [{ transform: 'translate(-50%, -50%) scale(0.4)', opacity: 0 }, { transform: 'translate(-50%, -50%) scale(1.2)', opacity: 1, offset: 0.2 }, { transform: 'translate(-50%, -50%) scale(1)', opacity: 1, offset: 0.35 }, { transform: 'translate(-50%, -90%) scale(1)', opacity: 1, offset: 0.8 }, { transform: 'translate(-50%, -110%) scale(1)', opacity: 0 }],
-    { duration: 800 / speed, easing: 'steps(10, jump-end)', fill: 'both' },
-  ).finished.then(() => el.remove(), () => el.remove());
-}
-
 function throwEffects(f: BattleFrame, stage: HTMLElement, delay: number, speed: number) {
   const shooter = f.marks.find((m) => m.kind === 'shoot');
   if (!shooter) return;
@@ -2751,17 +2736,13 @@ function battleEffects(b: PendingBattle, delay: number) {
   if (src && !pairs.length) {
     // Friends get a dotted line from the food that reached them; ability effects on enemies are lobbed as a spark.
     for (const m of linkedTargets(f, src)) orb(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `k-${m.kind}`, { speed, delay, ms: 280 });
-    // Ability effects on enemies are cast as a spark in the effect's colour, trailing, landing with a ring; a status
-    // it brings (Burn, Rot, Chill) pops up over the target as its badge, with the amount.
+    // Ability effects on enemies are cast as a spark in the effect's colour, trailing, landing with a ring.
     const seen = new Set<string>();
     for (const m of f.marks) {
       const key = `${m.side}:${m.slot}`;
       if (!SPARK_KINDS.has(m.kind) || seen.has(key) || m.side === src.side) continue;
       seen.add(key);
-      const to = fighterPoint(m.side, m.slot);
-      shoot(stage, fighterPoint(src.side, src.slot), to, `spark k-${m.kind}`, `k-${m.kind}`, { speed, delay, ms: 260, arc: 12 });
-      const status = f.marks.find((s) => s.side === m.side && s.slot === m.slot && (s.kind === 'burn' || s.kind === 'rot' || s.kind === 'chill') && (s.amount ?? 0) > 0);
-      if (status) statusPop(stage, [to[0], to[1] - 30], status.kind as 'burn' | 'rot' | 'chill', status.amount!, delay + 240 / speed, speed);
+      shoot(stage, fighterPoint(src.side, src.slot), fighterPoint(m.side, m.slot), `spark k-${m.kind}`, `k-${m.kind}`, { speed, delay, ms: 260, arc: 12 });
     }
   }
   const after = delay + (contactDelay(f) * 1000) / speed;

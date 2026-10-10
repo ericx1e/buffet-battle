@@ -1004,8 +1004,6 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .fx-ring.k-debuff { color: #a77bea; }
 .fx-ring.k-crust { color: #e2b043; }
 .fx-ring.k-summon { color: #ffd23f; }
-/* A status landing on a food: its badge pops up over it (see statusPop). */
-.status-pop { position: absolute; z-index: 98; pointer-events: none; display: flex; align-items: center; gap: 1px; transform: translate(-50%, -50%); }
 /* Growth in the kitchen: a big green number over the food that grew. */
 .floater.callout.grow { color: #7ee06a; font-size: 14px; }
 .floater.callout.grow.gold { color: #ffd23f; }
