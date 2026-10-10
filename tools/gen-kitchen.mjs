@@ -463,7 +463,7 @@ const MAGNET_INK = {
   o: P.outline, r: P.red, R: P.redHi, d: P.redDark, g: P.leaf, G: P.leafDark,
   y: '#fbe58a', Y: '#e8b52a', w: '#fffaf0', p: '#f28cb6', P: '#ffc4dc', q: '#c95a8a', b: '#d8b07a',
   f: '#6fa8d6', F: '#a8d2f0', k: '#3f6f9a',
-  a: '#8cc84b', A: '#c8ea8e', s: '#5d9c45', t: '#7a4a28',
+  a: '#8cc84b', A: '#c8ea8e', s: '#5d9c45', t: '#7a4a28', C: '#f5a04a', c: '#d4702a',
 };
 const MAGNETS = {
   // a green apple: red would read as one of the lives on the note it pins
@@ -520,6 +520,16 @@ const MAGNETS = {
     '.oryro.',
     '..odo..',
     '...o...',
+  ],
+  carrot: [
+    'g.g.g',
+    '.ggg.',
+    'oCCco',
+    'oCcco',
+    'oCCco',
+    '.oCo.',
+    '.oco.',
+    '..o..',
   ],
   fish: [
     '..oooo..o',
@@ -613,11 +623,14 @@ for (let k = 0; k < 16; k++) px(10 + k, 300 - k, P.glassHi); // reflections
   }
   for (let k = 0; k < 10; k++) px(x0 + 4 + k, y0 + 18 - k, P.glassHi); // a glint on the glass
 }
-// Fun fridge magnets around the freezer window (clear of it and its price tag)
-magnet(4, 96, MAGNETS.lemon, 20);
-leaningMagnet(4, 40, MAGNETS.popsicle, 0.3);
-magnet(56, 96, MAGNETS.strawberry, -16);
-leaningMagnet(29, 99, MAGNETS.fish, 0, -0.25);
+// Fun fridge magnets, scattered where there's door to stick to (never on the glass): around the freezer window, at
+// different heights and angles, and on the strip of door beside the fridge's glass, below the handle and by the note.
+leaningMagnet(4, 42, MAGNETS.popsicle, 0.3);
+leaningMagnet(57, 27, MAGNETS.fish, 0, 0.2);
+magnet(3, 88, MAGNETS.strawberry, -14);
+magnet(52, 94, MAGNETS.lemon, 16);
+magnet(66, 238, MAGNETS.tomato, 12);
+leaningMagnet(67, 298, MAGNETS.carrot, -0.25);
 for (let k = 0; k < 24; k++) px(54 + Math.floor(k / 3), 200 - k, P.glassHi);
 panel(67, 130, 6, 100, P.steel, P.steelHi, P.steelDark); // door handle
 for (let x = 8; x < 72; x += 4) rect(x, 350, 2, 6, P.fridgeDark); // kick grille
