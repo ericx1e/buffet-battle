@@ -463,8 +463,20 @@ const MAGNET_INK = {
   o: P.outline, r: P.red, R: P.redHi, d: P.redDark, g: P.leaf, G: P.leafDark,
   y: '#fbe58a', Y: '#e8b52a', w: '#fffaf0', p: '#f28cb6', P: '#ffc4dc', q: '#c95a8a', b: '#d8b07a',
   f: '#6fa8d6', F: '#a8d2f0', k: '#3f6f9a',
+  a: '#8cc84b', A: '#c8ea8e', s: '#5d9c45', t: '#7a4a28',
 };
 const MAGNETS = {
+  // a green apple: red would read as one of the lives on the note it pins
+  apple: [
+    '....tg...',
+    '.oo.too..',
+    'oAaaoaaao',
+    'oAaaaaaao',
+    'oaaaaaaso',
+    'oaaaaaaso',
+    '.oaaasso.',
+    '..ooooo..',
+  ],
   tomato: [
     '...oGo...',
     '.oogggoo.',
@@ -579,8 +591,8 @@ for (let k = 0; k < 16; k++) px(10 + k, 300 - k, P.glassHi); // reflections
   panel(x, y, w, h, P.paper, '#fffaf0', P.paperShade);
   for (let ly = y + 14; ly < y + h - 3; ly += 7) rect(x + 3, ly, w - 6, 1, P.paperLine); // ruled lines
   rect(x + 3, y + 3, 1, h - 6, '#f0c4b8'); // the margin
-  // pinned by a tomato magnet
-  magnet(x + Math.floor(w / 2) - 4, y - 4, MAGNETS.tomato, -14);
+  // pinned by an apple magnet
+  magnet(x + Math.floor(w / 2) - 4, y - 4, MAGNETS.apple, -14);
 }
 // The freezer's window: frosted glass onto an icy inside, where a frozen offer waits (LAYOUT.freezer)
 {

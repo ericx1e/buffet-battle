@@ -906,6 +906,7 @@ function render() {
   if (app.battle) fresh = renderBattle(app.battle);
   else if (isOver(app.run)) renderOver();
   else renderKitchen();
+  if (screen !== 'kitchen') dropChalk();
   paintChalk();
   if (keep) {
     root.querySelectorAll('img').forEach((img) => {
@@ -1412,20 +1413,23 @@ function chalkboard(): string {
 }
 
 // ---------- easter egg: chalk ----------
-// The stick of chalk on the chalkboard's tray can be picked up: press on it and it follows the pointer, drawing
-// wherever it touches the board (over the flavor lines); let go and it drops back onto the tray. The felt eraser wipes
-// the board. The drawing is kept in this browser only.
+// Click the chalkboard's tray to pick up the chalk: it follows the pointer, and pressing on the board draws (over the
+// flavor lines). Click the tray again (or Esc) and it drops back. The felt eraser wipes the board. The drawing is kept
+// in this browser only.
 
 const CHALK_KEY = 'buffetbattle.chalk';
 const [CB_X, CB_Y, CB_W, CB_H] = LAYOUT.chalkboard;
-/** The chalk's spot on the tray (stage pixels). */
+/** The chalk's spot on the tray, and the tray along the board's bottom you click to pick it up or put it back. */
 const CHALK_SPOT: Rect = [596, 131, 17, 8];
+const CHALK_TRAY: Rect = [512, 135, 124, 10];
 /** The drawing itself, kept off screen: the board's canvas is redrawn from it after every render. */
 const chalkArt = document.createElement('canvas');
 chalkArt.width = CB_W;
 chalkArt.height = CB_H;
-/** The chalk in your hand while you hold it (it follows the pointer), and the last point drawn (board pixels). */
+/** The chalk in your hand while you hold it (it follows the pointer), whether it's pressed to the board, and the last
+ * point drawn (board pixels). */
 let chalkHand: HTMLElement | null = null;
+let chalkDown = false;
 let chalkLast: [number, number] | null = null;
 try {
   const saved = localStorage.getItem(CHALK_KEY);
@@ -1443,6 +1447,7 @@ try {
 
 function chalkLayer(): string {
   return `<canvas class="chalk-art" width="${CB_W}" height="${CB_H}" style="${box(LAYOUT.chalkboard)}"></canvas>
+    <div class="chalk-tray" style="${box(CHALK_TRAY)}"></div>
     <div class="chalk-stick ${chalkHand ? 'held' : ''}" style="${box(CHALK_SPOT)}"><i></i></div>
     <button class="chalk-eraser" style="${box([492, 130, 18, 9])}" data-action="erase" aria-label="eraser"></button>`;
 }
@@ -1468,9 +1473,7 @@ function chalkDot(x: number, y: number) {
 function chalkTo(e: PointerEvent) {
   const [sx, sy] = stagePoint(e);
   const [x, y] = [sx - CB_X, sy - CB_Y];
-  const [tx, ty, tw, th] = CHALK_SPOT;
-  const onTray = sx >= tx && sx < tx + tw && sy >= ty && sy < ty + th;
-  if (onTray || x < 0 || y < 0 || x >= CB_W || y >= CB_H) {
+  if (x < 0 || y < 0 || x >= CB_W || y >= CB_H) {
     chalkLast = null;
     return;
   }
@@ -1508,42 +1511,72 @@ function eraseChalk() {
   c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: 'steps(5, jump-end)' }).finished.then(clear, clear);
 }
 
-root.addEventListener('pointerdown', (e) => {
-  const spot = (e.target as HTMLElement).closest<HTMLElement>('.chalk-stick');
-  if (!spot || chalkHand || app.battle) return;
-  e.preventDefault();
+/** Picks up the chalk from the tray: it follows the pointer from here. */
+function takeChalk(e: PointerEvent) {
   sfx('pick');
-  spot.classList.add('held');
+  root.querySelector('.chalk-stick')?.classList.add('held');
   chalkHand = document.createElement('div');
   chalkHand.className = 'chalk-hand';
   document.body.append(chalkHand);
-  chalkLast = null;
   moveChalkHand(e);
-  chalkTo(e);
-});
-window.addEventListener('pointermove', (e) => {
-  if (!chalkHand) return;
-  moveChalkHand(e);
-  chalkTo(e);
-});
-window.addEventListener('pointerup', () => {
+}
+
+/** Puts the chalk back: it drops onto the tray (at once if the kitchen isn't on screen). */
+function dropChalk() {
   const hand = chalkHand;
   if (!hand) return;
   chalkHand = null;
+  chalkDown = false;
   chalkLast = null;
-  saveChalk();
-  // Let go: the chalk drops back onto the tray.
   const home = root.querySelector<HTMLElement>('.chalk-stick i')?.getBoundingClientRect();
   const done = () => {
     hand.remove();
     root.querySelector('.chalk-stick')?.classList.remove('held');
-    sfx('place');
   };
   if (!home) return done();
+  sfx('place');
   hand.animate(
     [{ transform: hand.style.transform }, { transform: `translate(${home.left}px, ${home.bottom}px) rotate(0deg) scale(${stageScale()})` }],
     { duration: 260, easing: 'steps(6, jump-end)', fill: 'forwards' },
   ).finished.then(done, done);
+}
+
+/** Whether a pointer is over a stage rect. */
+function onStageRect(e: PointerEvent, [x, y, w, h]: Rect): boolean {
+  const [sx, sy] = stagePoint(e);
+  return sx >= x && sx < x + w && sy >= y && sy < y + h;
+}
+
+// Capture phase, so a click on the tray or a stroke on the board doesn't also act on what's under it.
+root.addEventListener(
+  'pointerdown',
+  (e) => {
+    if (app.battle || isOver(app.run) || e.button !== 0) return;
+    if (onStageRect(e, CHALK_TRAY) && !(e.target as HTMLElement).closest('.chalk-eraser')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return chalkHand ? dropChalk() : takeChalk(e);
+    }
+    if (chalkHand && onStageRect(e, LAYOUT.chalkboard as Rect)) {
+      e.preventDefault();
+      e.stopPropagation();
+      chalkDown = true;
+      chalkLast = null;
+      chalkTo(e);
+    }
+  },
+  true,
+);
+window.addEventListener('pointermove', (e) => {
+  if (!chalkHand) return;
+  moveChalkHand(e);
+  if (chalkDown) chalkTo(e);
+});
+window.addEventListener('pointerup', () => {
+  if (!chalkDown) return;
+  chalkDown = false;
+  chalkLast = null;
+  saveChalk();
 });
 
 // ---------- the tip jar: gold and interest ----------
@@ -2723,6 +2756,7 @@ document.addEventListener('keydown', (e) => {
     toggleMute();
     return render();
   }
+  if (chalkHand && e.key === 'Escape') return dropChalk();
   if (settingsOpen && e.key === 'Escape') {
     settingsOpen = false;
     return render();

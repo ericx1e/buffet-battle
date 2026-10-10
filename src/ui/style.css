@@ -826,10 +826,10 @@ body[data-screen='battle'] {
 .tipbox .gloss p > b, .inspect-card .gloss p > b { color: #2a1b14; }
 /* Hoverable keywords in the cookbook */
 .kw { color: #b2401b; border-bottom: 1px dotted #b2401b; cursor: help; }
-/* Easter egg: the chalk on the tray. Hold it and it follows the pointer, drawing on the board (over the flavor
-   lines); let go and it drops back onto the tray. */
+/* Easter egg: the chalk on the tray. Click the tray to pick it up: it follows the pointer, and pressing on the board
+   draws (over the flavor lines). Click the tray again and it drops back. */
 .chalk-art { position: absolute; z-index: 3; pointer-events: none; image-rendering: pixelated; }
-.chalk-stick, .chalk-eraser { position: absolute; z-index: 3; padding: 0; border: 0; background: none; cursor: grab; touch-action: none; }
+.chalk-tray, .chalk-stick, .chalk-eraser { position: absolute; z-index: 3; padding: 0; border: 0; background: none; cursor: pointer; touch-action: none; }
 .chalk-stick i { position: absolute; left: 4px; bottom: 1px; width: 9px; height: 2px; background: #d9e2d6; }
 .chalk-stick:hover i { background: #ffffff; }
 .chalk-stick.held i { visibility: hidden; }
@@ -838,7 +838,9 @@ body[data-screen='battle'] {
   position: fixed; left: 0; top: -2px; z-index: 50; width: 9px; height: 2px; pointer-events: none;
   background: #f3f7f1; box-shadow: 0 1px 0 #8a9a8c; transform-origin: 0 100%;
 }
-body:has(.chalk-hand), body:has(.chalk-hand) * { cursor: grabbing !important; }
+/* The chalk is the pointer while you hold it. */
+body:has(.chalk-hand), body:has(.chalk-hand) * { cursor: none !important; }
+body:has(.chalk-hand) .chalkboard { touch-action: none; }
 .chalk-line, .jar, .u-flavors, .u-item, .mag-stars, .mag-course, .u-gem { cursor: help; }
 
 /* Flavor tags: pixel icon + name */
