@@ -285,7 +285,7 @@ export const UNITS: UnitDef[] = [
     abilities: [] },
   { id: 'sorbet', name: 'Sorbet', cookedName: 'Sorbet Trio', emoji: '🍧', tier: 4, flavor: 'sour', flavor2: 'sweet', attack: 5, hp: 9, values: [3, 4, 5],
     aura: 'shatter',
-    text: 'Every 3 turns: the enemy across is Chilled 1. Shatter: every turn a Chilled enemy skips, it takes {v} damage.',
+    text: 'Every 3 turns: the enemy across is Chilled 1. Shatter: every time a Chilled enemy attacks, it takes {v} damage.',
     cooked: { text: 'Shatter also hits the enemies beside it, for half.', abilities: [], shatterSplash: true },
     abilities: [{ trigger: 'round', every: 3, effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
 

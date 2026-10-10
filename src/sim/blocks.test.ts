@@ -107,10 +107,12 @@ describe('statuses', () => {
     expect(count(r, 't_wall rots for 1')).toBeGreaterThanOrEqual(5);
   });
 
-  it('Chill makes a food skip its next attack', () => {
+  it("Chill halves a food's next attack", () => {
     const chiller = food('t_chiller', 1, 200, [{ trigger: 'startOfBattle', effect: 'chill', target: 'enemyInLane' }]);
-    const r = simulateBattle(plate(inst(chiller)), plate(inst(brute)), 1);
-    expect(texts(r)).toContain('t_brute is chilled and skips an attack');
+    const r = simulateBattle(plate(inst(chiller)), plate(inst(food('t_hitter', 10, 200))), 1);
+    expect(texts(r)).toContain('t_hitter is chilled: half damage');
+    const hits = r.frames.flatMap((f) => f.marks.filter((m) => m.kind === 'hit' && m.side === 0).map((m) => m.amount));
+    expect(hits.slice(0, 2)).toEqual([5, 10]); // halved once, then whole again
   });
 });
 

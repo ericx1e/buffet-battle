@@ -499,16 +499,19 @@ class Battle {
           const u = this.plates[side][slotAt(lane, row)];
           if (!u || !this.throwsNow(u) || !this.onPlate(u)) continue;
           if (this.over()) return;
-          if (u.chill > 0) {
+          // Chilled: it throws at half damage, and a stack melts.
+          const chilledNow = u.chill > 0;
+          if (chilledNow) {
             u.chill--;
             u.frozeIn = this.round;
             this.mark(u, 'chill', 0);
-            this.snap(`${this.name(u)} is chilled and skips a throw`);
+            this.snap(`${this.name(u)} is chilled: half damage`);
             this.shatter([u]);
-            continue;
+            if (!this.onPlate(u) || this.over()) continue;
           }
           const enemy = (1 - side) as Side;
-          const [damage, times] = this.swing(u);
+          const [full, times] = this.swing(u);
+          const damage = chilledNow ? Math.max(1, Math.floor(full / 2)) : full;
           const half = Math.max(1, Math.ceil(damage / 2));
           const burn = this.hasFlavor(u, 'spicy') ? this.bonus[side].spicyBurn : 0;
           const pattern = unitDef(u.defId).attackPattern;
@@ -567,21 +570,23 @@ class Battle {
       for (let lane = 0; lane < 3; lane++) {
         const attacker = this.plates[side][slotAt(lane, 0)];
         if (!attacker || this.throws(attacker)) continue;
-        if (attacker.chill > 0) {
+        // Chilled: it attacks at half damage, and a stack melts.
+        const chilledNow = attacker.chill > 0;
+        if (chilledNow) {
           attacker.chill--;
           attacker.frozeIn = this.round;
           chilled.push(attacker);
-          continue;
         }
         const primary = this.targetFor(enemy, lane);
         if (!primary) continue;
-        const [damage, times] = this.swing(attacker);
+        const [full, times] = this.swing(attacker);
+        const damage = chilledNow ? Math.max(1, Math.floor(full / 2)) : full;
         attacks.push({ attacker, primary, hits: this.attackTargets(attacker, primary, damage), times });
       }
     }
     if (chilled.length > 0) {
       for (const u of chilled) this.mark(u, 'chill', 0);
-      this.snap(`${chilled.map((u) => this.name(u)).join(', ')} ${chilled.length > 1 ? 'are' : 'is'} chilled and skip${chilled.length > 1 ? '' : 's'} an attack`);
+      this.snap(`${chilled.map((u) => this.name(u)).join(', ')} ${chilled.length > 1 ? 'are' : 'is'} chilled: half damage`);
       this.shatter(chilled);
     }
 
@@ -1281,13 +1286,13 @@ class Battle {
     return amount;
   }
 
-  /** Chilled, or skipped this turn for Chill (Chill counts down as the turn starts, but the food stays frozen all turn). */
+  /** Chilled, or used up Chill this turn (Chill melts as the food attacks, but the food stays frozen all turn). */
   private frozen(u: BattleUnit): boolean {
     return u.chill > 0 || u.frozeIn === this.round;
   }
 
   /**
-   * Shatter (Sorbet): enemies that just skipped a turn for Chill take damage (the best Sorbet's level number, past
+   * Shatter (Sorbet): enemies that just attacked while Chilled take damage (the best Sorbet's level number, past
    * Crust); cooked, the enemies beside each one take half.
    */
   private shatter(thawed: BattleUnit[]) {

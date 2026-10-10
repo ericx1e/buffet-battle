@@ -172,7 +172,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Crust | Pretzel, Anchovy, Ramen, Salt-Crusted Fish | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni, Jalapeño | Ghost Pepper (its attacks Burn, then double the Burn), Habanero Salsa (the most Burn spreads to its neighbours) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi, Cranberry | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn), Balsamic Vinegar (Rotting enemies Rot more every turn) |
-| Chill | Ice Cream, Popsicle, Frozen Peas (every 2 turns) | Sorbet (a Chilled enemy shatters for damage every turn it skips), Popsicle (Chilled enemies' abilities don't go off) |
+| Chill | Ice Cream, Popsicle, Frozen Peas (every 2 turns) | Sorbet (a Chilled enemy shatters for damage every time it attacks), Popsicle (Chilled enemies' abilities don't go off) |
 | Friends eaten | Egg, Popcorn, Watermelon (summons to lose), Jalapeño (wants to be eaten) | Cherries, Pepperoni, Croquembouche (+3/+3 per friend eaten) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
 
@@ -211,7 +211,7 @@ The battle is shown from the side: your plate on the left facing right, the enem
 1. **Step up:** back-row foods with an empty slot ahead move forward (also at the start of every turn).
 2. **Start of battle:** flavor bonuses, then abilities marked `early`, then the other Start of battle abilities.
 3. **Each turn (up to 40):**
-    1. Every front-row food attacks, following its attack pattern (below). Its main target is the enemy in its lane; **if that lane is empty, it attacks the nearest lane that has food** (the middle lane on ties). All attacks land at the same time. A Chilled food skips its attack and loses 1 Chill.
+    1. Every front-row food attacks, following its attack pattern (below). Its main target is the enemy in its lane; **if that lane is empty, it attacks the nearest lane that has food** (the middle lane on ties). All attacks land at the same time. A Chilled food attacks at half damage (rounded down, at least 1) and loses 1 Chill; throws are halved the same way. (Chill used to skip the attack outright, which made frequent Chill too strong: halving lets Chill come from more foods.)
     2. The struck food takes the hit: Tupperware may block it, Crust blocks what it can, the rest comes off its HP, and its on-hit ability triggers. The food behind it can react (`friendAheadHit`), and the food behind each attacker can follow up (`friendAheadAttacks`).
     3. Foods at 0 HP are eaten (a fork comes down), then their "eaten" abilities fire, and their neighbours' `friendFaint` abilities. A summon that found the plate full while a friend was being eaten (an Egg cracked by the hit that eats it, say) arrives now, in the room the eaten left.
     4. End of turn: "every N turns" abilities, turn abilities, Sweet HP and Salty Crust.
@@ -599,7 +599,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 2 | Frozen Peas | Savory | 2/7 | Every 2 turns: 1/2/3 random enemies are Chilled 1. | **Pea Ice Pack**: Start of battle: every enemy is Chilled 1. |
 | 2 | Rice | None (plain) | 2/6 | Every other night (even days) soaks up a neighbour's flavor, no flavor limit. Each flavor is a power, at 1/2/3: Spicy, when a neighbour attacks it flicks a grain at the same target; Sweet, it heals that much after each attack; Sour, it gains that much attack whenever it's hit; Salty, every hit on it deals that much less (at least 1); Savory, every night a neighbour grows that much for good. | **Fried Rice**: Its powers are doubled. |
 | 3 | Popsicle | Sweet | 3/6 | Start of battle: the enemy across is Chilled 1/2/3. Brain freeze: Chilled enemies' abilities don't go off. *(aura: brainFreeze)* | **Popsicle Bouquet**: Every 3 turns: the enemy across is Chilled 1 again. |
-| 4 | Sorbet | Sour + Sweet | 5/9 | Every 3 turns: the enemy across is Chilled 1. Shatter: every turn a Chilled enemy skips, it takes 3/4/5 damage (past Crust). *(aura: shatter)* | **Sorbet Trio**: Shatter also hits the enemies beside it, for half. |
+| 4 | Sorbet | Sour + Sweet | 5/9 | Every 3 turns: the enemy across is Chilled 1. Shatter: every time a Chilled enemy attacks, it takes 3/4/5 damage (past Crust). *(aura: shatter)* | **Sorbet Trio**: Shatter also hits the enemies beside it, for half. |
 | 5 | Habanero Salsa | Spicy | 6/11 | Every turn: the enemy with the most Burn spreads 2/3/4 Burn to each enemy beside it. | **Salsa Roja**: It spreads its full Burn. |
 | 5 | Macarons | Sweet | 4/10 | Start of battle: back-row friends gain +1/+1, +2/+2 or +3/+3 for every two Sweet friends. | **Macaron Tower**: The front row gains it too (+3/+3 for every two). |
 | 5 | Balsamic Vinegar | Sour | 5/10 | Every turn: Rotting enemies Rot 1/2/3 more. | **Aged Balsamic**: Every turn: Rotting enemies lose 3 attack. |
@@ -607,7 +607,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 6 | Fondue | Savory + Salty | 5/14 | Every turn: the enemy front row loses 1/2/3 attack, and your front row gains it. | **Fondue Feast**: It takes HP the same way (3 damage, +3 HP). |
 | 6 | Croquembouche | Sweet | 5/12 | Friend eaten: it gains +3/+3, +4/+4 or +6/+6. | **Grand Croquembouche**: Friend eaten: your other friends gain +1/+1 too. |
 
-New rules they brought: a food that skips its attack for Chill stays **frozen for the rest of that turn** (Chill counts down as the turn starts, so Chilled 1 means one frozen turn, for Popsicle's silence); a **start-of-turn** trigger that fires before throws and attacks (Salt-Crusted Fish); and **plain** foods (Rice), whose `flavor` is only colour: they have only the flavors they gain, with no cap, and a `flavorAbilities` power for each (battle and kitchen alike). Rice's powers are deliberately not the flavor's own theme: it becomes a sturdy hub that holds the line and feeds its neighbours. New hooks came with them: `neighbourAttacks`, `attacks` (this food has just attacked) and armor.
+New rules they brought: a food that uses up Chill stays **frozen for the rest of that turn** (Chill melts as it attacks, so Chilled 1 means one frozen turn, for Popsicle's silence); a **start-of-turn** trigger that fires before throws and attacks (Salt-Crusted Fish); and **plain** foods (Rice), whose `flavor` is only colour: they have only the flavors they gain, with no cap, and a `flavorAbilities` power for each (battle and kitchen alike). Rice's powers are deliberately not the flavor's own theme: it becomes a sturdy hub that holds the line and feeds its neighbours. New hooks came with them: `neighbourAttacks`, `attacks` (this food has just attacked) and armor.
 
 Summoned tokens (Yolk, Kernel, Spore, Slice, Cake Slice, Crumb) share the summoner's flavor but don't count toward synergies.
 

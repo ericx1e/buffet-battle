@@ -79,9 +79,9 @@ describe('battle', () => {
       expect(appleHeals(simulateBattle(plate({ 0: unit('popsicle', { copies: 3, hp: 200 }) }), apple(), 1))).toBe(0);
     });
 
-    it('Sorbet shatters a Chilled enemy every turn it skips', () => {
+    it('Sorbet shatters a Chilled enemy every time it attacks', () => {
       const r = simulateBattle(plate({ 0: unit('iceCream', { copies: 3, hp: 200 }), 3: unit('sorbet') }), plate({ 0: wall() }), 1);
-      // Ice Cream at level 2 Chills it 2: two skipped turns, two shatters.
+      // Ice Cream at level 2 Chills it 2: two Chilled attacks, two shatters.
       expect(r.frames.filter((f) => f.round <= 2 && f.text.includes('Sorbet: enemy Cheese shatters for 3')).length).toBe(2);
       // On its own, it Chills the enemy across every 3 turns, and shatters it.
       const solo = simulateBattle(plate({ 0: unit('sorbet', { hp: 200 }) }), plate({ 0: wall() }), 1);

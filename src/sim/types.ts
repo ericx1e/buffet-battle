@@ -30,7 +30,7 @@ export type Trigger =
   | 'endTurn' // you press Serve (foods on the plate)
   | 'fridgeTurn'; // you press Serve while this food is in the fridge
 
-/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill skips attacks. Burn stacks to BURN_CAP, Rot to ROT_CAP. */
+/** Statuses: Burn (Spicy) and Rot (Sour) deal damage at the end of each round; Chill halves attacks. Burn stacks to BURN_CAP, Rot to ROT_CAP. */
 export type Status = 'burn' | 'rot' | 'chill';
 export const STATUSES: readonly Status[] = ['burn', 'rot', 'chill'];
 
