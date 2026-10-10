@@ -1640,7 +1640,7 @@ const SPECIALS: Record<Exclude<SpecialOffer['kind'], 'freeItem'>, { name: string
   spicePack: { name: 'Spice Pack', text: 'Open it and keep 1 of 3 consumables, maybe one the buffet does not stock yet.' },
   farmPack: { name: 'Farm Box', text: 'Open it and keep 1 of 3 foods, up to one rarity above the buffet.' },
   bundle: { name: 'Pair', text: 'Two copies of one food for about one and a half times the price. They land on the counter tray: place, merge or sell them before serving.' },
-  premium: { name: 'Premium Refill', text: 'Refills the buffet with nothing but foods of the next rarity.' },
+  premium: { name: 'Premium Refill', text: 'Refills the buffet with nothing but foods of the next rarity, and a better shot at a mythic.' },
   mythic: { name: 'Mythic Delivery', text: 'A rare dish that bends a rule of the game. Each extra copy is a whole level: three cook it. Drag it straight onto your plate.' },
 };
 

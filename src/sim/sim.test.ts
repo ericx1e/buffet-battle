@@ -759,6 +759,26 @@ describe('run', () => {
     expect(run.market.every((o) => o?.kind !== 'unit' || unitDef(o.defId).tier === 2)).toBe(true);
   });
 
+  it('a premium restock now and then brings a mythic, more often than a plain refill, never before day 5', () => {
+    const mythics = (turn: number) => {
+      let n = 0;
+      for (let seed = 0; seed < 600; seed++) {
+        const run = newRun(seed);
+        run.turn = turn;
+        run.special = { kind: 'premium', cost: 3 };
+        run.gold = 10;
+        buySpecial(run);
+        n += run.market.filter((o) => o?.kind === 'unit' && rarityOf(unitDef(o.defId)) === 'mythic').length;
+      }
+      return n;
+    };
+    expect(mythics(4)).toBe(0);
+    const mid = mythics(7); // 600 refills x 4 cubbies x 3%: about 72
+    expect(mid).toBeGreaterThan(40);
+    expect(mid).toBeLessThan(110);
+    expect(mythics(12)).toBeGreaterThan(mid); // no rarity above: 5 cubbies x 6%
+  });
+
   it('losses on turns 1 and 2 cost no lives', () => {
     const run = newRun(1);
     finishBattle(run, 'loss');

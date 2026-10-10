@@ -276,7 +276,10 @@ export function marketOdds(turn: number): { tier: Tier; chance: number }[] {
   return tiers.map((tier) => ({ tier, chance: weight(tier) / total }));
 }
 
-/** Restocks the market. `premium`: every food comes from the tier above the highest unlocked one. */
+/**
+ * Restocks the market. `premium`: every food comes from the tier above the highest unlocked one, and each cubby has a
+ * better shot at a mythic (better still once there is no rarity above to show).
+ */
 function rollMarket(run: RunState, premium = false) {
   const { maxTier, unitSlots } = turnConfig(run.turn);
   const top = Math.min(6, maxTier + 1);
@@ -288,10 +291,11 @@ function rollMarket(run: RunState, premium = false) {
       for (const o of odds) if ((r -= o.chance) < 0) return o.tier;
       return odds[odds.length - 1].tier;
     };
+    const mythicChance = !premium ? MYTHIC_MARKET_CHANCE : maxTier >= 6 ? PREMIUM_MYTHIC_CHANCE_TOP : PREMIUM_MYTHIC_CHANCE;
     const market: (Offer | null)[] = [];
     for (let i = 0; i < unitSlots; i++) {
       // Now and then a mythic wanders onto the buffet (see MYTHIC_MARKET_CHANCE).
-      if (run.turn >= MYTHIC_MARKET_DAY && rng.next() < MYTHIC_MARKET_CHANCE) {
+      if (run.turn >= MYTHIC_MARKET_DAY && rng.next() < mythicChance) {
         market.push({ kind: 'unit', defId: pickMythic(run, rng) });
         continue;
       }
@@ -311,6 +315,9 @@ function rollMarket(run: RunState, premium = false) {
 /** From this day, each buffet slot has a small chance of holding a mythic. */
 export const MYTHIC_MARKET_DAY = 5;
 export const MYTHIC_MARKET_CHANCE = 0.005;
+/** A Premium Refill's chance per cubby of a mythic (from MYTHIC_MARKET_DAY), and once the top rarity is unlocked. */
+export const PREMIUM_MYTHIC_CHANCE = 0.03;
+export const PREMIUM_MYTHIC_CHANCE_TOP = 0.06;
 /** From this day, the special cubby offers a mythic on this share of days. */
 export const MYTHIC_SPECIAL_DAY = 5;
 export const MYTHIC_SPECIAL_CHANCE = 0.07;
