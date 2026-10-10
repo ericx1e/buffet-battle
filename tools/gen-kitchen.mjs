@@ -122,21 +122,38 @@ for (let x = 299; x < 341; x += 4) px(x, 22, P.paperShade);
 rect(316, 7, 8, 3, P.steelDark); // its clip, on the rail like the order tickets beside it
 
 // ---------- upper cabinet = market (80..480, 24..112) ----------
+/** The faces of an open cubby: its back wall, the lit left side, the shadowed right side, the ceiling and the floor. */
+const CUBBY_TONES = {
+  food: { back: '#4e2b17', lit: '#63391f', dark: '#371d0f', ceiling: '#2e180c', floor: '#6e4226' },
+  teal: { back: '#2f5553', lit: '#3d6a67', dark: '#223f3d', ceiling: '#1c3533', floor: '#457672' },
+  special: { back: '#4a2346', lit: '#5d2e58', dark: '#351731', ceiling: '#2b1228', floor: '#673d61' },
+};
 panel(80, 26, 400, 86, P.woodMid, P.woodHi, P.wood);
 panel(76, 24, 408, 7, P.woodLight, P.woodHi, P.wood); // crown molding
 for (let i = 0; i < 8; i++) {
   const ox = 86 + 48 * i;
-  // Foods on brown, the item on teal, and the special cubby (the last) its own plum-and-gold showcase.
+  // Foods on brown, the item on teal, and the special cubby (the last) its own plum showcase (the game outlines its
+  // offer in gold). Each is an open
+  // box seen straight on: a back wall, the left side lit and the right in shadow (both angling in), a shadowed
+  // ceiling and a lighter floor the dish stands on.
   const special = i === 7;
   const teal = i === 6;
-  const [back, shade] = special ? [P.cubbySpecial, P.cubbySpecialShade] : teal ? [P.cubbyTeal, P.cubbyTealShade] : [P.cubby, P.cubbyShade];
-  rect(ox, 36, 44, 64, back);
-  rect(ox, 36, 44, 6, shade); // shadow under the shelf above
-  rect(ox, 36, 2, 64, shade);
+  const tone = special ? CUBBY_TONES.special : teal ? CUBBY_TONES.teal : CUBBY_TONES.food;
+  const [x0, y0, w, h, d] = [ox, 36, 44, 64, 4];
+  for (let y = y0; y < y0 + h; y++) {
+    for (let x = x0; x < x0 + w; x++) {
+      const [l, r, t, bt] = [x - x0, x0 + w - 1 - x, y - y0, y0 + h - 1 - y];
+      // Which face this pixel is on: the nearest edge wins, within the depth (the corners split on the diagonal).
+      const m = Math.min(l, r, t, bt);
+      px(x, y, m >= d ? tone.back : m === t ? tone.ceiling : m === bt ? tone.floor : m === l ? tone.lit : tone.dark);
+    }
+  }
+  // The back wall's edge catches a little light along the top and left, and the floor meets it in a dark line.
+  rect(x0 + d, y0 + d, w - 2 * d, 1, tone.dark);
+  rect(x0 + d, y0 + h - d - 1, w - 2 * d, 1, tone.dark);
   if (special) {
-    frame(ox + 1, 37, 42, 61, P.brass); // a gold trim inside, like a display case
-    // Two little four-point sparkles in the velvet below the dish (single specks read as dirt, not shine).
-    for (const [sx, sy] of [[ox + 6, 91], [ox + 37, 89]]) {
+    // Two little four-point sparkles on the velvet floor (single specks read as dirt, not shine).
+    for (const [sx, sy] of [[ox + 7, 97], [ox + 36, 96]]) {
       px(sx, sy, '#fff6c8');
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(sx + dx, sy + dy, '#e6bd52');
     }
