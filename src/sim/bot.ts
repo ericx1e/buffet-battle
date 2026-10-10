@@ -1,7 +1,8 @@
 import { type Action, applyAction } from './actions';
-import { unitDef } from './data';
+import { flavorTier } from './battle';
+import { flavorTally, partnersOf, unitDef } from './data';
 import { Rng } from './rng';
-import { type Loc, type RunState, INTEREST_STEP, advanceTurn, interestCap, rerollCost, getUnit, newRun, offerCost, serve } from './run';
+import { type Loc, type RunState, INTEREST_STEP, advanceTurn, interestCap, rerollCost, getUnit, newRun, offerCost, sellPrice, serve } from './run';
 import { type Plate, PLATE_SIZE, type UnitInstance, isAdjacent, laneOf, levelOf, rowOf, slotAt } from './types';
 
 // Placement hints come from each food's abilities, so newly designed foods get placed sensibly too.
@@ -18,8 +19,31 @@ const buffsNeighbours = (id: string) => unitDef(id).abilities.some((a) => a.targ
 const power = (u: UnitInstance) => unitDef(u.defId).tier * 4 + levelOf(u.copies) * 3 + u.attack + u.hp;
 
 /**
- * Plays one Prep phase with simple heuristics: merge, buy the highest tier, upgrade weak units, spend leftovers on
- * items. Every change goes through an action, as a player's would; the ones that worked are appended to `log`.
+ * What a food is worth to this plate: its tier, plus what it adds to the plate's flavors (most for reaching the next
+ * flavor bonus, some for leaning into a flavor already there) and the partners it has on the plate. So a bot builds
+ * toward a flavor and a pairing instead of buying the highest tier it sees.
+ */
+function fit(defId: string, plate: Plate): number {
+  const def = unitDef(defId);
+  const others = plate.filter((u): u is UnitInstance => !!u && u.defId !== defId);
+  const tally = flavorTally(others);
+  let v = def.tier * 6;
+  for (const f of [def.flavor, def.flavor2]) {
+    if (!f) continue;
+    const n = tally.get(f) ?? 0;
+    v += (flavorTier(n + 1) - flavorTier(n)) * 9 + n * 2;
+  }
+  const partners = partnersOf(defId);
+  v += others.filter((u) => partners.includes(u.defId)).length * 6;
+  return v;
+}
+
+/** What a food on the plate is worth keeping: its fit, plus its level and the stats it has grown. */
+const worth = (u: UnitInstance, plate: Plate) => fit(u.defId, plate.map((o) => (o === u ? null : o))) + (levelOf(u.copies) - 1) * 14 + (u.attack + u.hp) / 4;
+
+/**
+ * Plays one Prep phase with simple heuristics: merge, buy what fits the plate best (its flavors and pairings), replace
+ * what fits worst, spend leftovers on items. Every change goes through an action, as a player's would; the ones that worked are appended to `log`.
  */
 export function botPrep(run: RunState, log: Action[] = []) {
   const act = (a: Action) => {
@@ -32,6 +56,9 @@ export function botPrep(run: RunState, log: Action[] = []) {
   }
   arrange(run, act);
 }
+
+/** How much better an offer must fit than the food it replaces. */
+const REPLACE_MARGIN = 10;
 
 function botAct(run: RunState, act: (a: Action) => boolean): boolean {
   const unitOffers = run.market
@@ -50,19 +77,28 @@ function botAct(run: RunState, act: (a: Action) => boolean): boolean {
       if (loc && act({ t: 'buy', src: { area: 'market', index }, to: loc })) return true;
     }
 
-    // 2. Fill an empty slot with the highest-tier offer.
-    const best = [...unitOffers].filter((x) => offerCost(x.o) <= run.gold).sort((a, b) => unitDef(b.o.defId).tier - unitDef(a.o.defId).tier)[0];
+    // 2. Fill an empty slot with the offer that fits the plate best.
+    const best = unitOffers
+      .filter((x) => offerCost(x.o) <= run.gold)
+      .map((x) => ({ ...x, v: fit(x.o.defId, run.plate) }))
+      .sort((a, b) => b.v - a.v)[0];
     const empty = plateLocs.find((l) => !getUnit(run, l));
     if (best && empty && act({ t: 'buy', src: { area: 'market', index: best.index }, to: empty })) return true;
 
-    // 3. Plate full: replace the weakest unit if the offer is a higher tier.
-    if (best && !empty) {
+    // 3. Plate full: replace the food worth least if an offer would fit clearly better in its place.
+    if (!empty) {
       const weakest = plateLocs
         .map((l) => ({ l, u: getUnit(run, l)! }))
-        .sort((a, b) => power(a.u) - power(b.u))[0];
-      if (unitDef(best.o.defId).tier > unitDef(weakest.u.defId).tier) {
+        .map((x) => ({ ...x, w: worth(x.u, run.plate) }))
+        .sort((a, b) => a.w - b.w)[0];
+      const without = run.plate.map((u) => (u === weakest.u ? null : u));
+      const swap = unitOffers
+        .filter((x) => offerCost(x.o) <= run.gold + sellPrice(weakest.u))
+        .map((x) => ({ ...x, v: fit(x.o.defId, without) }))
+        .sort((a, b) => b.v - a.v)[0];
+      if (swap && swap.v > weakest.w + REPLACE_MARGIN) {
         act({ t: 'sell', at: weakest.l });
-        if (act({ t: 'buy', src: { area: 'market', index: best.index }, to: weakest.l })) return true;
+        if (act({ t: 'buy', src: { area: 'market', index: swap.index }, to: weakest.l })) return true;
       }
     }
   }
@@ -126,12 +162,13 @@ function score(plate: Plate): number {
 /**
  * Gold a bot opponent gets on top of a normal day. A bot spends everything and never plans, so on its own it is too
  * strong early (a player might be saving) and too weak late (a player's plate has grown and found its synergies):
- * it gets less early and more late.
+ * it gets less early and more late. Tuned with tools/bot-bench.ts against players' real plates: about 55% of battles
+ * won overall, 60-70% from day 4 on.
  */
 export function ghostGold(turn: number): number {
   return GHOST_GOLD[Math.min(turn, GHOST_GOLD.length) - 1];
 }
-const GHOST_GOLD = [-3, -1, 0, 0, 0, 1, 2, 2, 3, 3, 4, 4, 5];
+const GHOST_GOLD = [-3, -1, 0, 1, 3, 4, 5, 6, 7, 8, 8, 9, 9];
 
 /**
  * A bot's plate as served on `turn`, played from a fresh run with `seed`. `fair`: no handicap (bot-vs-bot balance

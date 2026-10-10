@@ -10,6 +10,7 @@
     "gen:icons": "node tools/gen-app-icons.mjs",
     "test": "vitest run",
     "balance": "tsx tools/balance.ts",
+    "bench:bots": "tsx tools/bot-bench.ts",
     "gen:kitchen": "node tools/gen-kitchen.mjs",
     "gen:foods": "node tools/gen-foods.mjs",
     "gen:battle": "node tools/gen-battle.mjs",
