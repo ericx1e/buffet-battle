@@ -133,6 +133,7 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .u-item { position: absolute; right: 0; top: 0; display: flex; }
 .unit.item .u-art { top: 6px; }
 .frost { left: 0; top: 0; width: 40px; height: 48px; background: rgba(210, 238, 248, 0.35); pointer-events: none; }
+.buffet-zone { position: absolute; }
 /* A price tag on each cubby: paper, a coin and a dark number, red when you can't afford it. */
 .price {
   width: 28px; height: 11px; display: flex; align-items: center; justify-content: center; gap: 1px; pointer-events: none;
@@ -161,8 +162,8 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .newrun:hover { background: rgba(42, 27, 20, 0.8) !important; }
 
 /* Freezer magnets */
-.magnets { display: flex; flex-direction: column; gap: 6px; padding: 6px 4px; pointer-events: none; }
-.mag-stars { display: flex; gap: 1px; }
+.magnets { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 2px; pointer-events: none; }
+.mag-stars { display: flex; flex-wrap: wrap; justify-content: center; gap: 1px 2px; }
 .mag-star { display: inline-flex; }
 .mag-course { display: flex; align-items: center; gap: 2px; font: 400 10px/1 var(--pixel); color: #3a2a22; }
 

@@ -32,6 +32,8 @@ export const REROLL_COST = 1;
 export const START_LIVES = 5;
 export const COURSES_TO_WIN = 10;
 export const FRIDGE_SIZE = 2;
+/** Buffet offers you can freeze: they stay through refills and new days until you buy or thaw them. */
+export const FREEZER_SIZE = 1;
 export const OVERFLOW_SIZE = 3;
 export const MARKET_ITEM_SLOTS = 1;
 /** Most flavors one food can have. */
@@ -66,7 +68,11 @@ export interface Loc {
 }
 
 /** Where a purchasable offer comes from. */
-export type OfferSource = { area: 'market'; index: number } | { area: 'fridge'; index: number } | { area: 'special'; index: 0 };
+export type OfferSource =
+  | { area: 'market'; index: number }
+  | { area: 'fridge'; index: number }
+  | { area: 'freezer'; index: number }
+  | { area: 'special'; index: 0 };
 
 export interface RunState {
   rngState: number;
@@ -76,6 +82,8 @@ export interface RunState {
   courses: number;
   plate: Plate;
   fridge: (FridgeEntry | null)[];
+  /** Buffet offers frozen for later, still to be paid for (see freezeOffer). */
+  freezer: (Offer | null)[];
   market: (Offer | null)[];
   rerolledThisTurn: boolean;
   bonusGoldNext: number;
@@ -148,6 +156,7 @@ export function newRun(seed: number): RunState {
     courses: 0,
     plate: Array(PLATE_SIZE).fill(null),
     fridge: Array(FRIDGE_SIZE).fill(null),
+    freezer: Array(FREEZER_SIZE).fill(null),
     market: [],
     rerolledThisTurn: false,
     bonusGoldNext: 0,
@@ -181,6 +190,7 @@ export function migrateRun(run: RunState): RunState {
   run.pack ??= null;
   run.overflow ??= Array(OVERFLOW_SIZE).fill(null);
   run.growth ??= [];
+  run.freezer ??= Array(FREEZER_SIZE).fill(null);
   return run;
 }
 
@@ -353,6 +363,7 @@ export function specialCost(offer: SpecialOffer): number {
 
 export function getOffer(run: RunState, src: OfferSource): Offer | null {
   if (src.area === 'market') return run.market[src.index] ?? null;
+  if (src.area === 'freezer') return run.freezer[src.index] ?? null;
   if (src.area === 'special') {
     // The free consumable from a Spice Pack, or a mythic, bought like any food (straight onto the plate).
     if (run.special?.kind === 'freeItem') return { kind: 'item', itemId: run.special.itemId };
@@ -365,8 +376,16 @@ export function getOffer(run: RunState, src: OfferSource): Offer | null {
 
 function takeOffer(run: RunState, src: OfferSource) {
   if (src.area === 'market') run.market[src.index] = null;
+  else if (src.area === 'freezer') run.freezer[src.index] = null;
   else if (src.area === 'special') run.special = null;
   else run.fridge[src.index] = null;
+}
+
+/** Puts a taken offer back where it came from (a buy that failed after taking it). */
+function returnOffer(run: RunState, src: OfferSource, offer: Offer) {
+  if (src.area === 'market') run.market[src.index] = offer;
+  else if (src.area === 'freezer') run.freezer[src.index] = offer;
+  else if (src.area === 'fridge') run.fridge[src.index] = { kind: 'offer', offer };
 }
 
 export function getUnit(run: RunState, loc: Loc): UnitInstance | null {
@@ -424,6 +443,52 @@ function addBonusUnit(run: RunState): number | null {
   const at = firstItem < 0 ? run.market.length : firstItem;
   run.market.splice(at, 0, offer);
   return at;
+}
+
+/**
+ * Puts an offer back on the buffet: a food in an empty food cubby (or after the foods), an item in the item cubby.
+ * Returns its market index, or null when its cubbies are full.
+ */
+function placeInMarket(run: RunState, offer: Offer): number | null {
+  const firstItem = run.market.findIndex((o) => o?.kind === 'item');
+  if (offer.kind === 'item') {
+    if (run.market.filter((o) => o?.kind === 'item').length >= MARKET_ITEM_SLOTS) return null;
+    run.market.push(offer);
+    return run.market.length - 1;
+  }
+  if (run.market.filter((o) => o?.kind === 'unit').length >= MARKET_FOOD_SLOTS) return null;
+  const empty = run.market.findIndex((o, i) => !o && (firstItem < 0 || i < firstItem));
+  if (empty >= 0) {
+    run.market[empty] = offer;
+    return empty;
+  }
+  const at = firstItem < 0 ? run.market.length : firstItem;
+  run.market.splice(at, 0, offer);
+  return at;
+}
+
+/**
+ * Freezes a buffet offer, free: it waits in the freezer through refills and new days, at its price, until you buy it
+ * (drag it from the freezer like any offer) or thaw it. Freezing onto a frozen offer swaps the two.
+ */
+export function freezeOffer(run: RunState, from: number, to: number): ActionResult {
+  const offer = run.market[from];
+  if (!offer) return fail('Nothing to freeze there.');
+  if (to < 0 || to >= run.freezer.length) return fail('No freezer there.');
+  const old = run.freezer[to];
+  if (old && old.kind !== offer.kind) return fail('Thaw what is in the freezer first.');
+  run.freezer[to] = offer;
+  run.market[from] = old;
+  return ok();
+}
+
+/** Thaws a frozen offer back onto the buffet (where the next refill sweeps it away). */
+export function thawOffer(run: RunState, index: number): ActionResult {
+  const offer = run.freezer[index];
+  if (!offer) return fail('Nothing frozen there.');
+  if (placeInMarket(run, offer) === null) return fail(offer.kind === 'item' ? 'The item cubby is full.' : 'The buffet is full.');
+  run.freezer[index] = null;
+  return ok();
 }
 
 /** Copies that make each level: 1, 3 (level 2) and 6 (cooked). */
@@ -494,8 +559,7 @@ export function buyUnit(run: RunState, src: OfferSource, to: Loc): ActionResult 
   if (existing) {
     result = merge(run, existing, unit);
     if (!result.ok) {
-      if (src.area === 'market') run.market[src.index] = offer;
-      else if (src.area === 'fridge') run.fridge[src.index] = { kind: 'offer', offer };
+      returnOffer(run, src, offer);
       return result;
     }
   } else {

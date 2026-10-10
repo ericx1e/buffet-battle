@@ -8,6 +8,8 @@ import {
   type RunState,
   buySpecial,
   buyUnit,
+  freezeOffer,
+  thawOffer,
   moveUnit,
   pickPack,
   skipPack,
@@ -27,7 +29,9 @@ export type Action =
   | { t: 'item'; src: OfferSource; at: Loc; flavor?: Flavor }
   | { t: 'special' }
   | { t: 'pick'; index: number }
-  | { t: 'skip' };
+  | { t: 'skip' }
+  | { t: 'freeze'; from: number; to: number }
+  | { t: 'thaw'; index: number };
 
 /** Applies one action to the run. Garbage in (a tampered log) is a failed action, never a crash. */
 export function applyAction(run: RunState, a: Action): ActionResult {
@@ -49,6 +53,10 @@ export function applyAction(run: RunState, a: Action): ActionResult {
         return pickPack(run, a.index);
       case 'skip':
         return skipPack(run);
+      case 'freeze':
+        return freezeOffer(run, a.from, a.to);
+      case 'thaw':
+        return thawOffer(run, a.index);
     }
   } catch {
     // Fall through: an action that throws is refused.

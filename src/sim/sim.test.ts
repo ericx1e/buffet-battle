@@ -10,6 +10,7 @@ import {
   buyUnit,
   endDay,
   finishBattle,
+  freezeOffer,
   interestCap,
   marketOdds,
   moveUnit,
@@ -20,6 +21,7 @@ import {
   sellPrice,
   sellUnit,
   serve,
+  thawOffer,
   serveBlocker,
   useItem,
 } from './run';
@@ -244,6 +246,36 @@ describe('run', () => {
     expect(run.gold).toBe(START_GOLD - 6);
     expect(sellUnit(run, { area: 'plate', index: 0 }).ok).toBe(true);
     expect(run.gold).toBe(START_GOLD - 5);
+  });
+
+  it('freezes a buffet offer through refills and new days; it is still bought at its price, or thawed back', () => {
+    const run = newRun(7);
+    const offer = run.market[0]!;
+    expect(freezeOffer(run, 0, 0).ok).toBe(true);
+    expect(run.freezer[0]).toEqual(offer);
+    expect(run.market[0]).toBeNull();
+    expect(run.gold).toBe(START_GOLD); // freezing is free
+    reroll(run);
+    serve(run);
+    finishBattle(run, 'win');
+    expect(run.freezer[0]).toEqual(offer);
+    // Freezing another food swaps them: the frozen one goes back on the buffet.
+    const next = run.market[1]!;
+    expect(freezeOffer(run, 1, 0).ok).toBe(true);
+    expect(run.freezer[0]).toEqual(next);
+    expect(run.market[1]).toEqual(offer);
+    // Thawed, it goes back to the buffet (in an empty food cubby).
+    run.market[2] = null;
+    expect(thawOffer(run, 0).ok).toBe(true);
+    expect(run.freezer[0]).toBeNull();
+    expect(run.market[2]).toEqual(next);
+    // Bought from the freezer: it costs its price.
+    freezeOffer(run, 2, 0);
+    const gold = run.gold;
+    expect(buyUnit(run, { area: 'freezer', index: 0 }, { area: 'plate', index: 0 }).ok).toBe(true);
+    expect(run.plate[0]?.defId).toBe(next.kind === 'unit' && next.defId);
+    expect(run.gold).toBeLessThan(gold);
+    expect(run.freezer[0]).toBeNull();
   });
 
   it('two level 2 foods merge into level 3', () => {

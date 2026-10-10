@@ -1085,7 +1085,7 @@ function marketSlots(): string {
       const src: OfferSource = { area: 'market', index: i };
       const key = `${app.run.turn}:${app.marketGen}:${i}`;
       const attrs = `data-drag="offer:market:${i}" data-k="m:${key}" data-in="drop" data-out="drop-out"`;
-      return `<div class="slot" style="${at(pos)}" data-offer="market:${i}">${offerTile(o, attrs, isSelectedSrc(src))}</div>
+      return `<div class="slot" style="${at(pos)}" data-offer="market:${i}" data-drop="buffet">${offerTile(o, attrs, isSelectedSrc(src))}</div>
         <div class="price ${offerCost(o) > app.run.gold ? 'dear' : ''}" style="${at([pos[0] + 6, pos[1] + 49])}" data-k="p:${key}" data-in="fade" data-out="drop-out">${pix('coin')}${offerCost(o)}</div>`;
     })
     .join('');
@@ -1281,6 +1281,28 @@ function plateSlots(): string {
   return html;
 }
 
+/** The buffet shelf behind the cubbies: drop a frozen offer here to thaw it. */
+function buffetZone(): string {
+  return `<div class="buffet-zone" style="${box(LAYOUT.buffet as Rect)}" data-drop="buffet"></div>`;
+}
+
+/** The freezer door: buffet offers frozen for later, under frost, with their price. */
+function freezerSlots(): string {
+  const { run } = app;
+  return LAYOUT.freezer
+    .map((pos, index) => {
+      const o = run.freezer[index];
+      const src: OfferSource = { area: 'freezer', index };
+      if (!o) {
+        return `<div class="slot drop empty freezer-slot" style="${at(pos)}" data-drop="freezer:${index}" ${tipBox('Freezer', '<p>Drag a food or item here from the buffet to freeze it, free. It stays through refills and new days.</p><p>Buy it from here at its price whenever you like. Drag it back onto the buffet to thaw it.</p>')}></div>`;
+      }
+      const attrs = `data-drag="offer:freezer:${index}" data-k="fz:${index}:${offerId(o)}" data-in="drop"`;
+      return `<div class="slot drop freezer-slot" style="${at(pos)}" data-offer="freezer:${index}" data-drop="freezer:${index}">${offerTile(o, attrs, isSelectedSrc(src))}<div class="frost" data-k="fzfrost:${index}" data-in="fade"></div></div>
+        <div class="price ${offerCost(o) > run.gold ? 'dear' : ''}" style="${at([pos[0] + 6, pos[1] + 49])}">${pix('coin')}${offerCost(o)}</div>`;
+    })
+    .join('');
+}
+
 function fridgeSlots(): string {
   return LAYOUT.fridge
     .map((pos, index) => {
@@ -1305,7 +1327,7 @@ function freezerMagnets(): string {
     const on = i < run.lives;
     return `<span class="mag-star" data-vk="life:${i}" data-v="${on}" data-va="lose">${pix(on ? 'life' : 'lifeOff')}</span>`;
   }).join('');
-  return `<div class="magnets" style="${box(LAYOUT.freezer)}">
+  return `<div class="magnets" style="${box(LAYOUT.magnets as Rect)}">
       <div class="mag-stars" ${tipBox(`Lives: ${run.lives} of ${START_LIVES}`, '<p>Losing a battle costs a life (from day 3). Lose them all and the kitchen closes.</p>')}>${lives}</div>
       <div class="mag-course" ${tipBox(`Courses won: ${run.courses} of ${COURSES_TO_WIN}`, `<p>Win a battle to serve a course. Serve ${COURSES_TO_WIN} to win the run.</p>`)} data-vk="courses" data-va="levelup">${pix('trophy')} ${run.courses}/${COURSES_TO_WIN}</div>
     </div>`;
@@ -1609,10 +1631,12 @@ function renderKitchen() {
         ${chalkboard()}
         <button class="hotspot refill ${run.gold < cost ? 'off' : ''} ${cost === 0 ? 'free' : ''}" style="${box(LAYOUT.refill)}" data-action="reroll" data-drop="refill"
           ${tipBox('Refill the buffet', `<p>Refill every food and item cubby (key r) for <b>${cost ? `${cost} gold` : 'nothing'}</b>, as often as you like.</p><p class="dim">The odds of each rarity are on the card beside it. The special cubby keeps its offer.</p>`)} data-vk="refill" data-v="${app.marketGen}" data-va="shake"><span>refill · ${cost ? `${cost}g` : 'free'}</span></button>
+        ${buffetZone()}
         ${marketSlots()}
         ${oddsStrip()}
         ${specialSlot()}
         ${fridgeSlots()}
+        ${freezerSlots()}
         ${plateSlots()}
         ${counterTray()}
         <div class="label dark center" style="${box([cx - 6, cy - 3, 60, 9])}">serve!</div>
@@ -2335,7 +2359,7 @@ function parseDrag(value: string): Selection {
   const [kind, area, index] = value.split(':');
   if (kind === 'special') return { kind: 'special' };
   if (kind === 'pick') return { kind: 'pick', index: Number(area) };
-  if (kind === 'offer') return { kind: 'offer', src: area === 'special' ? { area: 'special', index: 0 } : { area: area as 'market' | 'fridge', index: Number(index) } };
+  if (kind === 'offer') return { kind: 'offer', src: area === 'special' ? { area: 'special', index: 0 } : { area: area as 'market' | 'fridge' | 'freezer', index: Number(index) } };
   return { kind: 'unit', loc: { area: area as Loc['area'], index: Number(index) } };
 }
 
@@ -2348,6 +2372,13 @@ function drop(target: string) {
     }
     return;
   }
+  if (target.startsWith('freezer:')) return dropOnFreezer(Number(target.split(':')[1]));
+  if (target === 'buffet') {
+    const sel = app.selected;
+    if (sel?.kind === 'offer' && sel.src.area === 'freezer') return report(dispatch({ t: 'thaw', index: sel.src.index }), 'place');
+    app.selected = null;
+    return render();
+  }
   if (target === 'tray' || target === 'refill') {
     const sel = app.selected;
     if (sel?.kind === 'special' && (target === 'tray' || app.run.special?.kind === 'premium')) return openSpecial();
@@ -2356,6 +2387,19 @@ function drop(target: string) {
     return render();
   }
   onDropSlot(parseLoc(target));
+}
+
+/** A drop on the freezer: a buffet offer freezes (swapping with what is frozen there). */
+function dropOnFreezer(index: number) {
+  const sel = app.selected;
+  if (sel?.kind === 'offer' && sel.src.area === 'freezer') {
+    app.selected = null;
+    return render();
+  }
+  if (sel?.kind !== 'offer' || sel.src.area !== 'market') return report({ ok: false, error: 'Only buffet offers go in the freezer.' });
+  const result = dispatch({ t: 'freeze', from: sel.src.index, to: index });
+  if (result.ok) sfx('freeze', 120);
+  return report(result.ok ? { ok: true, message: 'Frozen: it waits here until you buy it or drag it back to the buffet.' } : result, 'place');
 }
 
 interface DragState {
@@ -2504,7 +2548,8 @@ root.addEventListener('click', (e) => {
   } else if (el.dataset.pick) {
     onPick(Number(el.dataset.pick));
   } else if (el.dataset.offer) {
-    onOffer({ area: 'market', index: Number(el.dataset.offer.split(':')[1]) });
+    const [area, index] = el.dataset.offer.split(':');
+    onOffer({ area: area === 'freezer' ? 'freezer' : 'market', index: Number(index) });
   } else if (el.dataset.slot) {
     onClickSlot(parseLoc(el.dataset.slot));
   }

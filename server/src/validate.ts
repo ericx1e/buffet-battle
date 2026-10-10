@@ -20,7 +20,7 @@ function loc(x: unknown): Loc | null {
 
 function source(x: unknown): OfferSource | null {
   if (!isObj(x) || !keys(x, ['area', 'index']) || !isIndex(x.index)) return null;
-  if (x.area === 'market' || x.area === 'fridge') return { area: x.area, index: x.index };
+  if (x.area === 'market' || x.area === 'fridge' || x.area === 'freezer') return { area: x.area, index: x.index };
   return x.area === 'special' && x.index === 0 ? { area: 'special', index: 0 } : null;
 }
 
@@ -53,6 +53,10 @@ export function parseAction(x: unknown): Action | null {
       return keys(x, ['t', 'index']) && isIndex(x.index) ? { t: 'pick', index: x.index } : null;
     case 'skip':
       return keys(x, ['t']) ? { t: 'skip' } : null;
+    case 'freeze':
+      return keys(x, ['t', 'from', 'to']) && isIndex(x.from) && isIndex(x.to) ? { t: 'freeze', from: x.from, to: x.to } : null;
+    case 'thaw':
+      return keys(x, ['t', 'index']) && isIndex(x.index) ? { t: 'thaw', index: x.index } : null;
   }
   return null;
 }

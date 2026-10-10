@@ -83,6 +83,7 @@ Gold is now a resource to manage across days: it carries over, interest rewards 
 | Refill the buffet | 1 gold, always (Dumplings make the first 1/2/3 each day free) |
 | Sell a food | Half the gold its copies cost, rounded down (at least 1), plus any sell value it gained |
 | Put a food in the fridge | Its price: you buy it into the fridge (the fridge only holds foods you own) |
+| Freeze a buffet offer | Free (you still pay its price when you buy it) |
 
 Selling never refunds a merge in full: a level 2 tier 1 food (3 copies) sells for 4, not 9. Coin Chocolate and Olive Oil add sell value on top, which survives merges.
 
@@ -119,6 +120,14 @@ The fridge is a bench for foods you own. Unlike Super Auto Pets' freeze, it does
 - Holds your own foods, kept off the plate and not used in battle. Dropping a shop food in buys it at its price; the hint and the empty slots' tooltip say so.
 - Foods in the fridge still count for merging.
 - **Freezer growth:** some foods grow only while they wait in the fridge (Pickle, +1/+1 each time you serve). Trading a plate slot now for a stronger food later is the fridge's strategy.
+
+### Freezer
+
+The freezer (the fridge's top door) is Super Auto Pets' freeze: it holds a buffet offer you haven't bought yet.
+
+- 1 slot. Drag a food or item from the buffet into it, free. It stays through refills and new days.
+- Buy it from the freezer at its price, like any offer (onto the plate, into the fridge, onto a copy, or an item onto a food).
+- Freezing onto a frozen offer of the same kind swaps them. Drag a frozen offer back onto the buffet to thaw it (into an empty cubby; the next refill sweeps it away).
 
 ### Placement
 
@@ -621,7 +630,7 @@ Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than
 
 ## Look and feel
 
-- **Kitchen:** a slim fridge on the left (its two slots in the glass door, lives and courses on the freezer), the cabinet and counter beside it, and on the right the spice rack, a wide chalkboard and a large cookbook (two 90px pages). The market is a cabinet of cubbies (6 brown for foods, a teal one for the item and a gold-tagged special cubby), the plate is a platter on a wooden counter with the counter tray beside it, the fridge and freezer magnets (lives as pixel hearts, courses) are on the left, the tip jar shows gold with the interest you'd earn above it, and the spice rack (flavor counts) and chalkboard (flavor bonus tiers 2·4·6) are on the right. Press the service bell to Serve.
+- **Kitchen:** a slim fridge on the left (its two slots in the glass door, the freezer slot on the top door, lives and courses on the crisper drawer), the cabinet and counter beside it, and on the right the spice rack, a wide chalkboard and a large cookbook (two 90px pages). The market is a cabinet of cubbies (6 brown for foods, a teal one for the item and a gold-tagged special cubby), the plate is a platter on a wooden counter with the counter tray beside it, the fridge and freezer magnets (lives as pixel hearts, courses) are on the left, the tip jar shows gold with the interest you'd earn above it, and the spice rack (flavor counts) and chalkboard (flavor bonus tiers 2·4·6) are on the right. Press the service bell to Serve.
 - **Levels in battle:** the level as a chunky gold number on a dark tab at the food's top-left (orange 3 when cooked). Level 1 has none.
 - **Flavor icons:** every food tile wears its flavor icon small on its right edge (two for a two-flavor food); a food with three or more flavors (soaked-up Tofu, Saffron) shows them smaller, two to a row, so tiles stay clear.
 - **Flavor boards:** each side's active flavor bonuses sit on a little chalkboard under its name plaque (titled "Flavors", one each side): the flavor icon, its count and what it does; hover a line for the full tiers.
