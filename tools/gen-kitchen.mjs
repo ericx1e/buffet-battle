@@ -406,7 +406,8 @@ prop('tipjar', () => {
   }, '#4f7472', true, true);
 });
 
-// Scrap bin: brushed-steel pedal bin with a domed lid and a compost leaf badge.
+// Scrap bin: a sage-green enamel compost bin with a steel lid and a cream label with a leaf.
+const ENAMEL = ['#e2f0dc', '#b4d6ac', '#8cbc86', '#6a9a68', '#4c7650'];
 prop('bin', () => {
   // One round body seen from the side and a little above: every edge across it (the lid's top, the lid's lower
   // rim, the pressed ridges and the bottom) is part of the same ellipse, `ry` deep, so they all curve together.
@@ -427,14 +428,17 @@ prop('bin', () => {
     // Body: below the lid, down to a bottom on the same curve
     if (Math.abs(t) > 1 || y <= lidY + lidBand + dip(tl, ry) || y > bottom + dip(t, ry)) return null;
     const d = dip(t, ry);
-    if (y === 264 + d || y === 295 + d) return STEEL[4]; // pressed ridges wrap round the body
-    if (y === 265 + d || y === 296 + d) return STEEL[1];
+    if (y === 264 + d || y === 295 + d) return ENAMEL[4]; // pressed ridges wrap round the body
+    if (y === 265 + d || y === 296 + d) return ENAMEL[0];
     // Pedal at the front bottom
     if (y >= bottom + d - 2 && Math.abs(x - cx) <= 7) return y === bottom + d - 2 ? '#5a5250' : '#2c2726';
-    // Leaf badge
-    if (inEllipse(x, y, cx, 283, 5, 7)) return x === cx ? LEAF[4] : lit((x - cx) / 5.5, (y - 283) / 7.5, LEAF);
-    return side(t, STEEL);
-  }, '#363e45', true, true);
+    // A cream label with a leaf on it
+    if (inEllipse(x, y, cx, 281, 7, 8)) {
+      if (inEllipse(x, y, cx, 281, 3.5, 5)) return x === cx ? LEAF[4] : lit((x - cx) / 4, (y - 281) / 5.5, LEAF);
+      return inEllipse(x, y, cx, 281, 6, 7) ? '#f7f0de' : '#c9b48c';
+    }
+    return side(t, ENAMEL);
+  }, '#33473a', true, true);
 });
 
 // Cookbook on a stand: 432..632 x 156..316

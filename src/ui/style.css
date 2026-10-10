@@ -124,15 +124,8 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .u-art .sprite { width: 32px; height: 32px; }
 .u-art .emoji { font-size: 24px; line-height: 1; }
 .u-stats { position: absolute; left: 3px; top: 31px; width: 34px; display: flex; justify-content: space-between; }
-/* Merge progress: two groups of three copies (3 makes level 2, 6 cooks it), centred under the food. A group lights gold
-   once it is complete, so the halfway mark and cooking read at a glance. */
-.u-pips { position: absolute; left: 0; right: 0; top: 43px; display: flex; justify-content: center; gap: 2px; pointer-events: none; }
-/* Each group is a little grid: the same 1px line around and between its pips, so every side is even. */
-.u-pips .pg { display: flex; gap: 1px; border: 1px solid #7a6150; background: #7a6150; }
-.u-pips i { width: 3px; height: 3px; background: #efe4cf; }
-.u-pips i.on { background: #f27a3a; box-shadow: inset 0 1px 0 #ffb27a; }
-.u-pips .pg.full { border-color: #a8781a; background: #a8781a; }
-.u-pips .pg.full i { background: #ffd23f; box-shadow: inset 0 1px 0 #fff2a8; }
+/* Merge progress: a pixel image (see pipBar), 27x5, centred under the food. */
+.u-pips { position: absolute; left: 7px; top: 43px; width: 27px; height: 5px; image-rendering: pixelated; pointer-events: none; }
 .u-lvl { position: absolute; left: 0; top: 0; min-width: 7px; height: 9px; padding: 0 1px; display: grid; place-items: center; background: #2a1b14; color: #ffd27a; font: 400 10px/9px var(--pixel); text-align: center; }
 .unit.cooked .u-lvl { color: #ff9b6a; }
 .u-item { position: absolute; right: 0; top: 0; display: flex; }

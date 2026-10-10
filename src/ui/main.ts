@@ -1463,14 +1463,33 @@ function flavorDots(u: UnitData): string {
  * A 40x48 food: the 32x32 sprite, an attack/HP strip, and merge pips. `attrs` carries its drag handle and animation
  * key; with a uid its stats, level and pips animate when they change.
  */
+/**
+ * Merge progress as a pixel image (two groups of three copies: 3 make level 2, 6 cook it): drawn like the icons, so its
+ * lines stay even at any stage scale. Each group is a row of 3x3 pips with a line between them and an outline round
+ * it; a pip lights orange once owned, and a whole group turns gold once it's complete.
+ */
+const PIP_COLORS: Record<string, string> = { L: '#8a6e5a', e: '#efe4cf', o: '#f27a3a', O: '#ffb27a', g: '#c99a2a', y: '#ffd23f', Y: '#fff2a8' };
+function pipBar(copies: number): string {
+  const group = (from: number) => {
+    const full = copies >= from + 3;
+    return [0, 1, 2].map((row) =>
+      [1, 2, 3]
+        .map((k) => {
+          const on = from + k <= copies;
+          const c = full ? (row === 0 ? 'Y' : 'y') : on ? (row === 0 ? 'O' : 'o') : 'e';
+          return c.repeat(3);
+        })
+        .join(full ? 'g' : 'L'),
+    );
+  };
+  const [a, b] = [group(0), group(3)];
+  return gridUrl(a.map((row, i) => `${row}...${b[i]}`), PIP_COLORS);
+}
+
 function unitTile(u: UnitData, attrs: string, extra = '', uid?: number): string {
   const atk = u.attack + (u.tempAttack ?? 0);
   const vk = (name: string, v: string | number, more = '') => (uid === undefined ? '' : `data-vk="${name}:${uid}" data-v="${v}" ${more}`);
-  const pips = u.copies !== undefined
-    ? `<div class="u-pips" ${vk('cp', u.copies)}>${[0, 3]
-        .map((from) => `<span class="pg ${u.copies! >= from + 3 ? 'full' : ''}">${[1, 2, 3].map((k) => `<i class="${from + k <= u.copies! ? 'on' : ''}"></i>`).join('')}</span>`)
-        .join('')}</div>`
-    : '';
+  const pips = u.copies !== undefined ? `<img class="u-pips" src="${pipBar(u.copies)}" alt="" draggable="false" ${vk('cp', u.copies)}>` : '';
   return `
     <div class="unit flavor-${unitDef(u.defId).plain && !u.flavors?.length ? 'plain' : u.flavor} ${u.level === 3 ? 'cooked' : ''} ${extra}" ${attrs} ${vk('lvl', u.level, 'data-va="levelup"')}>
       <div class="u-art">${unitArt(u.defId, u.level === 3)}</div>
