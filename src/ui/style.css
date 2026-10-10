@@ -681,6 +681,16 @@ body[data-screen='battle'] {
 }
 .big-btn:hover { background: #ef7440 !important; translate: 0 -1px; }
 .big-btn:active { translate: 0 2px; box-shadow: 0 1px 0 #2a1b14; }
+/* The second choice next to a big button: the same chunky button, in cream. */
+.alt-btn {
+  padding: 3px 8px 4px !important; white-space: nowrap; cursor: pointer;
+  font: 400 10px/10px var(--pixel) !important; color: #3a2a22 !important; text-transform: uppercase; letter-spacing: 1px;
+  background: #fff6dc !important; border: 2px solid #2a1b14 !important;
+  box-shadow: 0 2px 0 #c9a46a, 0 3px 0 #2a1b14;
+  transition: translate 80ms steps(2, jump-end);
+}
+.alt-btn:hover { background: #ffe9bd !important; translate: 0 -1px; }
+.alt-btn:active { translate: 0 2px; box-shadow: 0 1px 0 #2a1b14; }
 
 /* The trophy just won pops in; a star this loss costs flashes, cracks and fades. */
 .trophy-slot, .star-slot { display: inline-flex; }
@@ -1034,7 +1044,8 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .google-chip { padding: 0 8px; }
 .signin-wait { display: flex; align-items: center; gap: 4px; font: 400 10px/10px var(--pixel); color: #8a7568; }
 /* Foods won with: every food in a grid, lit if it has been on a winning plate, a shadow if not. */
-.won-card { width: 470px; gap: 4px; }
+.won-card { translate: none; gap: 4px; }
+.won-card .row { margin-top: auto; }
 .won-card .pg-title { font-size: 14px; line-height: 14px; }
 .won-sub { font: 400 10px/10px var(--pixel); color: #8a7568; }
 .won-grid { display: grid; grid-template-columns: repeat(14, 31px); gap: 2px; min-height: 60px; }

@@ -389,11 +389,11 @@ function wonWithPage(w: NonNullable<App['wonWith']>): string {
     : `<p class="over-sub">${w.error ? esc(w.error) : 'one moment...'}</p>`;
   return `
     <div class="modal" data-k="won-dim" data-in="fade" data-action="won-with-close"></div>
-    <div class="modal-card won-card" data-k="won-card" data-in="pop">
+    <div class="modal-card won-card" style="${box([87, 38, 466, 270])}" data-k="won-card" data-in="drop">
       <div class="pg-title">Foods won with</div>
       <div class="won-sub">${foods ? `${won} of ${all.length} foods have been on a plate that won a run${app.server ? '' : ' on this device'}.` : ''}</div>
       <div class="won-grid">${grid}</div>
-      <div class="row"><button class="chip" data-action="won-with-close">done</button></div>
+      <div class="row"><button class="big-btn" data-action="won-with-close">done</button></div>
     </div>`;
 }
 
@@ -432,8 +432,8 @@ function chefCard(c: NonNullable<App['chef']>): string {
         </div>
         ${google}` : '<p class="over-sub">one moment...</p>'}
       <div class="name-buttons">
-        <button type="button" class="newrun name-alt" data-action="chef-rename">rename</button>
-        <button type="button" class="newrun name-alt" data-action="won-with">foods won with</button>
+        <button type="button" class="alt-btn" data-action="chef-rename">rename</button>
+        <button type="button" class="alt-btn" data-action="won-with">foods won with</button>
         <button type="button" class="big-btn" data-action="chef-close">done</button>
       </div>
     </div>`;
@@ -2199,7 +2199,7 @@ function namingCard(n: Naming): string {
       <input class="name-input" data-name="custom" maxlength="20" placeholder="your own name" spellcheck="false" value="${esc(n.custom)}" ${n.busy ? 'disabled' : ''}>
       <div class="name-preview">${n.error ? `<span class="name-error">${esc(n.error)}</span>` : `you'll be <b>${esc(chosenName(n))}</b>`}</div>
       <div class="name-buttons">
-        <button type="button" class="newrun name-alt" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
+        <button type="button" class="alt-btn" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
         <button type="submit" class="big-btn" ${n.busy ? 'disabled' : ''}>${n.busy ? 'one moment...' : n.renaming ? 'rename ›' : 'open the kitchen ›'}</button>
       </div>
       ${!n.renaming && signInOffered() ? `<div class="name-google"><span>chef already?</span>${signInControl(170)}</div>` : ''}
@@ -2751,7 +2751,7 @@ function renderOver() {
           <div class="over-plate">${plate.map((u) => `<div class="over-food">${unitArt(u.defId, levelOf(u.copies) === 3)}</div>`).join('') || '<span class="dim">empty</span>'}</div>
           ${canGoOn
             ? `<div class="over-buttons">
-                <button class="newrun name-alt" data-action="new-run" ${tip('<p>Start a fresh run from day 1.</p>')}>new run</button>
+                <button class="alt-btn" data-action="new-run" ${tip('<p>Start a fresh run from day 1.</p>')}>new run</button>
                 <button class="big-btn" data-action="endless" ${tip(`<p>Endless: keep this plate cooking. Every win adds a course; it ends when your ${run.lives} lives run out. It still counts as one run won.</p>`)}>keep cooking ›</button>
               </div>`
             : '<button class="big-btn" data-action="new-run">start a new run ›</button>'}
