@@ -121,6 +121,9 @@ describe('battle', () => {
       const rice = unit('rice');
       run.plate = [rice, unit('chili'), null, null, null, null];
       expect(flavorsOf(rice)).toEqual([]);
+      endDay(run); // day 1: odd, it only soaks every other night
+      expect(flavorsOf(rice)).toEqual([]);
+      run.turn = 2;
       endDay(run);
       expect(flavorsOf(rice)).toEqual(['spicy']);
       const r = simulateBattle(plate({ 0: unit('rice', { extraFlavors: ['spicy', 'sour', 'salty', 'savory'], hp: 200 }) }), plate({ 0: wall() }), 1);

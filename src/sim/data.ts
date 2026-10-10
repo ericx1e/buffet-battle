@@ -138,7 +138,7 @@ export const UNITS: UnitDef[] = [
     cooked: { text: 'Your Chilled foods take no Burn or Rot either.', abilities: [], coldPackStatus: true },
     abilities: [{ trigger: 'startOfBattle', effect: 'chill', target: 'friendAheadOrSelf' }] },
   { id: 'rice', name: 'Rice', cookedName: 'Fried Rice', emoji: '🍚', tier: 2, flavor: 'savory', plain: true, attack: 2, hp: 6, values: [1, 2, 3],
-    text: "Plain: soaks up a neighbour's flavor each night, no limit. Each flavor is a power ({v}):",
+    text: "Plain: every other night (even days), soaks up a neighbour's flavor, no limit. Each flavor is a power ({v}):",
     cooked: { text: 'Its flavor effects are doubled.', abilities: [] },
     flavorAbilities: {
       spicy: { trigger: 'startOfBattle', effect: 'burn', target: 'enemyInLane' },
@@ -147,7 +147,7 @@ export const UNITS: UnitDef[] = [
       salty: { trigger: 'startOfBattle', effect: 'crust' },
       savory: { trigger: 'startOfBattle', effect: 'buff', perOwnFlavor: true },
     },
-    abilities: [{ trigger: 'endTurn', effect: 'soakFlavor', values: [1, 1, 1] }] },
+    abilities: [{ trigger: 'endTurn', effect: 'soakFlavor', every: 2, values: [1, 1, 1] }] },
 
   // Tier 3 (4 gold)
   { id: 'cherry', name: 'Cherries', cookedName: 'Cherry Pie', emoji: '🍒', tier: 3, flavor: 'sweet', attack: 4, hp: 8, values: [2, 3, 4],

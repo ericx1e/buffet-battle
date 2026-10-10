@@ -2026,6 +2026,7 @@ function foodNotes(defId: string, level: 1 | 2 | 3, u?: UnitInstance): string {
   }
   // Rice: the power each flavor gives it, lit for the flavors it has.
   const powers = d.plain ? plainPowers(d, level, u ? flavorsOf(u) : []) : '';
+  if (d.plain && u) notes.push(app.run.turn % 2 === 0 ? 'Soaks up a flavor tonight, from a friend next to it.' : 'Soaks up a flavor tomorrow night.');
   return powers + notes.map((n) => `<p class="dim">${n}</p>`).join('');
 }
 

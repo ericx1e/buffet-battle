@@ -680,6 +680,8 @@ function fireShop(run: RunState, unit: UnitInstance, slot: number | null, trigge
   const fireAbility = (ab: AbilityDef, index: number, pass: number) => {
     const echo = pass > 0;
     if (ab.trigger !== trigger) return;
+    // Every Nth day (Rice soaks on even days).
+    if (ab.every && run.turn % ab.every !== 0) return;
     // Day-gated growth: it has a set number of days in it (more at higher levels).
     const days = ab.days?.[level - 1];
     if (!echo && days !== undefined && (unit.gains?.[index] ?? 0) >= days) return;

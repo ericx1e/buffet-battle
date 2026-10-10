@@ -122,7 +122,7 @@ export interface AbilityDef {
   /** Buff scaling: +attack x amount and +HP x amount (default 1 and 1; use 0 to skip one). */
   attack?: number;
   hp?: number;
-  /** round / hit triggers: fire only every Nth round or Nth hit. */
+  /** round / hit triggers: fire only every Nth round or Nth hit. Kitchen: only on days divisible by N. */
   every?: number;
   /** hit trigger: only the first time this food is hit. */
   once?: boolean;
