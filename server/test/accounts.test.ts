@@ -74,6 +74,7 @@ describe('Sign in with Google', () => {
 /** A run of the player's that has just been won (stored as the server would after the tenth win). */
 async function wonRun(playerId: string) {
   const state = newRun(9);
+  state.plate = [{ uid: 1, defId: 'cherry', copies: 1, attack: 4, hp: 8 }, { uid: 2, defId: 'cherry', copies: 1, attack: 4, hp: 8 }, { uid: 3, defId: 'kebab', copies: 3, attack: 9, hp: 20 }, null, null, null];
   state.courses = 9;
   finishBattle(state, 'win');
   const now = Date.now();
@@ -102,6 +103,13 @@ describe('endless and the win counter', () => {
     // The run ends with 13 courses: still one trophy, and the best endless is 13.
     await env.DB.prepare("UPDATE runs SET status = 'won', wins = 13 WHERE id = 'won-run'").run();
     expect((await call('GET', '/players/me', { token: p.token })).body).toMatchObject({ trophies: 1, bestEndless: 13 });
+  });
+
+  it('lists the foods on winning plates, once a run each', async () => {
+    const p = await newPlayer();
+    expect((await call('GET', '/players/me/foods', { token: p.token })).body).toEqual({ foods: {} });
+    await wonRun(p.playerId);
+    expect((await call('GET', '/players/me/foods', { token: p.token })).body).toEqual({ foods: { cherry: 1, kebab: 1 } });
   });
 
   it('only for your own won run, and not once another has started', async () => {

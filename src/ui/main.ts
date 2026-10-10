@@ -5,7 +5,7 @@ import { NAME_FIRST, NAME_SECOND, nameProblem, randomName, tidyName } from '../n
 import * as api from './api';
 import type { ServerRun } from './api';
 import { type BattleFrame, type BattleResult, type Mark, type UnitView, flavorTier, simulateBattle } from '../sim/battle';
-import { RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, echoable, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
+import { MARKET_UNITS, MYTHIC_UNITS, RARITY_BY_TIER, UNITS, abilitiesOf, daysOf, echoable, flavorTally, flavorsOf, isUnit, itemDef, itemRarity, linkedSlots, rarityOf, unitDef } from '../sim/data';
 import {
   type ActionResult,
   type Growth,
@@ -111,6 +111,8 @@ interface App {
   naming?: Naming;
   /** The chef card is open: the win counter and Google sign-in (`me` once the server has answered). */
   chef?: { me?: api.Me; error?: string; busy?: boolean };
+  /** The page of foods won with is open (`foods` once loaded). */
+  wonWith?: { foods?: Record<string, number>; error?: string };
   /** Watching a battle from the dev site: nothing is saved and the run isn't touched. */
   spectate?: boolean;
 }
@@ -319,6 +321,72 @@ function openNaming(renaming: boolean) {
   render();
 }
 
+// ---------- foods won with ----------
+// Every food, lit if it was on a plate that won a run (with how many), shadowed if not yet. Online the server has the
+// record (every won run's plate); offline this device keeps its own.
+
+const WON_KEY = 'buffetbattle.wonWith';
+
+function localWonWith(): Record<string, number> {
+  try {
+    return JSON.parse(localStorage.getItem(WON_KEY) ?? '{}') as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+function recordWonWith(plate: Plate) {
+  const foods = localWonWith();
+  for (const id of new Set(plate.flatMap((u) => (u && !unitDef(u.defId).token ? [u.defId] : [])))) foods[id] = (foods[id] ?? 0) + 1;
+  try {
+    localStorage.setItem(WON_KEY, JSON.stringify(foods));
+  } catch {
+    // Not kept: the server has it online.
+  }
+}
+
+async function openWonWith() {
+  app.chef = undefined;
+  if (!app.server) {
+    app.wonWith = { foods: localWonWith() };
+    sfx('page');
+    return render();
+  }
+  app.wonWith = {};
+  sfx('page');
+  render();
+  try {
+    const foods = await api.wonFoods();
+    if (app.wonWith) app.wonWith.foods = foods;
+  } catch (e) {
+    if (app.wonWith) app.wonWith.error = e instanceof api.Offline ? "Can't reach the kitchen server." : (e as Error).message;
+  }
+  render();
+}
+
+function wonWithPage(w: NonNullable<App['wonWith']>): string {
+  const foods = w.foods;
+  const all = [...MARKET_UNITS, ...MYTHIC_UNITS].sort((a, b) => a.tier - b.tier || (rarityOf(a) === 'mythic' ? 1 : 0) - (rarityOf(b) === 'mythic' ? 1 : 0) || a.name.localeCompare(b.name));
+  const won = foods ? all.filter((d) => foods[d.id]).length : 0;
+  const grid = foods
+    ? all
+        .map((d) => {
+          const n = foods[d.id] ?? 0;
+          return `<div class="won-food ${n ? 'won' : ''}" ${tip(n ? `<p><b>${d.name}</b>: on ${n} winning plate${n > 1 ? 's' : ''}.</p>` : `<p><b>${d.name}</b>: not won with yet.</p>`)}>
+            ${unitArt(d.id, false)}${n ? `<b class="won-count">${n}</b>` : ''}</div>`;
+        })
+        .join('')
+    : `<p class="over-sub">${w.error ? esc(w.error) : 'one moment...'}</p>`;
+  return `
+    <div class="modal" data-k="won-dim" data-in="fade" data-action="won-with-close"></div>
+    <div class="modal-card won-card" data-k="won-card" data-in="pop">
+      <div class="pg-title">Foods won with</div>
+      <div class="won-sub">${foods ? `${won} of ${all.length} foods have been on a plate that won a run${app.server ? '' : ' on this device'}.` : ''}</div>
+      <div class="won-grid">${grid}</div>
+      <div class="row"><button class="chip" data-action="won-with-close">done</button></div>
+    </div>`;
+}
+
 /** The chef card: fetches the win counter from the server. */
 async function openChef() {
   app.chef = {};
@@ -355,6 +423,7 @@ function chefCard(c: NonNullable<App['chef']>): string {
         ${google}` : '<p class="over-sub">one moment...</p>'}
       <div class="name-buttons">
         <button type="button" class="newrun name-alt" data-action="chef-rename">rename</button>
+        <button type="button" class="newrun name-alt" data-action="won-with">foods won with</button>
         <button type="button" class="big-btn" data-action="chef-close">done</button>
       </div>
     </div>`;
@@ -821,6 +890,12 @@ function onAction(action: string, el: HTMLElement) {
     case 'chef':
       if (!app.battle) void openChef();
       return;
+    case 'won-with':
+      if (!app.battle) void openWonWith();
+      return;
+    case 'won-with-close':
+      app.wonWith = undefined;
+      return render();
     case 'chef-rename':
       app.chef = undefined;
       return openNaming(true);
@@ -991,6 +1066,8 @@ function endBattle() {
   if (!battle) return;
   if (app.spectate) return void (location.href = 'admin.html#battles');
   finishBattle(app.run, battle.result.outcome);
+  // A run just won: its plate goes into this device's record of foods won with (online, the server keeps the record).
+  if (battle.result.outcome === 'win' && isWon(app.run) && !app.run.endless) recordWonWith(app.run.plate);
   // Online, the server's run is the real one: they should match, but if not the kitchen carries on from the server's.
   if (battle.next && canonical({ ...app.run, growth: [] }) !== canonical({ ...battle.next.state, growth: [] })) {
     console.warn('The run after this battle differs from the server; using the server run', battle.next);
@@ -1494,9 +1571,9 @@ function freezerMagnets(): string {
   }).join('');
   return `<div class="magnets" style="${box(LAYOUT.magnets as Rect)}">
       <div class="mag-stars" ${tipBox(`Lives: ${run.lives} of ${START_LIVES}`, '<p>Losing a battle costs a life (from day 3). Lose them all and the kitchen closes.</p>')}>${lives}</div>
-      <div class="mag-course" ${run.endless
-        ? tipBox(`Endless: ${run.courses} courses`, '<p>You won the run and kept cooking: every win adds a course, until your lives run out.</p>')
-        : tipBox(`Courses won: ${run.courses} of ${COURSES_TO_WIN}`, `<p>Win a battle to serve a course. Serve ${COURSES_TO_WIN} to win the run.</p>`)} data-vk="courses" data-va="levelup">${pix('trophy')} ${run.endless ? `${run.courses}<small>∞</small>` : `${run.courses}/${COURSES_TO_WIN}`}</div>
+      <div class="mag-course" data-action="won-with" ${run.endless
+        ? tipBox(`Endless: ${run.courses} courses`, '<p>You won the run and kept cooking: every win adds a course, until your lives run out.</p><p class="dim">Click for every food you have won with.</p>')
+        : tipBox(`Courses won: ${run.courses} of ${COURSES_TO_WIN}`, `<p>Win a battle to serve a course. Serve ${COURSES_TO_WIN} to win the run.</p><p class="dim">Click for every food you have won with.</p>`)} data-vk="courses" data-va="levelup">${pix('trophy')} ${run.endless ? `${run.courses}<small>∞</small>` : `${run.courses}/${COURSES_TO_WIN}`}</div>
     </div>`;
 }
 
@@ -1993,6 +2070,7 @@ function renderKitchen() {
         ${app.message ? `<div class="toast" style="${box(LAYOUT.toast)};animation-delay:-${toastAge}ms" data-k="toast:${toast.id}" data-in="rise"><span>${app.message}</span></div>` : ''}
         ${app.seasoning ? seasoningModal() : ''}
         ${settingsOpen ? settingsModal() : ''}
+        ${app.wonWith ? wonWithPage(app.wonWith) : ''}
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
         ${app.chef ? chefCard(app.chef) : ''}

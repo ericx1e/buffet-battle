@@ -106,6 +106,8 @@ export interface Me {
   bestEndless: number | null;
 }
 export const me = () => request<Me>('GET', '/players/me');
+/** The foods on the chef's winning plates, with how many won runs each was in. */
+export const wonFoods = async () => (await request<{ foods: Record<string, number> }>('GET', '/players/me/foods')).foods;
 
 // ---------- Sign in with Google ----------
 // Google's own button gives the game an ID token; the server checks it and links the chef to the account.

@@ -4,6 +4,7 @@
 //                              keep yours; the chef on this device was linked to the account)
 //   POST  /auth/signout        forget this device's token (a chef linked to Google)
 //   GET   /players/me          { playerId, name, google, trophies, bestEndless }
+//   GET   /players/me/foods    the foods on the chef's winning plates: { foods: { [defId]: runs won with it } }
 //   PATCH /players/me          rename: { name }
 //   POST  /runs                new run (an active run is abandoned first) -> { run }
 //   GET   /runs/current        the active run, this morning -> { run } (null when there is none)
@@ -64,6 +65,18 @@ async function route(req: Request, env: Env): Promise<Response> {
       .bind(player.id)
       .first<{ trophies: number; best: number | null }>();
     return json({ playerId: player.id, name: player.name, google: player.google, trophies: stats?.trophies ?? 0, bestEndless: stats?.best ?? null });
+  }
+  if (at('GET', '/players/me/foods')) {
+    // Each won run's plate (an endless one's as it stands now); only the plate is read out of the stored state.
+    const { results } = await env.DB.prepare("SELECT json_extract(state, '$.plate') AS plate FROM runs WHERE player_id = ? AND (status = 'won' OR endless = 1)")
+      .bind(player.id)
+      .all<{ plate: string | null }>();
+    const foods: Record<string, number> = {};
+    for (const { plate } of results) {
+      const ids = new Set((JSON.parse(plate ?? '[]') as ({ defId: string } | null)[]).flatMap((u) => (u ? [u.defId] : [])));
+      for (const id of ids) foods[id] = (foods[id] ?? 0) + 1;
+    }
+    return json({ foods });
   }
   if (at('POST', '/auth/signout')) {
     if (!player.google) throw new HttpError(409, "This chef isn't linked to Google: signing out would lose it.");

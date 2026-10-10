@@ -1029,5 +1029,16 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .over-buttons { margin-top: auto; display: flex; gap: 8px; align-items: center; justify-content: center; }
 .over-buttons .big-btn { margin-top: 0; }
 .mag-course small { font-size: 10px; margin-left: 1px; }
+.mag-course { cursor: pointer; pointer-events: auto; }
+/* Foods won with: every food in a grid, lit if it has been on a winning plate, a shadow if not. */
+.won-card { width: 470px; gap: 4px; }
+.won-card .pg-title { font-size: 14px; line-height: 14px; }
+.won-sub { font: 400 10px/10px var(--pixel); color: #8a7568; }
+.won-grid { display: grid; grid-template-columns: repeat(14, 31px); gap: 2px; min-height: 60px; }
+.won-food { position: relative; width: 31px; height: 31px; display: grid; place-items: center; background: #f1e4c2; border: 1px solid #e0cfa6; }
+.won-food .sprite, .won-food img { width: 28px; height: 28px; image-rendering: pixelated; }
+.won-food:not(.won) .sprite, .won-food:not(.won) img { filter: brightness(0); opacity: 0.18; }
+.won-food.won { background: #fff6dc; border-color: #d9a441; }
+.won-count { position: absolute; right: -1px; bottom: -1px; min-width: 9px; padding: 0 1px; font: 400 10px/9px var(--pixel); color: #fff; background: #b2401b; text-align: center; }
 .chef-tag { text-transform: none !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .name-dim { z-index: 59; }

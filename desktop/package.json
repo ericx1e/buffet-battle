@@ -21,7 +21,10 @@
       "output": "release"
     },
     "win": {
-      "target": "dir"
+      "target": [
+        "portable",
+        "dir"
+      ]
     },
     "mac": {
       "target": "dir",
@@ -29,6 +32,10 @@
     },
     "linux": {
       "target": "dir"
+    },
+    "icon": "game/icons/icon-512.png",
+    "portable": {
+      "artifactName": "BuffetBattle-${version}.exe"
     }
   },
   "devDependencies": {
