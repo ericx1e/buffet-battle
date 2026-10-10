@@ -60,8 +60,10 @@ const ANIMS: Record<string, Anim> = {
   shake: { kf: [{ transform: 'translateX(0)' }, { transform: 'translateX(-2px)' }, { transform: 'translateX(2px)' }, { transform: 'translateX(-1px)' }, { transform: 'translateX(0)' }], ms: 280, steps: 4 },
   hop: { kf: [{ transform: 'translateY(0)' }, { transform: 'translateY(-3px)', offset: 0.3 }, { transform: 'translateY(0)', offset: 0.6 }, { transform: 'translateY(-1px)', offset: 0.8 }, { transform: 'translateY(0)' }], ms: 360, steps: 6 },
   levelup: { kf: [{ transform: 'scale(1)', filter: 'brightness(1)' }, { transform: 'scale(1.35)', filter: 'brightness(2.2)', offset: 0.35 }, { transform: 'scale(0.95)', filter: 'brightness(1.3)', offset: 0.7 }, { transform: 'scale(1)', filter: 'brightness(1)' }], ms: 520, steps: 8 },
-  flipL: { kf: [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], ms: 200, steps: 5, origin: '100% 50%' },
-  flipR: { kf: [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], ms: 200, steps: 5, origin: '0% 50%' },
+  // The cookbook turning a page: a leaf lifts off the right page, swings over the spine (darkening as it stands up)
+  // and lands on the left, where the new left page shows once it has; the new right page was under it all along.
+  pageTurn: { kf: [{ transform: 'scaleX(1)', filter: 'brightness(1)', opacity: 1 }, { transform: 'scaleX(0.06)', filter: 'brightness(0.82)', opacity: 1, offset: 0.5 }, { transform: 'scaleX(-1)', filter: 'brightness(1)', opacity: 1, offset: 0.96 }, { transform: 'scaleX(-1)', opacity: 0 }], ms: 360, steps: 10, origin: '0% 50%' },
+  pageLand: { kf: [{ opacity: 0 }, { opacity: 0, offset: 0.85 }, { opacity: 1 }], ms: 360, steps: 6 },
   caption: { kf: [{ transform: 'translateY(5px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], ms: 160, steps: 4 },
   lose: { kf: [{ transform: 'scale(1)', filter: 'brightness(1)' }, { transform: 'scale(1.6)', filter: 'brightness(2.5)', offset: 0.3 }, { transform: 'translateX(-2px) scale(1)', offset: 0.5 }, { transform: 'translateX(2px)', offset: 0.7 }, { transform: 'translateX(0)', filter: 'brightness(1)' }], ms: 500, steps: 8 },
 };

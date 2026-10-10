@@ -2266,10 +2266,12 @@ function cookbook(): string {
       unitPages(d.id, 1, flavorsOf({ defId: d.id }), d.attack, d.hp, undefined, 'free pick');
     }
   }
-  // A new selection turns the pages.
+  // A new selection turns the page: a leaf (keyed by what's on the pages, so it enters afresh) swings from the right
+  // page to the left; the new right page is under it, the new left page shows as it lands.
   const sig = hash(left + right);
-  return `<div class="page" style="${box(LAYOUT.pageLeft)}" data-vk="pgL" data-v="${sig}" data-va="flipL">${left}</div>
-    <div class="page" style="${box(LAYOUT.pageRight)}" data-vk="pgR" data-v="${sig}" data-va="flipR">${right}</div>`;
+  return `<div class="page" style="${box(LAYOUT.pageLeft)}" data-vk="pgL" data-v="${sig}" data-va="pageLand">${left}</div>
+    <div class="page" style="${box(LAYOUT.pageRight)}">${right}</div>
+    <div class="page-leaf" style="${box(LAYOUT.pageRight)}" data-k="leaf:${sig}" data-in="pageTurn" data-out="none"></div>`;
 }
 
 /**
