@@ -124,9 +124,9 @@ rect(316, 7, 8, 3, P.steelDark); // its clip, on the rail like the order tickets
 // ---------- upper cabinet = market (80..480, 24..112) ----------
 /** The faces of an open cubby: its back wall, the lit left side, the shadowed right side, the ceiling and the floor. */
 const CUBBY_TONES = {
-  food: { back: '#4e2b17', lit: '#63391f', dark: '#371d0f', ceiling: '#2e180c', floor: '#6e4226' },
-  teal: { back: '#2f5553', lit: '#3d6a67', dark: '#223f3d', ceiling: '#1c3533', floor: '#457672' },
-  special: { back: '#4a2346', lit: '#5d2e58', dark: '#351731', ceiling: '#2b1228', floor: '#673d61' },
+  food: { side: '#462614', back: '#4e2b17', lit: '#63391f', dark: '#371d0f', ceiling: '#2e180c', floor: '#6e4226' },
+  teal: { side: '#2a4d4b', back: '#2f5553', lit: '#3d6a67', dark: '#223f3d', ceiling: '#1c3533', floor: '#457672' },
+  special: { side: '#421f3e', back: '#4a2346', lit: '#5d2e58', dark: '#351731', ceiling: '#2b1228', floor: '#673d61' },
 };
 panel(80, 26, 400, 86, P.woodMid, P.woodHi, P.wood);
 panel(76, 24, 408, 7, P.woodLight, P.woodHi, P.wood); // crown molding
@@ -144,7 +144,8 @@ for (let i = 0; i < 8; i++) {
     for (let x = x0; x < x0 + w; x++) {
       const [l, r, t, bt] = [x - x0, x0 + w - 1 - x, y - y0, y0 + h - 1 - y];
       const side = Math.min(l, r);
-      px(x, y, t < d && t <= side ? tone.ceiling : bt < d && bt <= side ? tone.floor : tone.back);
+      // Between them, the side walls a shade darker than the back wall, so the box's corners show.
+      px(x, y, t < d && t <= side ? tone.ceiling : bt < d && bt <= side ? tone.floor : side < d ? tone.side : tone.back);
     }
   }
   // Where the ceiling meets the back wall, a line of shadow; where the floor meets it, a darker seam.
