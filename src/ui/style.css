@@ -858,7 +858,9 @@ body:has(.chalk-hand) .chalkboard { touch-action: none; }
 /* Flavor tags: pixel icon + name */
 .fl-tag { display: inline-flex; align-items: center; gap: 1px; margin-right: 3px; white-space: nowrap; text-transform: capitalize; }
 .fl-tag .pix, .chip .pix { margin-right: 1px; }
-.cap-food { display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.cap-food { white-space: nowrap; }
+/* The icon sits on the text's line (a flex box here would line its bottom up with the baseline and lift the name). */
+.cap-food .pix { vertical-align: -2px; margin-right: 1px; }
 /* Stat badge + label pairs never split across lines */
 .stat-pair { display: inline-flex; align-items: center; gap: 1px; margin-right: 3px; white-space: nowrap; }
 .missing { display: grid; place-items: center; }

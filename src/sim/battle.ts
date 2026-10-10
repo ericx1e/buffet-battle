@@ -647,13 +647,17 @@ class Battle {
   /**
    * Burn and Rot deal their damage (ignoring Crust; not a hit). Neither has a cap: Burn then halves (rounded down), so
    * it settles near twice what is added each turn, or with Spicy x6 on the other side fades by only 1. Rot never fades,
-   * so it only builds from foods that keep applying it.
+   * so it only builds from foods that keep applying it. A cooked Pepperoni on the other side makes Burn tick twice,
+   * fading after each tick.
    */
   private statusTick() {
     const lines: string[] = [];
     const ticks: string[] = [];
     for (const side of [0, 1] as Side[]) {
-      const sticks = this.bonus[(1 - side) as Side].burnSticks;
+      const enemy = (1 - side) as Side;
+      const sticks = this.bonus[enemy].burnSticks;
+      const twice = this.units(enemy).some((f) => f.level === 3 && !!unitDef(f.defId).cooked?.burnTwice);
+      const fade = (u: BattleUnit) => (u.burn = sticks ? u.burn - 1 : Math.floor(u.burn / 2));
       for (const u of this.units(side)) {
         const mult = this.fermented(u);
         const dmg = (u.burn + u.rot) * mult;
@@ -661,9 +665,18 @@ class Battle {
         u.hp -= dmg;
         if (u.burn > 0) this.mark(u, 'burn', u.burn);
         if (u.rot > 0) this.mark(u, 'rot', u.rot);
-        ticks.push(`${this.name(u)} ${dmg}`);
-        lines.push(`${this.name(u)} ${u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots'} for ${dmg}${mult === 3 ? ' (tripled)' : mult === 2 ? ' (doubled)' : ''}`);
-        if (u.burn > 0) u.burn = sticks ? u.burn - 1 : Math.floor(u.burn / 2);
+        const what = u.burn > 0 && u.rot > 0 ? 'burns and rots' : u.burn > 0 ? 'burns' : 'rots';
+        const times = mult === 3 ? ' (tripled)' : mult === 2 ? ' (doubled)' : '';
+        if (u.burn > 0) fade(u);
+        // The second tick: the Burn that's left, after fading once.
+        const again = twice && u.burn > 0 ? u.burn * mult : 0;
+        if (again > 0) {
+          u.hp -= again;
+          this.mark(u, 'burn', u.burn);
+          fade(u);
+        }
+        ticks.push(`${this.name(u)} ${dmg}${again ? `+${again}` : ''}`);
+        lines.push(`${this.name(u)} ${what} for ${dmg}${times}${again ? `, then burns for ${again}` : ''}`);
       }
     }
     // Several foods ticking at once: one compact line ("Burn & Rot: Popcorn 4, Kimchi 2").

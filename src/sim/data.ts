@@ -190,10 +190,10 @@ export const UNITS: UnitDef[] = [
     text: 'When Crust blocks a hit on it or a neighbour, the attacker takes {v} damage.',
     cooked: { text: 'Start of battle: adjacent friends gain 3 Crust.', abilities: [{ trigger: 'startOfBattle', effect: 'crust', target: 'adjacentFriends', values: [3, 3, 3] }] },
     abilities: [{ trigger: 'crustBlock', effect: 'damage', target: 'attacker', max: 6 }] },
-  { id: 'pepperoni', name: 'Pepperoni', cookedName: 'Pepperoni Roll', emoji: '🍕', tier: 3, flavor: 'spicy', attack: 5, hp: 9, values: [2, 3, 4],
-    text: 'Friend summoned: the enemy across Burns {v}.',
-    cooked: { text: 'Friend summoned: it gains +2/+2.', abilities: [{ trigger: 'friendSummoned', effect: 'buff', target: 'summoned', values: [2, 2, 2] }] },
-    abilities: [{ trigger: 'friendSummoned', effect: 'burn', target: 'enemyInLane' }] },
+  { id: 'pepperoni', name: 'Pepperoni', cookedName: 'Pepperoni Roll', emoji: '🍕', tier: 3, flavor: 'spicy', attack: 5, hp: 9, values: [3, 4, 5],
+    text: 'Friend eaten: the enemy across Burns {v}.',
+    cooked: { text: 'Enemy Burn ticks twice a turn (halving after each tick).', abilities: [], burnTwice: true },
+    abilities: [{ trigger: 'anyFriendEaten', effect: 'burn', target: 'enemyInLane' }] },
 
   // Tier 4 (4 gold)
   { id: 'cremeBrulee', name: 'Crème Brûlée', cookedName: 'Torched Brûlée', emoji: '🍮', tier: 4, flavor: 'sweet', attack: 3, hp: 7, values: [1, 2, 3],
@@ -458,7 +458,7 @@ export const PAIRS: { what: string; makes: string[]; uses: string[] }[] = [
   { what: 'interest', makes: ['mandarin'], uses: ['fortuneCookie', 'caviar'] },
   { what: 'free refills', makes: ['dumplings'], uses: ['soySauce'] },
   { what: 'selling', makes: ['coinChocolate', 'sugar'], uses: ['sourdough'] },
-  { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'gravy', 'pepperoni'] },
+  { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'gravy'] },
   { what: 'HP gains', makes: ['apple', 'mochi', 'peanutButter', 'honey', 'breadDough'], uses: ['hotCocoa', 'cake'] },
   { what: 'Crust', makes: ['pretzel', 'anchovy', 'ramen'], uses: ['porkCrackling', 'croutons', 'baguette', 'cremeBrulee'] },
   { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni'], uses: ['ghostPepper'] },

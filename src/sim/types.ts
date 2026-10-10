@@ -213,6 +213,8 @@ export interface UnitDef {
     halfThrow?: boolean;
     /** Its echo reaches every adjacent friend, not only the one ahead (Bento Box). */
     echoAll?: boolean;
+    /** Enemy Burn ticks twice a turn, halving after each tick (Pepperoni). */
+    burnTwice?: boolean;
   };
   /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
   rarity?: Rarity;

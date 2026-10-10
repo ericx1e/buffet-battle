@@ -644,13 +644,30 @@ const foods = {
   },
   cabbage(s) {
     s.shadow(17, 29, 12, 2);
-    // A round head wrapped in loose outer leaves with pale veins.
-    const leaf = R('#7cbf4a'), inner = R('#b8df7a');
-    s.ball(16, 19, 12, 9, leaf, { tone: (nx, ny) => (Math.abs(Math.round(nx * 6)) % 3 === 2 && ny > -0.3 ? -1 : 0) });
-    s.ball(16, 16, 8, 6, inner, { tone: (nx) => (Math.abs(Math.round(nx * 5)) % 3 === 1 ? 1 : 0) });
-    s.line(16, 12, 16, 21, inner[0]);
-    s.line(9, 19, 6, 25, leaf[0]);
-    s.line(23, 19, 26, 25, leaf[0]);
+    // A tight pale head, cupped by big darker outer leaves that open out at the bottom, each with a pale midrib
+    // fanning out into veins, and a wavy lighter edge where it curls away from the head.
+    const outer = R('#4f9a38'), mid = R('#7cbf4a'), head = R('#b2d878');
+    // Outer leaves: left, right and front, spread wider than the head.
+    s.ball(9, 21, 7, 6, outer);
+    s.ball(23, 21, 7, 6, outer);
+    s.ball(16, 24, 9, 5, outer);
+    // The head, and a second leaf wrapping its lower half.
+    s.ball(16, 14, 8, 7.5, head);
+    s.ball(16, 19, 9, 5, mid, { clip: (x, y) => y >= 17 });
+    // The wrapping leaf's curled edge, wavy across the head.
+    for (let x = 8; x <= 24; x++) {
+      const y = 17 - Math.round(Math.sin(x * 1.1) * 0.8);
+      s.px(x, y, mid[0]);
+      s.px(x, y + 1, mid[1]);
+    }
+    // Seams where the head's leaves overlap.
+    s.line(15, 8, 13, 15, head[3]);
+    s.line(19, 8, 20, 15, head[3]);
+    // Midribs and veins on the outer leaves.
+    s.line(16, 27, 16, 21, '#d8efb0');
+    s.line(15, 27, 5, 20, '#a9d77c');
+    s.line(17, 27, 27, 20, '#a9d77c');
+    for (const [x, y] of [[8, 19], [11, 25], [24, 19], [21, 25], [13, 22], [19, 22]]) s.px(x, y, '#a9d77c');
   },
   iceCream(s) {
     s.shadow(16, 30, 5, 1);

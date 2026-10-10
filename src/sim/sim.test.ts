@@ -51,6 +51,17 @@ describe('battle', () => {
     }
   });
 
+  it('Pepperoni Burns the enemy across when a friend is eaten; cooked, enemy Burn ticks twice', () => {
+    const tank = () => plate({ 0: unit('cheese', { attack: 30, hp: 200 }), 1: unit('cheese', { attack: 30, hp: 200 }), 2: unit('cheese', { attack: 30, hp: 200 }) });
+    const eaten = simulateBattle(plate({ 0: unit('lemon', { hp: 1 }), 4: unit('pepperoni', { hp: 200 }) }), tank(), 1);
+    expect(frameText(eaten, 'Pepperoni: ')).toBe(true);
+
+    const twice = simulateBattle(plate({ 0: unit('chili', { hp: 200 }), 3: unit('pepperoni', { copies: 6, hp: 200 }) }), plate({ 0: unit('cheese', { attack: 0, hp: 200 }) }), 1);
+    expect(frameText(twice, ', then burns for ')).toBe(true);
+    const once = simulateBattle(plate({ 0: unit('chili', { hp: 200 }), 3: unit('pepperoni', { hp: 200 }) }), plate({ 0: unit('cheese', { attack: 0, hp: 200 }) }), 1);
+    expect(frameText(once, 'then burns')).toBe(false);
+  });
+
   it('front foods trade hits in their lane until one is eaten', () => {
     const r = simulateBattle(plate({ 0: unit('cheese', { attack: 5, hp: 10 }) }), plate({ 0: unit('lemon', { attack: 1, hp: 4 }) }), 1);
     expect(r.outcome).toBe('win');

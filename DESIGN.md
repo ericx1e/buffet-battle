@@ -167,7 +167,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Interest | Mandarin (raises the cap) | Fortune Cookie (+1 HP per gold of interest), Caviar (a random friend +1/+1 per gold of interest) |
 | Free refills | Dumplings (first 1/2/3 refills free) | Soy Sauce (a random friend +1/+1 per refill) |
 | Selling | Coin Chocolate (sell value grows), Sugar Cube | Sourdough Starter (+HP whenever you sell a friend) |
-| Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack), Pepperoni (summon: Burn) |
+| Summons | Egg, Popcorn, Mushroom, Watermelon | Steak (summons +2/+2), Gravy (summons +3 attack) |
 | HP gains | Apple, Mochi, Peanut Butter, Honey, Bread Dough | Hot Cocoa (+attack: once a day in the kitchen, every time in battle), Birthday Cake (+1 to every gain) |
 | Crust | Pretzel, Anchovy, Ramen | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni | Ghost Pepper (its attacks Burn, then double the Burn) |
@@ -278,7 +278,7 @@ A few foods turn one flavor's mechanic into another's, so plates are built aroun
 | --- | --- | --- |
 | Hot Cocoa (Sweet) | HP → attack | A neighbour that gains HP gains attack too: put it beside the food your Sweet bonus, Apple and buffs keep feeding |
 | Pork Crackling (Salty) | Crust → damage | Crust blocking a hit on it or a neighbour bites the attacker: pairs with Salty's Crust and Wagyu |
-| Pepperoni (Spicy) | Summons → Burn | Every summon Burns the enemy across: pairs with Egg, Popcorn, Mushroom, Savory bonuses |
+| Pepperoni (Spicy) | Friends eaten → Burn | Every friend eaten Burns the enemy across, so it works on any plate (more with fragile foods and summons); cooked, enemy Burn ticks twice a turn |
 | Peppercorns (Spicy) | Projectiles → Burn | Three hits a throw, and Spicy bonuses Burn with each |
 | Honey (Sweet) | Buffs Spicy double | Spicy neighbours get twice its buff |
 | Black Garlic, Wagyu, Saffron, Golden Truffle | See Mythics | |
@@ -547,7 +547,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 3 | Maple Syrup | Sweet | 3/6 | 4 | End of day: 2 random friends gain +2/3/4 HP. | **Maple Taffy**: End of day: one more random friend gains +4 HP. |
 | 3 | Peppercorns | Spicy | 2/6 | 4 | Start of battle, 3/4/5 peppercorns hit random enemies for half its attack. *(spray attack)* | **Pepper Steak Rub**: Start of battle: every enemy Burns 2. |
 | 3 | Pork Crackling | Salty | 4/11 | 4 | When Crust blocks a hit on it or a neighbour, the attacker takes 2/3/4 damage. | **Chicharrón**: Start of battle: adjacent friends gain 3 Crust. |
-| 3 | Pepperoni | Spicy | 5/9 | 4 | Friend summoned: the enemy across Burns 2/3/4. | **Pepperoni Roll**: Friend summoned: it gains +2/+2. |
+| 3 | Pepperoni | Spicy | 5/9 | 4 | Friend eaten: the enemy across Burns 3/4/5. | **Pepperoni Roll**: Enemy Burn ticks twice a turn (halving after each tick). |
 | 4 | Crème Brûlée | Sweet | 3/7 | 4 | Crust broken on your plate: that food gains +1/2/3 attack. | **Torched Brûlée**: Start of battle: your front row gains 3 Crust. |
 | 4 | Pomegranate | Sour | 4/8 | 4 | Every turn, from any row, instead of attacking: its seeds burst at 2/3/4 random enemies for half its attack. *(scatter attack)* | **Grenadine**: Start of battle: a random back-row enemy Rots 3. |
 | 4 | Mushroom | Savory | 4/11 | 4 | Every 2 turns: summon a 2/2, 3/3 or 4/4 Spore. | **Risotto**: Eaten: summon two 4/4 Spores. |
@@ -639,7 +639,7 @@ Items are cheap (1 to 5 gold). One-use stat items are a small top-up rather than
 - **Modifiers show themselves.** Birthday Cake's extra HP and Wagyu's doubled HP and Crust aren't added silently: the gain lands first, then the Cake (or Wagyu) sends its extra as a buff of its own, in its own frame (every extra from the same food together). In the kitchen the Cake's extra applies to every HP gain while you plan (abilities, items like Bone Broth, the +1/+1 from merging) and shows as its own gift from the Cake.
 - **Name plaques:** each side's name with its run so far: wins (trophy), lives (heart) and the day. Opponents are matched to your run: a past run's ghost from the same day with the nearest wins and lives, or a bot given a record next to yours.
 - **Repeats get their own moment.** A second attack (Coffee Bean, attack-twice) comes after the lane's first swings, as its own frame ("Kebab attacks again"), picking its targets again. An echoed ability (Bento Box) goes off again in its own frame after the original, captioned "Echo!".
-- **Reactions get their own moment.** A friend summoned (Steak, Gravy, Pepperoni), Crust blocking a hit (Pork Crackling) and a neighbour gaining HP (Hot Cocoa) don't go off inside the frame that caused them: they wait for it, then fire one food at a time, each in its own frame, marked on the food that reacts.
+- **Reactions get their own moment.** A friend summoned (Steak, Gravy), a friend eaten (Pepperoni), Crust blocking a hit (Pork Crackling) and a neighbour gaining HP (Hot Cocoa) don't go off inside the frame that caused them: they wait for it, then fire one food at a time, each in its own frame, marked on the food that reacts.
 - **Battle layers:** food sprites at the bottom (nearer lanes over farther ones), then each food's stat row above every sprite (attack, HP, and a small column of chips for Crust, Burn, Rot and Chill, so statuses never cover a food's face and rows in a lane don't collide), then every pop-up (damage, heals, gains, status ticks) above everything.
 - **Buffs:** a gold four-pointed star (trailing two smaller ones) flies from the food that gave it and bursts on the friend, which hops and glows gold while "+1 ⚔ +1 ♥" rises over it, exactly what it gained. Heals fly pink, Crust tan. Attack losses rise in purple ("-1 ⚔"). Kitchen growth uses the same star.
 - **Captions:** one short line per moment. Three or more targets are counted ("Durian: 3 enemies Rot 1"), several foods taking Burn and Rot share one line ("Burn & Rot: Popcorn 4, Kimchi 2"), repeats collapse ("+1/+1 ×3"), and each plate's end-of-turn effects get their own moment. Anything still longer than two lines ends in an ellipsis.
