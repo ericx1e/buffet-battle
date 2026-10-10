@@ -1,0 +1,27 @@
+{
+ "public": {
+  "keys": [
+   {
+    "kty": "RSA",
+    "n": "kLqJbGMsOWr9ogu9gp7YssmXCBSQK5Odq9tLgi1KA2M3rZwKUeQssNySCWsX7oT_mW4iOtYzutvKReh5_2Xdz8aQNpyHjQADAswXe_h7naH0TUCkroSgW-b-TypTBo_6iodhEVt8x6moUv88icB7bVwKPilturapMKqzozwTHQM_mJlSNNTfKz8zLroRd89Ip0dw1FtJRlO1DvY38fJ34CMKK6TlIE2fmrpGsHie6jpaa3qhk4VT0OAH1yMGHVDIVz6Nja1_jgP5S4yL3x0zcR0JKu2HvYHp9AbaB8OPYD4NZQkHifmiA_POi8-s7_thLC5jquEKERh917m40uapCw",
+    "e": "AQAB",
+    "kid": "test-key",
+    "alg": "RS256",
+    "use": "sig"
+   }
+  ]
+ },
+ "private": {
+  "kty": "RSA",
+  "n": "kLqJbGMsOWr9ogu9gp7YssmXCBSQK5Odq9tLgi1KA2M3rZwKUeQssNySCWsX7oT_mW4iOtYzutvKReh5_2Xdz8aQNpyHjQADAswXe_h7naH0TUCkroSgW-b-TypTBo_6iodhEVt8x6moUv88icB7bVwKPilturapMKqzozwTHQM_mJlSNNTfKz8zLroRd89Ip0dw1FtJRlO1DvY38fJ34CMKK6TlIE2fmrpGsHie6jpaa3qhk4VT0OAH1yMGHVDIVz6Nja1_jgP5S4yL3x0zcR0JKu2HvYHp9AbaB8OPYD4NZQkHifmiA_POi8-s7_thLC5jquEKERh917m40uapCw",
+  "e": "AQAB",
+  "d": "IycLpeXYogGYpTlQyF8opxRLuMy1z7_E9i8HghDZ_0SkC2jxIL7ZFAQe_Gako2xuYKfdbIkGe4ZS9PPoXd4yJ_tEn98ZFWhBUvabZaMO81SY8AKZfUH9aRUMA9J15AwogGktbHfaMOzGU5Jm89ZqpD9MxZhubIFdStLLWwSGZ-86icx8yyVMxsNn2zqOZN5_zuYqscJJSrTqIUE2yIeANxxa9b4OqWgBaNipZ1vvLyaxpetVokGqKpEbOhqISBl0VaHz2I-kHzgwF8u5SDWidv-KUHR10lj0y9gUzeMpShiHnR1HTb2rHXoRlwkDctM62yv48EF5q5QcNlx9uRasEQ",
+  "p": "wwER85CYbs79DKqT7OTRPhFetpgOlQ5QWmxHP7anCyYkNsZ4jTxMTsaIEpSjs3JDEczaZ97X2QcbM-zhL6twPO_qG7cbKXNiVGZvCVnjT0d3BZb6aLncLRaRYq_U9SB781QKyvOSj5kJKY01L01oI6aGbtG5a7zBYK_lfZNbrAU",
+  "q": "vf-pfLB9SNQqf9PpQslFsZhaoTZlzs2bxRD0gmp505yvHsGAi1zvKWGPOGLk_lT4-b3Xlpq7XjjYhBg5gDNilH0iDP49N5kRAobwhqu2dHGqXgaKY1HDaFKvg2fi6GOwcq-uG3k2pmv9u7ejXEhfv-E3UDmUDB-PsfmIUjBCHc8",
+  "dp": "QMd7Oik_qhfS0kFcMKb2p6LHjurGdVey88biiFTZ-wcpopSd-XUdeFHVZC7CjtsXUrN1nmnV1H_a1o4LZHWULHoakChsuoFdGeKJYlbc_zojXNUBzIZpkQTdOSZmHSQ0aOnzR-ZQOqnA9G-3SkZxoN4x7GB5M0QaDU-BcgzguC0",
+  "dq": "mv3ybwsySLT7LmfaQ2cZeXTFiflsN7W2up3IOJNPanbIzJghmo5ncyRoxyC1mVwL9v8M3YjADG7nAWsZjSFd66_glSTZH3-4Ro15rQJqxrbqueUwAzFx7Kp3DwUyL00TZZs2tqa9FCnIRNfbZa6MnWTF0KYHxZQBjrf2osVHSjU",
+  "qi": "BdQZZoyERYDFSUJ8YTx5_QIUF4xZEOGI_-iZUr15kRxqw01abpwf8dVkmBg7lX-ZP0SGLA7kppp7MFFSL6eUm0VNty893rTtgJL71j4Lmb0SuofV87T2SqCBDkzHo5796A0g03z76PgH9A6v5NSoMsNNMJv4qMwtJv9PlDke5b0",
+  "kid": "test-key",
+  "alg": "RS256"
+ }
+}

@@ -22,6 +22,8 @@ Buffet Battle is an asynchronous autobattler where everyday foods battle on a di
 
 Each day is Prep in the kitchen, then Serve, then an automatic battle on the plate. A run lasts until the player earns 10 courses (wins) or loses all 5 lives.
 
+**Endless.** A won run can keep cooking: the game-over card offers "keep cooking", and the run goes on with the same plate, every win adding a course, until the lives run out. It still counts as one run won; how many courses it reached is the chef's "best endless". Bots past day 15 are the day-15 bot with each food +1/+2 per extra day (playing every day out would cost the server too much CPU).
+
 | Term | Meaning | Value |
 | --- | --- | --- |
 | Life | Lose one per battle lost | Start with 5 |
@@ -673,7 +675,15 @@ Today the prototype keeps ghosts in the browser's `localStorage`. The plan below
 - The client calls `POST /players` with the name.
 - It gets back a random `playerId` and a secret `token`, kept in `localStorage`. The server stores only a SHA-256 hash of the token.
 - Every request carries `Authorization: Bearer <token>`.
-- Clearing site data loses the player; linking a login (Google, email) to carry runs across devices comes later.
+- Clearing site data loses the player, unless it is linked to Google.
+
+### Sign in with Google and the win counter
+
+- Clicking the chef name opens the chef card: runs won (trophies), best endless, rename, and Sign in with Google (Google's own button; the game sends its ID token to `POST /auth/google`, which checks the signature against Google's keys, the audience and expiry).
+- Signing in links the chef on this device to the Google account (`players.google_sub`). On another device the same sign-in gets a token of its own for that chef (`sessions` table), and the name card offers "chef already? Sign in". An account with no chef gets a new one with a word-list name.
+- Sign out forgets only that device's token, and only for a linked chef (an unlinked one would be lost).
+- The client ID is the repository variable `GOOGLE_CLIENT_ID`, passed to the game build and the Worker at deploy; without it the sign-in buttons are hidden.
+- Ranks come later.
 
 ### A day, end to end
 

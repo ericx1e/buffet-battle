@@ -10,7 +10,7 @@ describe('players', () => {
     expect(p.name).toBe('Gordon R.');
     expect(p.token.length).toBeGreaterThanOrEqual(40);
     const me = await call('GET', '/players/me', { token: p.token });
-    expect(me.body).toEqual({ playerId: p.playerId, name: 'Gordon R.' });
+    expect(me.body).toEqual({ playerId: p.playerId, name: 'Gordon R.', google: false, trophies: 0, bestEndless: null });
     const row = await env.DB.prepare('SELECT * FROM players WHERE id = ?').bind(p.playerId).first<Json>();
     expect(row!.token_hash).toBe(await hashToken(p.token));
     expect(JSON.stringify(row)).not.toContain(p.token);

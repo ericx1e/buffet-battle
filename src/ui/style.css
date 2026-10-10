@@ -1015,5 +1015,19 @@ html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent
 .name-buttons .big-btn { margin-top: 0; }
 .name-buttons .big-btn:disabled { opacity: 0.7; cursor: wait; }
 .name-alt { position: static; padding: 0 8px; height: 16px; cursor: pointer; }
+/* Sign in with Google: Google's own button, under the name card's buttons and on the chef card. */
+.name-google { margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 6px; font: 400 10px/10px var(--pixel); color: #8a7568; }
+/* Shown at its own size, not scaled up with the stage (Google draws it for the screen's pixels). */
+.google-slot { position: relative; width: calc(var(--w) * 1px / var(--s)); height: calc(32px / var(--s)); }
+.google-slot > div { position: absolute; left: 0; top: 0; transform: scale(calc(1 / var(--s))); transform-origin: 0 0; }
+/* The chef card: the win counter and Google sign-in. */
+.chef-card { align-items: center; gap: 6px; }
+.chef-card .over-stats b { display: flex; align-items: center; gap: 3px; justify-content: center; }
+.chef-google { margin: 0; padding: 0 10px; text-align: center; font: 400 10px/11px var(--pixel); color: #3a2a22; }
+.chef-card .name-buttons { align-self: stretch; justify-content: space-between; padding: 0 10px; }
+/* A won run: a new run or keep cooking (endless). */
+.over-buttons { margin-top: auto; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.over-buttons .big-btn { margin-top: 0; }
+.mag-course small { font-size: 10px; margin-left: 1px; }
 .chef-tag { text-transform: none !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .name-dim { z-index: 59; }

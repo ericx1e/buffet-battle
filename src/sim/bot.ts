@@ -170,11 +170,21 @@ export function ghostGold(turn: number): number {
 }
 const GHOST_GOLD = [-3, -1, 0, 1, 3, 4, 5, 6, 7, 8, 8, 9, 9];
 
+/** The last day a bot plays out; past it (endless runs) its foods grow by ENDLESS_GROWTH (attack, HP) a day. */
+const BOT_LAST_DAY = 15;
+const ENDLESS_GROWTH = [1, 2];
+
 /**
  * A bot's plate as served on `turn`, played from a fresh run with `seed`. `fair`: no handicap (bot-vs-bot balance
  * reports).
  */
 export function generateGhost(turn: number, seed: number, fair = false): Plate {
+  // Endless days: the plate from BOT_LAST_DAY, each food grown for every day past it (playing out every day would
+  // cost the server too much time).
+  if (turn > BOT_LAST_DAY) {
+    const extra = turn - BOT_LAST_DAY;
+    return generateGhost(BOT_LAST_DAY, seed, fair).map((u) => u && { ...u, attack: u.attack + extra * ENDLESS_GROWTH[0], hp: u.hp + extra * ENDLESS_GROWTH[1] });
+  }
   const run = newRun(seed);
   let plate: Plate = [];
   for (let t = 1; t <= turn; t++) {

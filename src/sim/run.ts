@@ -108,6 +108,8 @@ export interface RunState {
   overflow: (UnitInstance | null)[];
   /** Permanent gains since the UI last showed them (see Growth). */
   growth: Growth[];
+  /** Endless: the run was won and carries on past COURSES_TO_WIN courses until its lives run out (see goEndless). */
+  endless?: boolean;
 }
 
 /**
@@ -197,7 +199,18 @@ export function migrateRun(run: RunState): RunState {
 }
 
 export function isOver(run: RunState): boolean {
-  return run.lives <= 0 || run.courses >= COURSES_TO_WIN;
+  return run.lives <= 0 || (run.courses >= COURSES_TO_WIN && !run.endless);
+}
+
+/** Whether the run was won: ten courses served (an endless run stays won however it ends). */
+export const isWon = (run: RunState) => run.courses >= COURSES_TO_WIN;
+
+/** A won run carries on in endless mode: the next day starts, and it goes on until the lives run out. */
+export function goEndless(run: RunState): boolean {
+  if (!isWon(run) || run.lives <= 0 || run.endless) return false;
+  run.endless = true;
+  startTurn(run);
+  return true;
 }
 
 function withRng<T>(run: RunState, fn: (rng: Rng) => T): T {

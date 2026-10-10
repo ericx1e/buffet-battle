@@ -31,6 +31,8 @@ import {
   cellarFoods,
   MAX_FLAVORS,
   isOver,
+  isWon,
+  goEndless,
   marketOdds,
   mythicOdds,
   MYTHIC_SPECIAL_CHANCE,
@@ -107,6 +109,8 @@ interface App {
   server?: { runId: string };
   /** The chef-name card is open. */
   naming?: Naming;
+  /** The chef card is open: the win counter and Google sign-in (`me` once the server has answered). */
+  chef?: { me?: api.Me; error?: string; busy?: boolean };
   /** Watching a battle from the dev site: nothing is saved and the run isn't touched. */
   spectate?: boolean;
 }
@@ -312,6 +316,107 @@ function openNaming(renaming: boolean) {
   const current = api.savedPlayer()?.name;
   const listed = current && NAME_FIRST.includes(splitName(current).first as never) && NAME_SECOND.includes(splitName(current).second as never);
   app.naming = { ...splitName(listed ? current : randomName()), custom: current && !listed ? current : '', renaming };
+  render();
+}
+
+/** The chef card: fetches the win counter from the server. */
+async function openChef() {
+  app.chef = {};
+  render();
+  try {
+    const me = await api.me();
+    if (app.chef) app.chef.me = me;
+  } catch (e) {
+    if (app.chef) app.chef.error = e instanceof api.Offline ? "Can't reach the kitchen server." : (e as Error).message;
+  }
+  render();
+}
+
+function chefCard(c: NonNullable<App['chef']>): string {
+  const me = c.me;
+  const name = me?.name ?? api.savedPlayer()?.name ?? '';
+  const google = !me
+    ? ''
+    : me.google
+      ? `<p class="chef-google">Linked to Google: sign in on any device to cook as ${esc(me.name)}.</p>
+         <button class="chip" data-action="sign-out" ${c.busy ? 'disabled' : ''}>sign out</button>`
+      : api.googleReady()
+        ? '<p class="chef-google">Sign in with Google to keep this chef and its trophies on every device.</p><div class="google-slot" data-width="200" style="--w:200"></div>'
+        : '';
+  return `
+    <div class="over-dim name-dim" data-k="chef-dim" data-in="fade" data-action="chef-close"></div>
+    <div class="over-card name-card chef-card" style="${box([170, 66, 300, 186])}" data-k="chef-card" data-in="drop">
+      <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>Chef ${esc(name)}</span></div>
+      ${c.error ? `<p class="over-sub">${esc(c.error)}</p>` : me ? `
+        <div class="over-stats">
+          <div ${tip('<p>Runs won: ten courses served.</p>')}><b>${pix('trophy')} ${me.trophies}</b><span>runs won</span></div>
+          <div ${tip('<p>The most courses an endless run reached (keep cooking after a win).</p>')}><b>${me.bestEndless ?? '-'}</b><span>best endless</span></div>
+        </div>
+        ${google}` : '<p class="over-sub">one moment...</p>'}
+      <div class="name-buttons">
+        <button type="button" class="newrun name-alt" data-action="chef-rename">rename</button>
+        <button type="button" class="big-btn" data-action="chef-close">done</button>
+      </div>
+    </div>`;
+}
+
+/** Google's button answered: this device's chef is linked to the account, or becomes the account's chef. */
+async function googleSignedIn(credential: string) {
+  const before = api.savedPlayer()?.playerId;
+  try {
+    const p = await api.googleSignIn(credential);
+    app.naming = undefined;
+    sfx('bell');
+    if (p.playerId === before) {
+      app.message = `Signed in: ${p.name} is linked to your Google account.`;
+      if (app.chef) return void openChef();
+      return render();
+    }
+    // Another chef: theirs is the run to play.
+    app.chef = undefined;
+    app.message = `Welcome back, ${p.name}.`;
+    await syncRun(true);
+  } catch (e) {
+    sfx('deny');
+    app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}`;
+    render();
+  }
+}
+
+/** Signs this device out of a Google-linked chef: the kitchen starts over, as a new chef or another sign-in. */
+async function signOut() {
+  if (!app.chef) return;
+  app.chef.busy = true;
+  render();
+  try {
+    await api.signOut();
+    Object.assign(app, freshApp(), { battle: undefined, server: undefined, chef: undefined });
+    forceWipe = true;
+    save();
+    openNaming(false);
+  } catch (e) {
+    app.chef = { ...app.chef, busy: false, error: (e as Error).message };
+    render();
+  }
+}
+
+/** A won run carries on: endless mode. */
+async function keepCooking() {
+  const message = 'Endless mode: every win adds a course. Keep going until your lives run out!';
+  if (app.server) {
+    try {
+      return adoptRun(await api.goEndless(app.server.runId), message);
+    } catch (e) {
+      sfx('deny');
+      app.message = `${pix('warn')} ${e instanceof api.Offline ? "Can't reach the kitchen server" : (e as Error).message}`;
+      return render();
+    }
+  }
+  if (!goEndless(app.run)) return;
+  app.day = startOfDay(app.run);
+  app.message = message;
+  forceWipe = true;
+  save();
   render();
 }
 
@@ -714,8 +819,18 @@ function onAction(action: string, el: HTMLElement) {
       save();
       return render();
     case 'chef':
-      if (!app.battle) openNaming(true);
+      if (!app.battle) void openChef();
       return;
+    case 'chef-rename':
+      app.chef = undefined;
+      return openNaming(true);
+    case 'chef-close':
+      app.chef = undefined;
+      return render();
+    case 'sign-out':
+      return void signOut();
+    case 'endless':
+      return void keepCooking();
     case 'name-open': {
       const n = app.naming;
       if (!n) return;
@@ -893,7 +1008,7 @@ function endBattle() {
   save();
   render();
   const back = 2 * WIPE_MS;
-  if (isOver(app.run)) sfx(app.run.courses >= COURSES_TO_WIN ? 'win' : 'lose', back);
+  if (isOver(app.run)) sfx(isWon(app.run) ? 'win' : 'lose', back);
   else {
     if (o === 'win') sfx('trophy', back);
     else if (o === 'loss' && app.run.turn - 1 >= 3) sfx('lifeLost', back);
@@ -937,6 +1052,7 @@ function render() {
   else renderKitchen();
   if (screen !== 'kitchen') dropChalk();
   paintChalk();
+  api.mountGoogleButtons(root, (credential) => void googleSignedIn(credential));
   if (keep) {
     root.querySelectorAll('img').forEach((img) => {
       const old = keep.get(img.outerHTML)?.pop();
@@ -1378,7 +1494,9 @@ function freezerMagnets(): string {
   }).join('');
   return `<div class="magnets" style="${box(LAYOUT.magnets as Rect)}">
       <div class="mag-stars" ${tipBox(`Lives: ${run.lives} of ${START_LIVES}`, '<p>Losing a battle costs a life (from day 3). Lose them all and the kitchen closes.</p>')}>${lives}</div>
-      <div class="mag-course" ${tipBox(`Courses won: ${run.courses} of ${COURSES_TO_WIN}`, `<p>Win a battle to serve a course. Serve ${COURSES_TO_WIN} to win the run.</p>`)} data-vk="courses" data-va="levelup">${pix('trophy')} ${run.courses}/${COURSES_TO_WIN}</div>
+      <div class="mag-course" ${run.endless
+        ? tipBox(`Endless: ${run.courses} courses`, '<p>You won the run and kept cooking: every win adds a course, until your lives run out.</p>')
+        : tipBox(`Courses won: ${run.courses} of ${COURSES_TO_WIN}`, `<p>Win a battle to serve a course. Serve ${COURSES_TO_WIN} to win the run.</p>`)} data-vk="courses" data-va="levelup">${pix('trophy')} ${run.endless ? `${run.courses}<small>∞</small>` : `${run.courses}/${COURSES_TO_WIN}`}</div>
     </div>`;
 }
 
@@ -1680,7 +1798,7 @@ function orderTickets(): string {
 
   const freeLoss = run.turn < 3;
   const stakes = freeLoss ? 'free loss' : `loss ${pix('lifeOff')}-1`;
-  const stakesTip = tipBox(freeLoss ? 'A loss today is free' : 'A loss costs a life', `<p>${freeLoss ? 'Losses on days 1 and 2 cost no lives.' : `Lose today and you have ${run.lives - 1} of ${START_LIVES} lives left.`} A win serves a course: ${COURSES_TO_WIN - run.courses} more to win the run.</p>`);
+  const stakesTip = tipBox(freeLoss ? 'A loss today is free' : 'A loss costs a life', `<p>${freeLoss ? 'Losses on days 1 and 2 cost no lives.' : `Lose today and you have ${run.lives - 1} of ${START_LIVES} lives left.`} ${run.endless ? 'Endless: every win adds a course.' : `A win serves a course: ${COURSES_TO_WIN - run.courses} more to win the run.`}</p>`);
 
   const t = (x: number, w: number, body: string, tip: string, key: string, cls = '') => `<div class="order-ticket ${cls}" style="${box([x, 9, w, 13])}" ${tip} data-vk="ticket:${key}" data-v="${hash(body)}" data-va="hop">${body}</div>`;
   // The day ticket (drawn in the kitchen art) is the centre of the rail, 298..342: the rarity ticket reaches as far
@@ -1877,6 +1995,7 @@ function renderKitchen() {
         ${settingsOpen ? settingsModal() : ''}
         ${chefTag()}
         ${app.naming ? namingCard(app.naming) : ''}
+        ${app.chef ? chefCard(app.chef) : ''}
       </main>
     </div>`;
   if (app.naming) fillNamingCard(app.naming);
@@ -1886,7 +2005,7 @@ function renderKitchen() {
 function chefTag(): string {
   const player = app.server && api.savedPlayer();
   if (!player) return '';
-  return `<button class="newrun chef-tag" style="${box(LAYOUT.chef as Rect)}" data-action="chef" ${tipBox(`Chef ${esc(player.name)}`, '<p>Other chefs see this name when they meet your plate. Click to change it.</p>')}>${esc(player.name)}</button>`;
+  return `<button class="newrun chef-tag" style="${box(LAYOUT.chef as Rect)}" data-action="chef" ${tipBox(`Chef ${esc(player.name)}`, '<p>Other chefs see this name when they meet your plate. Click for your chef card: runs won, renaming and Google sign-in.</p>')}>${esc(player.name)}</button>`;
 }
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -1904,7 +2023,7 @@ function namingCard(n: Naming): string {
     : '';
   return `
     <div class="over-dim name-dim" data-k="name-dim" data-in="fade"></div>
-    <form class="over-card name-card" style="${box([170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
+    <form class="over-card name-card" style="${box(!n.renaming && api.googleReady() ? [170, 50, 300, 222] : [170, 62, 300, 196])}" data-k="name-card" data-in="drop" autocomplete="off">
       <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${n.renaming ? 'New name' : 'Hello, chef!'}</span></div>
       <p class="over-sub">${n.renaming ? 'Pick a new name.' : 'Pick your chef name. Other chefs see it when they meet your plate.'}</p>
       <div class="name-row">
@@ -1919,6 +2038,7 @@ function namingCard(n: Naming): string {
         <button type="button" class="newrun name-alt" data-action="${n.renaming ? 'name-cancel' : 'name-offline'}">${n.renaming ? 'cancel' : 'play offline'}</button>
         <button type="submit" class="big-btn" ${n.busy ? 'disabled' : ''}>${n.busy ? 'one moment...' : n.renaming ? 'rename ›' : 'open the kitchen ›'}</button>
       </div>
+      ${!n.renaming && api.googleReady() ? '<div class="name-google"><span>chef already?</span><div class="google-slot" data-width="170" style="--w:170"></div></div>' : ''}
       ${menu}
     </form>`;
 }
@@ -2422,6 +2542,10 @@ function lifeRow(lives: number, scale: number, breaking = -1): string {
 /** What the battle means for the run (shown before Continue applies it). */
 function resultDetail(outcome: 'win' | 'loss' | 'draw'): string {
   const { run } = app;
+  if (outcome === 'win' && run.endless) {
+    return `<div class="result-row trophies"><span class="trophy-slot fresh">${pix('trophy', 2)}</span></div>
+      <p class="result-line">Endless course <b>${run.courses + 1}</b> served</p>`;
+  }
   if (outcome === 'win') {
     return `<div class="result-row trophies">${trophyRow(run.courses + 1, 1, run.courses)}</div>
       <p class="result-line">Course won: <b>${run.courses + 1}</b> of ${COURSES_TO_WIN}</p>`;
@@ -2437,7 +2561,13 @@ function resultDetail(outcome: 'win' | 'loss' | 'draw'): string {
 /** Game over: a card over the dimmed kitchen with the run's trophies, its numbers and the plate that ended it. */
 function renderOver() {
   const { run } = app;
-  const won = run.courses >= COURSES_TO_WIN;
+  const won = isWon(run);
+  // A run just won can keep cooking (endless); an endless one that ended shows how far it went.
+  const canGoOn = won && !run.endless && run.lives > 0;
+  const title = run.endless ? 'Endless feast!' : won ? 'Michelin-worthy!' : 'Kitchen closed';
+  const sub = run.endless
+    ? `${run.courses} courses served before the kitchen closed.`
+    : won ? 'Ten courses served. You won the run!' : 'Out of lives. Your kitchen closes for the night.';
   const plate = run.plate.filter((u): u is NonNullable<typeof u> => !!u);
   root.innerHTML = `
     <div class="stage-wrap" style="--s:${stageScale()}">
@@ -2445,8 +2575,8 @@ function renderOver() {
         <img class="scene-bg" src="${kitchenUrl}" alt="" draggable="false">
         <div class="over-dim"></div>
         <div class="over-card ${won ? 'won' : 'lost'}" style="${box([150, 50, 340, 228])}" data-k="over" data-in="drop">
-          <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${won ? 'Michelin-worthy!' : 'Kitchen closed'}</span></div>
-          <p class="over-sub">${won ? 'Ten courses served. You won the run!' : 'Out of lives. Your kitchen closes for the night.'}</p>
+          <div class="ribbon"><i class="rib-tail l"><i></i></i><i class="rib-tail r"><i></i></i><span>${title}</span></div>
+          <p class="over-sub">${sub}</p>
           <div class="result-row trophies">${trophyRow(run.courses, 2)}</div>
           <div class="over-stats">
             <div><b>${run.courses}</b><span>courses won</span></div>
@@ -2455,7 +2585,12 @@ function renderOver() {
           </div>
           <div class="over-plate-label">${won ? 'the winning plate' : 'your last plate'}</div>
           <div class="over-plate">${plate.map((u) => `<div class="over-food">${unitArt(u.defId, levelOf(u.copies) === 3)}</div>`).join('') || '<span class="dim">empty</span>'}</div>
-          <button class="big-btn" data-action="new-run">start a new run ›</button>
+          ${canGoOn
+            ? `<div class="over-buttons">
+                <button class="newrun name-alt" data-action="new-run" ${tip('<p>Start a fresh run from day 1.</p>')}>new run</button>
+                <button class="big-btn" data-action="endless" ${tip(`<p>Endless: keep this plate cooking. Every win adds a course; it ends when your ${run.lives} lives run out. It still counts as one run won.</p>`)}>keep cooking ›</button>
+              </div>`
+            : '<button class="big-btn" data-action="new-run">start a new run ›</button>'}
         </div>
       </main>
     </div>`;

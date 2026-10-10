@@ -11,6 +11,9 @@ import {
   endDay,
   finishBattle,
   freezeOffer,
+  goEndless,
+  isOver,
+  isWon,
   interestCap,
   marketOdds,
   moveUnit,
@@ -207,6 +210,31 @@ describe('food data', () => {
 });
 
 describe('run', () => {
+  it('carries on in endless mode after a win, until the lives run out', () => {
+    const run = newRun(3);
+    expect(goEndless(run)).toBe(false); // not won yet
+    run.courses = 9;
+    finishBattle(run, 'win');
+    expect(isOver(run)).toBe(true);
+    const gold = run.gold;
+    expect(goEndless(run)).toBe(true);
+    expect(goEndless(run)).toBe(false);
+    expect(isOver(run)).toBe(false);
+    expect(run.gold).toBeGreaterThan(gold); // the next day started: income
+    finishBattle(run, 'win');
+    expect(run.courses).toBe(11);
+    run.lives = 1;
+    finishBattle(run, 'loss');
+    expect(isOver(run) && isWon(run)).toBe(true);
+  });
+
+  it('makes bots for endless days without playing every day out', () => {
+    const late = generateGhost(15, 7);
+    const deep = generateGhost(25, 7);
+    const attack = (p: Plate) => p.reduce((n, u) => n + (u ? u.attack : 0), 0);
+    expect(attack(deep)).toBe(attack(late) + 10 * late.filter(Boolean).length);
+  });
+
   it('merges copies into levels and cooks at 6', () => {
     const run = newRun(42);
     run.plate[0] = unit('egg', { copies: 5 });

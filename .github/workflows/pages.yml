@@ -42,7 +42,8 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm test
       - run: npx wrangler d1 migrations apply buffet-battle --remote
-      - run: npx wrangler deploy
+      # Sign in with Google: the OAuth client ID, a repository variable (empty: no Google sign-in).
+      - run: npx wrangler deploy --var "GOOGLE_CLIENT_ID:${{ vars.GOOGLE_CLIENT_ID }}"
       - name: The API answers on the version this commit built
         run: |
           expected=$(sed -n "s/.*GAME_VERSION = '\(.*\)'.*/\1/p" ../src/sim/version.ts)
@@ -72,6 +73,7 @@ jobs:
           VITE_API_URL: ${{ env.API_URL }}
           # Cloudflare Web Analytics on the game page: the beacon token, a repository variable (empty: no analytics).
           VITE_CF_BEACON: ${{ vars.CF_BEACON_TOKEN }}
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
       - run: npm ci --prefix server
       - run: server/node_modules/.bin/wrangler deploy --config site/wrangler.jsonc
       - run: server/node_modules/.bin/wrangler deploy --config site/www/wrangler.jsonc

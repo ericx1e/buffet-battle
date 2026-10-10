@@ -1,5 +1,5 @@
 // Runs: one active run per player, stored as the run's state at the start of its current day.
-import { type RunState, migrateRun, newRun } from '../../src/sim/run';
+import { type RunState, goEndless, migrateRun, newRun } from '../../src/sim/run';
 import { GAME_VERSION } from '../../src/sim/version';
 import { randomId } from './auth';
 import { HttpError } from './http';
@@ -77,6 +77,21 @@ export async function startRun(env: Env, playerId: string): Promise<RunView> {
     ),
   ]);
   return view(row, { ...state, growth: [] });
+}
+
+/** A won run carries on in endless mode, if the chef hasn't started another since. */
+export async function endlessRun(env: Env, playerId: string, runId: string): Promise<RunView> {
+  const row = await env.DB.prepare('SELECT * FROM runs WHERE id = ? AND player_id = ?').bind(runId, playerId).first<RunRow & { endless: number }>();
+  if (!row) throw new HttpError(404, 'No such run.');
+  if (row.status !== 'won' || row.endless) throw new HttpError(409, "This run can't go on.");
+  if (await activeRun(env, playerId)) throw new HttpError(409, "You've started another run since.");
+  const state = migrateRun(JSON.parse(row.state) as RunState);
+  if (!goEndless(state)) throw new HttpError(409, "This run can't go on.");
+  const result = await env.DB.prepare("UPDATE runs SET status = 'active', endless = 1, version = ?, state = ?, updated_at = ? WHERE id = ? AND status = 'won' AND endless = 0")
+    .bind(GAME_VERSION, stored(state), Date.now(), row.id)
+    .run();
+  if (result.meta.changes === 0) throw new HttpError(409, "This run can't go on.");
+  return view({ ...row, version: GAME_VERSION, status: 'active' }, { ...state, growth: [] });
 }
 
 export async function abandonRun(env: Env, playerId: string, runId: string): Promise<void> {
