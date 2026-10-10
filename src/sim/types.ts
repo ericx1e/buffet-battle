@@ -13,6 +13,7 @@ export type Trigger =
   | 'friendAheadHit' // the friend ahead of this food is hit (`attacker` = who hit it)
   | 'friendAheadAttacks' // the friend ahead of this food attacks (`attacker` = the food it attacked)
   | 'neighbourAttacks' // an adjacent friend attacks (`attacker` = the food it attacked)
+  | 'attacks' // this food has just attacked (`attacker` = the food it attacked)
   | 'friendFaint' // an adjacent friend is eaten
   | 'anyFriendEaten' // any friend is eaten
   | 'crustBreak' // a hit uses up the last of this food's Crust
@@ -107,7 +108,6 @@ export type Effect =
   | 'spreadBurn' // the enemy with the most Burn passes amount Burn to each enemy beside it (Habanero Salsa)
   | 'doubleCrust' // the targets' Crust doubles (Salt-Crusted Fish)
   | 'siphon' // the targets lose amount attack and your front row gains amount attack (Fondue)
-  | 'guard' // the next amount enemy hits on a neighbour hit this food instead (Rice)
   | 'armor' // every hit on this food deals amount less damage, at least 1 (Rice)
   // kitchen
   | 'sellValue' // +amount sell value, for good

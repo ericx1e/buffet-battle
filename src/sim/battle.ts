@@ -66,8 +66,6 @@ interface BattleUnit {
   chill: number;
   /** The turn it last skipped for Chill: it stays frozen for the rest of that turn (see frozen). */
   frozeIn: number;
-  /** Rice: enemy hits on a neighbour it will still take instead. */
-  guards: number;
   /** Damage taken off every hit on it (Rice), down to 1. */
   armor: number;
 
@@ -254,7 +252,7 @@ class Battle {
       uid: this.nextUid++, defId, side, slot, level: 1, flavor: def.flavor, flavors: [def.flavor],
       attack, hp, startHp: hp, crust: 0, token: true, hitsTaken: 0, fired: [], firstAttackDone: false, swings: 0,
       extraAttacks: [], tupperwareUsed: false, abilityBonus: 0, extra: [], lives: 0, allFlavors: false,
-      burn: 0, rot: 0, chill: 0, frozeIn: 0, guards: 0, armor: 0, rallied: 0, rushed: false, towered: false,
+      burn: 0, rot: 0, chill: 0, frozeIn: 0, armor: 0, rallied: 0, rushed: false, towered: false,
     };
   }
 
@@ -620,9 +618,13 @@ class Battle {
           const line = this.fire(behind, 'friendAheadAttacks', { source: primary });
           if (line) followUps.push(line);
         }
-        // So can every food next to it (Rice).
+        // So can every food next to it (Rice), and the attacker itself.
         for (const n of this.adjacent(attacker)) {
           const line = this.fire(n, 'neighbourAttacks', { source: primary });
+          if (line) followUps.push(line);
+        }
+        if (this.onPlate(attacker)) {
+          const line = this.fire(attacker, 'attacks', { source: primary });
           if (line) followUps.push(line);
         }
       }
@@ -1114,9 +1116,6 @@ class Battle {
         for (const t of near) this.addStatus(t, 'burn', n);
         return `${name}: ${this.name(from)}'s Burn spreads, ${names(near)} ${near.length > 1 ? 'Burn' : 'Burns'} ${n}`;
       }
-      case 'guard':
-        u.guards += amount;
-        return `${name} guards its neighbours: it takes the next ${amount} ${amount > 1 ? 'hits' : 'hit'} on them`;
       case 'armor':
         u.armor += amount;
         return `${name} toughens up: hits on it deal ${amount} less`;
@@ -1230,17 +1229,6 @@ class Battle {
     const foe = source && source.side !== target.side ? source : undefined;
     if (foe && target.burn > 0 && this.bonus[foe.side].flare) amount += 2; // Spicy x8
     if (foe && target.chill > 0) amount += this.chillBite(foe.side); // cooked Ice Cream
-    // Guarded (Rice): a neighbour with guards left takes the enemy's hit instead.
-    if (foe && !reaction) {
-      const guard = this.adjacent(target).find((g) => g.guards > 0 && g.hp > 0);
-      if (guard) {
-        guard.guards--;
-        this.mark(guard, 'ability');
-        this.mark(target, 'blocked');
-        this.hit(guard, amount, source, ignoreCrust, reaction);
-        return;
-      }
-    }
     // Cold pack (Frozen Peas): a Chilled food takes no damage from hits.
     if (this.frozen(target) && this.units(target.side).some((f) => unitDef(f.defId).aura === 'coldPack')) {
       this.mark(target, 'blocked');

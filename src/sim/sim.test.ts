@@ -126,7 +126,7 @@ describe('battle', () => {
       run.turn = 2;
       endDay(run);
       expect(flavorsOf(rice)).toEqual(['spicy']);
-      // Spicy follows a neighbour's attack; Sour grows when it's hit; Salty takes damage off hits; Sweet guards neighbours.
+      // Spicy follows a neighbour's attack; Sour grows when it's hit; Salty takes damage off hits; Sweet heals as it attacks.
       const r = simulateBattle(
         plate({ 0: unit('cheese', { attack: 3, hp: 200 }), 1: unit('rice', { extraFlavors: ['spicy', 'sour', 'salty'], hp: 200 }) }),
         plate({ 0: wall({ attack: 5 }), 1: wall({ attack: 4 }) }),
@@ -138,9 +138,8 @@ describe('battle', () => {
       const hits = r.frames.flatMap((f) => f.marks.filter((m) => m.kind === 'hit' && m.side === 0 && m.slot === 1).map((m) => m.amount));
       expect(hits.length).toBeGreaterThan(0);
       expect(hits[0]).toBe(3); // the middle lane Cheese hits for 4, less 1 armor
-      const front = unit('cheese', { attack: 1, hp: 20 });
-      const s = simulateBattle(plate({ 0: front, 1: unit('rice', { extraFlavors: ['sweet'], hp: 200 }) }), plate({ 0: unit('cheese', { attack: 9, hp: 200 }) }), 1);
-      expect(s.frames.find((f) => f.round === 1 && f.text.startsWith('Turn 1'))!.plates[0][0]!.hp).toBe(20); // Rice took it
+      const s = simulateBattle(plate({ 0: unit('rice', { extraFlavors: ['sweet'], hp: 20 }) }), plate({ 0: wall({ attack: 3 }) }), 1);
+      expect(text(s)).toContain('Rice: Rice +1 HP');
       // Savory: end of day, a neighbour gains +1/+1 for good.
       const run2 = newRun(2);
       const friend = unit('cheese');

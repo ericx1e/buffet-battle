@@ -2035,7 +2035,7 @@ function plainPowers(d: UnitDef, level: 1 | 2 | 3, has: Flavor[]): string {
   const n = d.values[level - 1] * (level === 3 ? 2 : 1);
   const what: Record<Flavor, string> = {
     spicy: `grain hits for ${n}`,
-    sweet: `guards ${n} hit${n > 1 ? 's' : ''}`,
+    sweet: `attacks: +${n} HP`,
     sour: `hit: +${n} attack`,
     salty: `hits on it -${n}`,
     savory: `one +${n}/+${n} nightly`,

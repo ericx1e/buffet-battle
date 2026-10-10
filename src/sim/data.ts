@@ -140,11 +140,11 @@ export const UNITS: UnitDef[] = [
   { id: 'rice', name: 'Rice', cookedName: 'Fried Rice', emoji: '🍚', tier: 2, flavor: 'savory', plain: true, attack: 2, hp: 6, values: [1, 2, 3],
     text: "Every other night, soaks up a neighbour's flavor (no limit). Each flavor is a power ({v}):",
     cooked: { text: 'Its flavor effects are doubled.', abilities: [] },
-    // Each flavor it soaks up is a power (see plainPowers in the UI for the wording): it guards its neighbours, toughens
-    // up and gets angry when hit, follows their attacks, and feeds one of them every night.
+    // Each flavor it soaks up is a power (see plainPowers in the UI for the wording): it heals as it attacks, toughens
+    // up and gets angry when hit, follows its neighbours' attacks, and feeds one of them every night.
     flavorAbilities: {
       spicy: { trigger: 'neighbourAttacks', effect: 'damage', target: 'attacker', thrown: true },
-      sweet: { trigger: 'startOfBattle', effect: 'guard' },
+      sweet: { trigger: 'attacks', effect: 'heal' },
       sour: { trigger: 'hit', effect: 'buff', hp: 0 },
       salty: { trigger: 'startOfBattle', effect: 'armor' },
       savory: { trigger: 'endTurn', effect: 'buff', target: 'adjacentFriends', count: 1 },
