@@ -113,9 +113,27 @@ body[data-screen='kitchen'], body[data-screen='over'] {
 
 /* Slots and food tiles (40x48) */
 .slot { width: 40px; height: 48px; }
-body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline-offset: -2px; background: rgba(224, 100, 47, 0.08); }
-.slot.drop-hover { outline: 2px solid #e0642f !important; outline-offset: -1px; animation: slot-pulse 0.5s steps(1) infinite; }
-@keyframes slot-pulse { 50% { outline-offset: -3px; } }
+/* While carrying something: every empty spot shows pixel corner brackets on a faint warm fill (a dashed outline
+   spaces its dashes unevenly), and the spot under it a solid outline with a light inner edge on a warmer fill. */
+body.dragging .slot.empty {
+  background:
+    linear-gradient(#e8703a, #e8703a) left 2px top 2px / 7px 2px no-repeat,
+    linear-gradient(#e8703a, #e8703a) left 2px top 2px / 2px 7px no-repeat,
+    linear-gradient(#e8703a, #e8703a) right 2px top 2px / 7px 2px no-repeat,
+    linear-gradient(#e8703a, #e8703a) right 2px top 2px / 2px 7px no-repeat,
+    linear-gradient(#e8703a, #e8703a) left 2px bottom 2px / 7px 2px no-repeat,
+    linear-gradient(#e8703a, #e8703a) left 2px bottom 2px / 2px 7px no-repeat,
+    linear-gradient(#e8703a, #e8703a) right 2px bottom 2px / 7px 2px no-repeat,
+    linear-gradient(#e8703a, #e8703a) right 2px bottom 2px / 2px 7px no-repeat;
+  background-color: rgba(232, 112, 58, 0.07);
+}
+.slot.drop-hover {
+  outline: 2px solid #f07a3a !important; outline-offset: -2px;
+  box-shadow: inset 0 0 0 3px rgba(255, 214, 170, 0.55);
+  background-color: rgba(240, 122, 58, 0.16) !important;
+  animation: slot-pulse 0.5s steps(1) infinite;
+}
+@keyframes slot-pulse { 50% { outline-offset: -3px; box-shadow: inset 0 0 0 4px rgba(255, 214, 170, 0.4); } }
 .unit { position: relative; width: 40px; height: 48px; cursor: grab; touch-action: none; transition: translate 90ms steps(2, jump-end); }
 .unit:hover { translate: 0 -2px; }
 .unit.lifted { opacity: 0.3; filter: grayscale(1); translate: 0 0; }
@@ -557,8 +575,21 @@ body[data-screen='battle'] {
 .link-arrow { z-index: 30; pointer-events: none; animation: link-pulse 1.2s steps(1) infinite; }
 @keyframes link-pulse { 50% { translate: 0 0; filter: brightness(1.25); } }
 /* While placing or holding a food: the slots it would reach. */
-.slot.reach { outline: 1px dashed #5fbf4a; outline-offset: -2px; background: rgba(127, 216, 106, 0.16); animation: reach-pulse 0.6s steps(1) infinite; }
-@keyframes reach-pulse { 50% { outline-offset: -4px; background: rgba(127, 216, 106, 0.28); } }
+/* The spots a food's ability would reach from where it's held: the same corner brackets, in green. */
+.slot.reach {
+  background:
+    linear-gradient(#5fbf4a, #5fbf4a) left 2px top 2px / 7px 2px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) left 2px top 2px / 2px 7px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) right 2px top 2px / 7px 2px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) right 2px top 2px / 2px 7px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) left 2px bottom 2px / 7px 2px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) left 2px bottom 2px / 2px 7px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) right 2px bottom 2px / 7px 2px no-repeat,
+    linear-gradient(#5fbf4a, #5fbf4a) right 2px bottom 2px / 2px 7px no-repeat !important;
+  background-color: rgba(127, 216, 106, 0.16) !important;
+  animation: reach-pulse 0.6s steps(1) infinite;
+}
+@keyframes reach-pulse { 50% { background-color: rgba(127, 216, 106, 0.3); } }
 
 /* ---------- level-up ---------- */
 .bit.ray { border: 0; width: 3px; height: 3px; z-index: 97; }
