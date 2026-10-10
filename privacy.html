@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy · Buffet Battle</title>
+    <link rel="icon" href="./favicon.ico" sizes="16x16 32x32 64x64" />
+    <style>
+      :root { --ink: #3a2a22; --paper: #fbf2da; --line: #e0cfa6; --accent: #b2401b; --ground: #1d1410; }
+      body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+      main { max-width: 680px; margin: 32px auto; padding: 28px 32px; background: var(--paper); border: 2px solid #2a1b14; box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35); }
+      @media (max-width: 720px) { main { margin: 0; border: 0; box-shadow: none; padding: 20px 16px; } }
+      h1 { margin: 0 0 4px; font-size: 28px; color: var(--accent); }
+      h2 { margin: 28px 0 6px; font-size: 18px; }
+      .dated { margin: 0 0 20px; color: #8a7568; font-size: 14px; }
+      ul { padding-left: 20px; }
+      li { margin: 4px 0; }
+      a { color: var(--accent); }
+      footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Privacy</h1>
+      <p class="dated">Buffet Battle · last updated 10 October 2026</p>
+
+      <p>Buffet Battle is a small food autobattler. This page says what it keeps about you, why, and what you can do about it. The short version: a chef name, your runs, and (only if you choose to sign in) an id from Google. No ads, no tracking cookies, nothing sold.</p>
+
+      <h2>What the game keeps</h2>
+      <ul>
+        <li><b>Your chef.</b> The chef name you pick, and a random id with a secret token so the game knows it's you. Only a scrambled (hashed) copy of the token is kept on the server; the token itself stays on your device.</li>
+        <li><b>Your runs.</b> Each day's plate, the moves you made in the kitchen, and your battles, with their results. The server replays your moves to check each day is fair, and saves your plate as a "ghost" that other players battle against.</li>
+        <li><b>What other players see.</b> Your chef name, your plate and your run's record (wins and lives) when they meet your ghost. Nothing else.</li>
+        <li><b>On your device.</b> Your run in progress, your settings (sound, music), your chalkboard doodles and a few other conveniences are saved in your browser's storage, so the game picks up where you left off. Clearing your browser's site data removes them.</li>
+      </ul>
+
+      <h2>Signing in with Google</h2>
+      <p>Signing in is optional. If you do, Google tells the game a stable id for your Google account, and the game links your chef to it so you can play the same chef on other devices. The game keeps only that id. It does not keep your name, email address, photo or anything else from your Google account, and it never posts anything or reads any other Google data.</p>
+
+      <h2>Visits</h2>
+      <p>The site uses Cloudflare Web Analytics to count visits (pages, countries, devices). It uses no cookies and doesn't identify you. The servers that run the game (Cloudflare) see your IP address to answer requests and to limit how fast new chefs can be made from one address; the game doesn't store it.</p>
+
+      <h2>Why</h2>
+      <p>Everything above is kept to run the game: to save your progress, to match you against other players' plates, to keep battles fair, and to see how the game is played so it can be balanced and improved.</p>
+
+      <h2>How long, and deleting it</h2>
+      <p>Your chef and runs are kept while the game is running, so your record and ghosts stay part of the game. To have your chef and everything linked to it deleted, email <a href="mailto:ericxie6@gmail.com">ericxie6@gmail.com</a> from the address of your Google account (if you signed in) or with your chef name, and it will be removed.</p>
+
+      <h2>Children</h2>
+      <p>The game doesn't ask for anyone's age and collects nothing beyond what's above. Signing in with Google follows Google's own age rules.</p>
+
+      <h2>Changes</h2>
+      <p>If this changes, this page will say so, with a new date at the top.</p>
+
+      <footer>Questions: <a href="mailto:ericxie6@gmail.com">ericxie6@gmail.com</a> · <a href="./terms">Terms</a> · <a href="./">Play Buffet Battle</a></footer>
+    </main>
+  </body>
+</html>

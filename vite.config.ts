@@ -20,8 +20,8 @@ function webAnalytics(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [webAnalytics()],
-  // Two pages: the game, and the dev site (admin.html) that reads the API's admin routes.
-  build: { rollupOptions: { input: { main: 'index.html', admin: 'admin.html' } } },
+  // The game, the dev site (admin.html) that reads the API's admin routes, and the privacy and terms pages.
+  build: { rollupOptions: { input: { main: 'index.html', admin: 'admin.html', privacy: 'privacy.html', terms: 'terms.html' } } },
   // server/ has its own tests, run in the Workers runtime (cd server && npm test).
   test: { exclude: [...configDefaults.exclude, 'server/**'] },
 });

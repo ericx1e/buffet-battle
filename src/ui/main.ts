@@ -1271,6 +1271,7 @@ function settingsModal(): string {
         <button class="chip" data-action="close-settings">done</button>
       </div>
       <div class="set-hint">key m mutes everything</div>
+      <div class="set-hint set-links"><a href="https://buffetbattle.com/privacy" target="_blank" rel="noopener">privacy</a> · <a href="https://buffetbattle.com/terms" target="_blank" rel="noopener">terms</a></div>
     </div>`;
 }
 
