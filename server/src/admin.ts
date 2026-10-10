@@ -37,7 +37,7 @@ export async function admin(req: Request, env: Env, url: URL): Promise<Response>
   if (url.pathname === '/admin/overview') {
     const since = Date.now() - 30 * DAY_MS;
     const dayOf = (col: string) => `date(${col} / 1000, 'unixepoch')`;
-    const [players, signups, active, runs, reached, battles, versions] = await db.batch([
+    const [players, signups, active, runs, reached, battles, versions, google, linked, devices] = await db.batch([
       db.prepare('SELECT COUNT(*) AS n FROM players'),
       db.prepare(`SELECT ${dayOf('created_at')} AS date, COUNT(*) AS n FROM players WHERE created_at > ? GROUP BY date ORDER BY date`).bind(since),
       db.prepare(`SELECT ${dayOf('created_at')} AS date, COUNT(DISTINCT player_id) AS chefs, COUNT(*) AS days FROM days WHERE created_at > ? GROUP BY date ORDER BY date`).bind(since),
@@ -45,6 +45,10 @@ export async function admin(req: Request, env: Env, url: URL): Promise<Response>
       db.prepare("SELECT day - 1 AS days, status, COUNT(*) AS n FROM runs WHERE status IN ('won', 'lost') GROUP BY days, status ORDER BY days"),
       db.prepare("SELECT COUNT(*) AS n, SUM(opp_ghost_id IS NULL) AS bots, SUM(outcome = 'win') AS wins, SUM(outcome = 'draw') AS draws FROM battles"),
       db.prepare('SELECT version, COUNT(*) AS plates, COUNT(DISTINCT player_id) AS chefs, MIN(created_at) AS first, MAX(created_at) AS last FROM ghosts GROUP BY version ORDER BY last DESC'),
+      // Sign in with Google: chefs linked to an account, links by day, and devices signed into an existing chef.
+      db.prepare('SELECT COUNT(*) AS n FROM players WHERE google_sub IS NOT NULL'),
+      db.prepare(`SELECT ${dayOf('google_linked_at')} AS date, COUNT(*) AS n FROM players WHERE google_linked_at > ? GROUP BY date ORDER BY date`).bind(since),
+      db.prepare('SELECT COUNT(*) AS n FROM sessions'),
     ]);
     return json({
       players: (players.results[0] as { n: number }).n,
@@ -54,6 +58,11 @@ export async function admin(req: Request, env: Env, url: URL): Promise<Response>
       reached: reached.results,
       battles: battles.results[0],
       versions: versions.results,
+      google: {
+        chefs: (google.results[0] as { n: number }).n,
+        linked: linked.results,
+        devices: (devices.results[0] as { n: number }).n,
+      },
     });
   }
 

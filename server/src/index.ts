@@ -136,7 +136,7 @@ async function googleChef(req: Request, env: Env, sub: string, current: Player |
     return { playerId: linked.id, token, name: linked.name };
   }
   if (current && !current.google) {
-    await env.DB.prepare('UPDATE players SET google_sub = ? WHERE id = ?').bind(sub, current.id).run();
+    await env.DB.prepare('UPDATE players SET google_sub = ?, google_linked_at = ? WHERE id = ?').bind(sub, Date.now(), current.id).run();
     return { playerId: current.id, token: null, name: current.name };
   }
   await limitSignups(req, env);
@@ -180,8 +180,8 @@ async function newChef(env: Env, name: string, googleSub: string | null = null) 
   const playerId = randomId();
   const token = randomId(32);
   const now = Date.now();
-  await env.DB.prepare('INSERT INTO players (id, token_hash, name, created_at, last_seen, google_sub) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(playerId, await hashToken(token), name, now, now, googleSub)
+  await env.DB.prepare('INSERT INTO players (id, token_hash, name, created_at, last_seen, google_sub, google_linked_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(playerId, await hashToken(token), name, now, now, googleSub, googleSub ? now : null)
     .run();
   return { playerId, token, name };
 }

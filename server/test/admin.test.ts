@@ -41,6 +41,7 @@ describe('admin', () => {
     expect(body.battles).toMatchObject({ n: 5, bots: 5 });
     expect(body.active.at(-1)).toMatchObject({ chefs: 2, days: 5 });
     expect(body.versions[0]).toMatchObject({ version: GAME_VERSION, plates: 5, chefs: 2 });
+    expect(body.google).toEqual({ chefs: 0, linked: [], devices: 0 });
   });
 
   it('pages through battles, each one replayable', async () => {

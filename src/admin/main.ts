@@ -27,6 +27,8 @@ interface Overview {
   reached: { days: number; status: 'won' | 'lost'; n: number }[];
   battles: { n: number; bots: number | null; wins: number | null; draws: number | null };
   versions: { version: string; plates: number; chefs: number; first: number; last: number }[];
+  /** Sign in with Google: chefs linked to an account, links by day (last 30), and extra devices signed in. */
+  google?: { chefs: number; linked: { date: string; n: number }[]; devices: number };
 }
 
 interface Battle {
@@ -211,6 +213,8 @@ function viewOverview(): string {
       <div class="tile"><b>${runs[0]}</b><span>runs in progress</span></div>
       <div class="tile"><b>${b.n}</b><span>battles, ${pct(b.bots ?? 0, b.n)} against bots</span></div>
       <div class="tile"><b>${pct(b.wins ?? 0, b.n)}</b><span>of battles won by the chef serving</span></div>
+      <div class="tile"><b>${o.google?.chefs ?? 0}</b><span>chefs signed in with Google (${pct(o.google?.chefs ?? 0, o.players)}), ${o.google?.linked.find((l) => l.date === today)?.n ?? 0} today</span></div>
+      <div class="tile"><b>${o.google?.devices ?? 0}</b><span>extra devices signed into a chef</span></div>
     </div>
     <div class="two">
       <div><h2>Activity</h2><div class="panel">
