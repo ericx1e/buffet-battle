@@ -1414,7 +1414,7 @@ function chalkboard(): string {
 
 // ---------- easter egg: chalk ----------
 // Click the chalkboard's tray to pick up the chalk: it follows the pointer, and pressing on the board draws (over the
-// flavor lines). Click the tray again (or Esc) and it drops back. The felt eraser wipes the board. The drawing is kept
+// flavor lines). Click the tray again, press Esc or reach for anything else and it drops back. The felt eraser wipes the board. The drawing is kept
 // in this browser only.
 
 const CHALK_KEY = 'buffetbattle.chalk';
@@ -1557,13 +1557,17 @@ root.addEventListener(
       e.stopPropagation();
       return chalkHand ? dropChalk() : takeChalk(e);
     }
-    if (chalkHand && onStageRect(e, LAYOUT.chalkboard as Rect)) {
+    if (!chalkHand) return;
+    if (onStageRect(e, LAYOUT.chalkboard as Rect)) {
       e.preventDefault();
       e.stopPropagation();
       chalkDown = true;
       chalkLast = null;
       chalkTo(e);
+      return;
     }
+    // Reaching for anything else: the chalk drops back onto the tray, and the press goes on to what it was on.
+    dropChalk();
   },
   true,
 );
