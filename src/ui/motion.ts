@@ -64,9 +64,9 @@ const ANIMS: Record<string, Anim> = {
   // about the spine in 3D; the old left page stays until the leaf lands on it, and the new
   // one takes over then. The new right page was under the leaf all along.
   // (No filter on it: a filter flattens 3D, and the back face would never show.)
-  pageTurn: { kf: [{ transform: 'perspective(420px) rotateY(0deg)', opacity: 1 }, { transform: 'perspective(420px) rotateY(-180deg)', opacity: 1, offset: 0.97 }, { transform: 'perspective(420px) rotateY(-180deg)', opacity: 0 }], ms: 260, steps: 9, origin: '0% 50%' },
-  pageLand: { kf: [{ opacity: 0 }, { opacity: 0, offset: 0.96 }, { opacity: 1 }], ms: 260, steps: 9 },
-  pageHold: { kf: [{ opacity: 1 }, { opacity: 1, offset: 0.96 }, { opacity: 0 }], ms: 260, steps: 9 },
+  pageTurn: { kf: [{ transform: 'perspective(420px) rotateY(0deg)', opacity: 1 }, { transform: 'perspective(420px) rotateY(-180deg)', opacity: 1, offset: 0.97 }, { transform: 'perspective(420px) rotateY(-180deg)', opacity: 0 }], ms: 200, steps: 9, origin: '0% 50%' },
+  pageLand: { kf: [{ opacity: 0 }, { opacity: 0, offset: 0.96 }, { opacity: 1 }], ms: 200, steps: 9 },
+  pageHold: { kf: [{ opacity: 1 }, { opacity: 1, offset: 0.96 }, { opacity: 0 }], ms: 200, steps: 9 },
   caption: { kf: [{ transform: 'translateY(5px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }], ms: 160, steps: 4 },
   lose: { kf: [{ transform: 'scale(1)', filter: 'brightness(1)' }, { transform: 'scale(1.6)', filter: 'brightness(2.5)', offset: 0.3 }, { transform: 'translateX(-2px) scale(1)', offset: 0.5 }, { transform: 'translateX(2px)', offset: 0.7 }, { transform: 'translateX(0)', filter: 'brightness(1)' }], ms: 500, steps: 8 },
 };
