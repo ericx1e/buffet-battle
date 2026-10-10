@@ -228,11 +228,12 @@ describe('run', () => {
     expect(isOver(run) && isWon(run)).toBe(true);
   });
 
-  it('makes bots for endless days without playing every day out', () => {
+  it('makes bots for endless days that grow exponentially, without playing every day out', () => {
     const late = generateGhost(15, 7);
     const deep = generateGhost(25, 7);
     const attack = (p: Plate) => p.reduce((n, u) => n + (u ? u.attack : 0), 0);
-    expect(attack(deep)).toBe(attack(late) + 10 * late.filter(Boolean).length);
+    expect(attack(deep)).toBeCloseTo(attack(late) * 1.1 ** 10, -1);
+    expect(attack(generateGhost(45, 7))).toBeGreaterThan(attack(late) * 15);
   });
 
   it('merges copies into levels and cooks at 6', () => {

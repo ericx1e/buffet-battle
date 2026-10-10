@@ -22,7 +22,7 @@ Buffet Battle is an asynchronous autobattler where everyday foods battle on a di
 
 Each day is Prep in the kitchen, then Serve, then an automatic battle on the plate. A run lasts until the player earns 10 courses (wins) or loses all 5 lives.
 
-**Endless.** A won run can keep cooking: the game-over card offers "keep cooking", and the run goes on with the same plate, every win adding a course, until the lives run out. It still counts as one run won; how many courses it reached is the chef's "best endless". Bots past day 15 are the day-15 bot with each food +1/+2 per extra day (playing every day out would cost the server too much CPU).
+**Endless.** A won run can keep cooking: the game-over card offers "keep cooking", and the run goes on with the same plate, every win adding a course, until the lives run out. It still counts as one run won; how many courses it reached is the chef's "best endless". Bots past day 15 are the day-15 bot with attack and HP compounding 10% a day (playing every day out would cost the server too much CPU): slower than a good plate grows at first, but exponential, so every endless run ends. Simulated, a plate growing ~25 stats a day wins about half its battles to day 20 and fades by day 30; a strong one (~50 a day) holds to about day 30 and ends by 35-40.
 
 | Term | Meaning | Value |
 | --- | --- | --- |

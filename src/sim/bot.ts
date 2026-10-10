@@ -170,20 +170,24 @@ export function ghostGold(turn: number): number {
 }
 const GHOST_GOLD = [-3, -1, 0, 1, 3, 4, 5, 6, 7, 8, 8, 9, 9];
 
-/** The last day a bot plays out; past it (endless runs) its foods grow by ENDLESS_GROWTH (attack, HP) a day. */
+/**
+ * The last day a bot plays out. Past it (endless runs) its foods' attack and HP compound by ENDLESS_RATE a day: slower
+ * than a strong player's plate grows at first (about 25-50 stats a day against the bot's ~20), but exponential, so it
+ * overtakes any plate and every endless run ends (around day 25 for an average plate, 35-40 for a strong one).
+ */
 const BOT_LAST_DAY = 15;
-const ENDLESS_GROWTH = [1, 2];
+const ENDLESS_RATE = 1.1;
 
 /**
  * A bot's plate as served on `turn`, played from a fresh run with `seed`. `fair`: no handicap (bot-vs-bot balance
  * reports).
  */
 export function generateGhost(turn: number, seed: number, fair = false): Plate {
-  // Endless days: the plate from BOT_LAST_DAY, each food grown for every day past it (playing out every day would
-  // cost the server too much time).
+  // Endless days: the plate from BOT_LAST_DAY, grown for every day past it (playing out every day would cost the
+  // server too much time).
   if (turn > BOT_LAST_DAY) {
-    const extra = turn - BOT_LAST_DAY;
-    return generateGhost(BOT_LAST_DAY, seed, fair).map((u) => u && { ...u, attack: u.attack + extra * ENDLESS_GROWTH[0], hp: u.hp + extra * ENDLESS_GROWTH[1] });
+    const grow = ENDLESS_RATE ** Math.min(turn - BOT_LAST_DAY, 200);
+    return generateGhost(BOT_LAST_DAY, seed, fair).map((u) => u && { ...u, attack: Math.round(u.attack * grow), hp: Math.round(u.hp * grow) });
   }
   const run = newRun(seed);
   let plate: Plate = [];
