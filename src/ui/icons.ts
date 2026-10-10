@@ -358,9 +358,9 @@ const cache = new Map<string, string>();
  * cells use `fill`), and every painted cell gets a 1px dark outline. Shown with image-rendering: pixelated at a
  * whole-number size, it scales cleanly, without the hairline seams box-shadow "pixels" get on some screens.
  */
-export function gridUrl(rows: string[], colors: Record<string, string> = PALETTE, fill = '#ffffff'): string {
+export function gridUrl(rows: string[], colors: Record<string, string> = PALETTE, fill = '#ffffff', outlined = true): string {
   // The same grid can be drawn in different colours (rarity gems and saucers), so the palette is part of the key.
-  const key = `${rows.join('|')}:${fill}:${colors === PALETTE ? '' : JSON.stringify(colors)}`;
+  const key = `${rows.join('|')}:${fill}:${outlined}:${colors === PALETTE ? '' : JSON.stringify(colors)}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const at = (x: number, y: number) => rows[y]?.[x] ?? '.';
@@ -372,7 +372,7 @@ export function gridUrl(rows: string[], colors: Record<string, string> = PALETTE
     for (let x = -1; x <= rows[0].length; x++) {
       const c = at(x, y);
       const outline = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => at(x + dx, y + dy) !== '.');
-      const color = c !== '.' ? (c === '#' ? fill : colors[c]) : outline ? OUTLINE : '';
+      const color = c !== '.' ? (c === '#' ? fill : colors[c]) : outline && outlined ? OUTLINE : '';
       if (!color) continue;
       ctx.fillStyle = color;
       ctx.fillRect(x + 1, y + 1, 1, 1);

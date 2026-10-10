@@ -1628,7 +1628,9 @@ function oddsStrip(): string {
     ? 'Mythics can turn up in any food cubby now, and in the special cubby'
     : `Mythics start turning up in the buffet on day ${MYTHIC_MARKET_DAY}, and in the special cubby on day ${MYTHIC_SPECIAL_DAY}`;
   const body = `${oddsTable()}<p class="dim">Newer rarities show up more as the days go on. A level-up adds a dish from the rarity above.</p><p class="dim">${mythicNote} (${pct(MYTHIC_SPECIAL_CHANCE)} of days). Half the time it is one you already own.</p>`;
-  return `<div class="odds-strip ${odds.length > 6 ? 'wide' : ''}" style="${box(LAYOUT.odds as Rect)}" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
+  // Up to four a row, the rows as even as they go (seven: four over three).
+  const cols = Math.ceil(odds.length / Math.ceil(odds.length / 4));
+  return `<div class="odds-strip" style="${box(LAYOUT.odds as Rect)};grid-template-columns:repeat(${cols}, auto)" data-vk="odds" data-v="${app.run.turn}" data-va="flash" ${tipBox('Buffet odds', body)}>${cells}</div>`;
 }
 
 /** Names and blurbs for what the special cubby can hold. */
@@ -2529,11 +2531,37 @@ interface FighterOpts {
 
 /** Hits this big shake the table and get a bigger number. */
 const BIG_HIT = 5;
-const ICONS = {
-  buff: { cells: ['..#..', '.###.', '#####', '.###.', '.###.'], fill: '#7fd86a' },
-  debuff: { cells: ['.###.', '.###.', '#####', '.###.', '..#..'], fill: '#b48cf0' },
-  crust: { cells: ['#####', '#####', '.###.', '..#..'], fill: '#f0c04a' },
+/**
+ * What each thrower throws, as pixel art at twice the foods' pixel size (4x), so each reads as an object, shaded light to dark like the food
+ * sprites: h highlight, b body, d shade, plus a detail colour or two. Anything without its own is a crumb.
+ */
+const PROJECTILES: Record<string, { rows: string[]; colors: Record<string, string> }> = {
+  edamame: { rows: ['.hbb.', 'hbbbd', 'bbbbd', '.bbd.'], colors: { h: '#c8f08a', b: '#8fd05a', d: '#5e9a34' } },
+  olive: { rows: ['.hbb.', 'hbrrd', 'bbrrd', 'bbbbd', '.bdd.'], colors: { h: '#b8d870', b: '#7a9c3a', d: '#4f6a24', r: '#d8402a' } },
+  rice: { rows: ['..hx', '.hxs', 'hxs.', 'xs..'], colors: { h: '#ffffff', x: '#efe9d8', s: '#c9bfa6' } },
+  cherry: { rows: ['.hb.', 'hbbd', 'bbbd', '.dd.'], colors: { h: '#fff0d0', b: '#e0c690', d: '#b08a58' } },
+  kebab: { rows: ['..hbd..', 'mhbbbdm', '..bdd..'], colors: { h: '#d88a5a', b: '#a0522d', d: '#6e3418', m: '#d8b77a' } },
+  nachos: { rows: ['..h..', '.hyy.', '.yyd.', 'hyydd'], colors: { h: '#ffe08a', y: '#f2c94c', d: '#c8952f' } },
+  peppercorn: { rows: ['.hb.', 'hbbd', 'bbdd', '.dd.'], colors: { h: '#8a6a52', b: '#4a3428', d: '#2e2018' } },
+  pomegranate: { rows: ['.h.', 'hbb', 'bbd', '.d.'], colors: { h: '#ff8a96', b: '#d8283c', d: '#8a1020' } },
+  spaghetti: { rows: ['.hbb.', 'hbbbd', 'bbbdd', '.bdd.'], colors: { h: '#c87850', b: '#8a4a2a', d: '#5a2e18' } },
+  takoyaki: { rows: ['.hbbb.', 'hssmsd', 'bbbbbd', '.bddd.'], colors: { h: '#ffe0a0', b: '#c88a3e', d: '#8a5530', s: '#5a3018', m: '#fff6e0' } },
+  crumb: { rows: ['.hb.', 'hbbd', '.bd.'], colors: { h: '#f0d8a8', b: '#d0a868', d: '#9a7340' } },
 };
+
+/** The projectile sprites as CSS, once: `.bit.proj-<food>` draws that food's, plain `.bit.proj` a crumb. */
+function projectileStyles(): void {
+  const rule = (sel: string, p: (typeof PROJECTILES)[string]) => {
+    const w = p.rows[0].length * 4;
+    const h = p.rows.length * 4;
+    return `${sel} { width: ${w}px; height: ${h}px; margin: -${h / 2}px 0 0 -${w / 2}px; background: url(${gridUrl(p.rows, p.colors, '#fff', false)}) 0 0 / 100% 100% no-repeat; }`;
+  };
+  const css = [rule('.bit.proj', PROJECTILES.crumb), ...Object.entries(PROJECTILES).map(([id, p]) => rule(`.bit.proj.proj-${id}`, p))].join('\n');
+  const el = document.createElement('style');
+  el.textContent = css;
+  document.head.appendChild(el);
+}
+projectileStyles();
 
 /** "+2 ⚔ +2 ♥" rising over a food that was buffed this moment, "-1 ⚔" for an attack loss: exactly what changed. */
 function gainPop(marks: Mark[], fresh: boolean): string {
@@ -2553,7 +2581,6 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
   const sum = (kind: string) => (o.fresh ? marks.filter((m) => m.kind === kind).reduce((a, m) => a + (m.amount ?? 0), 0) : 0);
   const hit = sum('hit');
   const heal = sum('heal');
-  const icon = (k: keyof typeof ICONS, x: number) => (kinds.has(k) ? `<i class="pop-ico" style="${pixelIcon(ICONS[k].cells, ICONS[k].fill, x, -12, 2)}"></i>` : '');
   // Statuses: a pixel flame, mould blob or snowflake rises with the amount (stacks added, or damage dealt).
   const status = (k: 'burn' | 'rot' | 'chill') => (kinds.has(k) ? `<span class="pop st st-${k}">${statBadge(k, sum(k) || 1, 2)}</span>` : '');
   const popups = [
@@ -2565,7 +2592,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     status('chill'),
     kinds.has('cleanse') ? '<span class="pop heal">clean!</span>' : '',
     gainPop(marks, o.fresh),
-    icon('crust', 48),
+    sum('crust') > 0 ? `<span class="pop st st-crust">${statBadge('crust', sum('crust'), 2)}</span>` : '',
   ].join('');
   const cls = [...kinds].map((k) => `fx-${k}`).join(' ') + (hit >= BIG_HIT ? ' big-hit' : '') + (o.role ? ` ${o.role}` : '');
   // Idle bob, continuous across re-renders: every food breathes on its own beat.
