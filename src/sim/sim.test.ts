@@ -759,6 +759,16 @@ describe('run', () => {
     expect(run.market.every((o) => o?.kind !== 'unit' || unitDef(o.defId).tier === 2)).toBe(true);
   });
 
+  it('a Chocolate Coin held on the plate brings 1 gold at the start of each day', () => {
+    const run = newRun(3);
+    run.plate = [unit('cheese', { item: 'chocolateCoin' }), unit('chili', { item: 'chocolateCoin' }), unit('lemon'), null, null, null];
+    run.gold = 0;
+    endDay(run);
+    finishBattle(run, 'win');
+    expect(run.lastIncome).toBe(INCOME + 2);
+    expect(run.gold).toBe(INCOME + 2);
+  });
+
   it('a premium restock now and then brings a mythic, more often than a plain refill, never before day 5', () => {
     const mythics = (turn: number) => {
       let n = 0;

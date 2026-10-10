@@ -264,6 +264,13 @@ const ICONS = {
     '..bb.',
     '..bb.',
   ],
+  heldChocolateCoin: [
+    '.hyy.',
+    'hyhyd',
+    'yhhhd',
+    'yyhyd',
+    '.ydd.',
+  ],
   heldTupperware: [
     'iiiiiii',
     'IjjjjjI',

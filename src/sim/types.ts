@@ -281,7 +281,7 @@ export interface UnitDef {
   lives?: number;
 }
 
-export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware' | 'bouillon' | 'chopsticks' | 'hotSauce';
+export type HeldItemId = 'saltShaker' | 'toothpick' | 'tupperware' | 'bouillon' | 'chopsticks' | 'hotSauce' | 'chocolateCoin';
 export type ItemId = HeldItemId | 'butter' | 'seasoning' | 'microwave' | 'lunchbox' | 'flavorPacket' | 'oliveOil' | 'boneBroth' | 'sprinkles' | 'partyMix' | 'takeout';
 
 export interface ItemDef {

@@ -478,6 +478,7 @@ export const ITEMS: ItemDef[] = [
   { id: 'flavorPacket', name: 'Flavor Packet', emoji: '🧂', tier: 2, cost: 2, held: false, text: 'The food gains a random flavor it doesn\'t have (up to 3 flavors).' },
   { id: 'boneBroth', name: 'Bone Broth', emoji: '🍵', tier: 2, cost: 2, held: false, text: '+4 HP permanently.' },
   { id: 'saltShaker', name: 'Salt Shaker', emoji: '🧂', tier: 2, cost: 3, held: true, text: 'Held: gain 5 Crust at Start of battle.' },
+  { id: 'chocolateCoin', name: 'Chocolate Coin', emoji: '🪙', tier: 2, cost: 3, held: true, text: 'Held: start of each day, +1 gold.' },
   { id: 'toothpick', name: 'Toothpick', emoji: '🥢', tier: 2, cost: 3, held: true, text: "Held: this food's attacks deal +1 damage and ignore Crust." },
   { id: 'bouillon', name: 'Bouillon Cube', emoji: '🟫', tier: 3, cost: 3, held: true, text: 'Held: this food counts as one more food of its flavors.' },
   { id: 'partyMix', name: 'Party Mix', emoji: '🥜', tier: 3, cost: 3, held: false, anywhere: true, text: '4 random foods on your plate +1/+1 permanently.' },

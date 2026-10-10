@@ -1022,6 +1022,20 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .f-sts { display: flex; flex-direction: column-reverse; align-self: flex-end; margin-left: 1px; }
 .f-tags .f-sts .stat-badge > b { font-size: 10px; line-height: 9px; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; padding: 0; }
 .f-pops { position: absolute; width: 64px; height: 64px; pointer-events: none; }
+/* The item a food holds, on a little cream tag at its shoulder, so you can see what it carries into the fight. */
+.f-held {
+  position: absolute; right: -10px; top: 2px; z-index: 4; width: 34px; height: 34px; display: grid; place-items: center;
+  background: #fbf2da; border: 2px solid #2a1b14; border-radius: 50%; box-shadow: 0 2px 0 rgba(42, 27, 20, 0.45);
+  pointer-events: auto; cursor: help;
+}
+.f-held .sprite { width: 32px; height: 32px; margin-top: -2px; }
+.f-held.fire { animation: held-fire calc(0.6s / var(--spd, 1)) steps(6) calc(var(--fxd, 0s) / var(--spd, 1)) both; }
+@keyframes held-fire {
+  0% { scale: 1; }
+  25% { scale: 1.35; background: #fff3b0; border-color: #e8a227; box-shadow: 0 0 0 2px #ffd23f; }
+  60% { scale: 1.15; background: #fff3b0; border-color: #e8a227; }
+  100% { scale: 1; }
+}
 .f-pops .pop.st { top: 26px; }
 /* Buffs: a sparkle (with a trail) flies from the food that gave it and bursts, then the gain pops over the food. */
 /* A 4-pointed star with a dark outline, trailed by two smaller ones. */

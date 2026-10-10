@@ -1356,12 +1356,43 @@ const items = {
     s.tube([[6, 5], [10, 7.4]], 1.4, R('#d6ad45'));
   },
   tupperware(s) {
-    s.shadow(17, 28, 13, 2);
-    s.poly([[5, 16], [27, 16], [25, 27], [7, 27]], (x) => (x < 8 ? I.tub[1] : x > 24 ? I.tub[3] : I.tub[2]));
-    s.poly([[7, 17], [25, 17], [24, 25], [8, 25]], (x, y) => ((x + y) % 4 === 0 ? I.stew[1] : I.stew[2])); // food seen through
-    s.poly([[4, 12], [28, 12], [28, 16], [4, 16]], (x, y) => (y === 12 ? I.lid[1] : I.lid[2]));
-    for (const x of [6, 25]) { s.rect(x, 15, 2, 4, I.clip[2]); s.rect(x, 15, 1, 4, I.clip[1]); }
-    s.rect(7, 13, 8, 1, '#ffffff');
+    s.shadow(17, 29, 13, 2);
+    // A clear plastic tub of stew seen from the front-left and a little above, like the gift box: a front face and a
+    // right side receding toward the back, both showing the stew through the plastic, under a pale blue snap lid
+    // (its top face, front and side bands) with a blue clip on each side.
+    const stew = (x, y) => ((x * 3 + y) % 5 === 0 ? I.stew[1] : (x + y * 2) % 7 === 0 ? I.stew[3] : I.stew[2]);
+    // the tub: front face and right side, plastic rim at the bottom, stew showing above it
+    s.poly([[5, 16], [21, 16], [20, 28], [6, 28]], (x, y) => (y >= 26 ? I.tub[2] : x < 7 ? I.tub[1] : stew(x, y)));
+    s.poly([[21, 16], [27, 13], [26, 25], [20, 28]], (x, y) => (y >= 26 - (x - 20) / 2 ? I.tub[3] : x > 24 ? I.stew[4] : I.stew[3]));
+    s.rect(6, 17, 1, 8, '#ffffff'); // a glint down the plastic
+    // the lid: top face, front band, side band
+    s.poly([[10, 9], [29, 9], [23, 12], [4, 12]], (x, y) => (y === 9 ? I.lid[0] : I.lid[1]));
+    s.poly([[4, 12], [23, 12], [22, 16], [4, 16]], (x, y) => (y === 12 ? I.lid[1] : I.lid[2]));
+    s.poly([[23, 12], [29, 9], [28, 13], [22, 16]], I.lid[3]);
+    s.rect(7, 10, 9, 1, '#ffffff');
+    // the clips, snapped down over the rim
+    s.rect(11, 15, 3, 4, I.clip[2]); s.rect(11, 15, 1, 4, I.clip[1]);
+    s.poly([[24, 13], [26, 12], [26, 16], [24, 17]], I.clip[3]);
+  },
+  chocolateCoin(s) {
+    s.shadow(17, 29, 10, 2);
+    // A chocolate coin in gold foil, standing on its edge and turned a little toward the right: the thick foil edge
+    // showing on the right, the stamped face with a raised rim (lit top-left, shaded bottom-right) and a star, and one
+    // corner of foil peeled back to show the chocolate.
+    const foil = R('#efc23a');
+    s.ball(19, 18, 9, 10, R('#a8761c')); // the edge, behind the face
+    s.fill(6, 7, 26, 29, (x, y) => {
+      const d = ((x - 16) / 9) ** 2 + ((y - 18) / 10) ** 2;
+      if (d > 1) return null;
+      if (d > 0.66) return x + y < 34 ? foil[0] : foil[3]; // the rim
+      if (d > 0.5) return x + y < 34 ? foil[3] : foil[1]; // the step down into the face
+      return foil[2];
+    });
+    // the stamped star, lit on its upper-left edges
+    const star = ['....h....', '...hyd...', 'hhhyyyddd', '.hyyyyyd.', '..yyyyd..', '.hyd.hyd.', '.yd...yd.'];
+    star.forEach((row, j) => [...row].forEach((c, i) => { if (c !== '.') s.px(12 + i, 14 + j, c === 'h' ? foil[0] : c === 'd' ? foil[3] : foil[1]); }));
+    s.poly([[19, 25], [24, 22], [23, 27]], R('#6a3a1e')[2]); // foil peeled back: the chocolate
+    s.poly([[19, 25], [22, 21], [24, 22]], '#fff4c0');
   },
   microwave(s) {
     s.shadow(17, 28, 13, 2);

@@ -239,9 +239,14 @@ export function interestOn(run: RunState, gold: number): number {
   return Math.min(interestCap(run), Math.floor(gold / INTEREST_STEP)) * interestMult(run);
 }
 
+/** Gold the plate's Chocolate Coins (held) bring at the start of a day: 1 each. */
+export function coinGold(run: RunState): number {
+  return run.plate.filter((u) => u?.item === 'chocolateCoin').length;
+}
+
 function startTurn(run: RunState) {
   const interest = run.turn === 1 ? 0 : interestOn(run, run.gold);
-  const income = (run.turn === 1 ? START_GOLD : INCOME) + run.bonusGoldNext;
+  const income = (run.turn === 1 ? START_GOLD : INCOME + coinGold(run)) + run.bonusGoldNext;
   run.gold += income + interest;
   run.lastInterest = interest;
   run.lastIncome = income;
@@ -902,6 +907,7 @@ export function useItem(run: RunState, src: OfferSource, target: Loc, flavor?: F
     case 'bouillon':
     case 'chopsticks':
     case 'hotSauce':
+    case 'chocolateCoin':
       unit!.item = def.id;
       break;
     case 'takeout': {

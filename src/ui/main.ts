@@ -27,6 +27,7 @@ import {
   interestMult,
   interestOn,
   INCOME,
+  coinGold,
   INTEREST_STEP,
   cellarFoods,
   isOver,
@@ -137,7 +138,7 @@ interface Naming {
 
 const SAVE_KEY = 'buffetbattle.run';
 /** Pixel icon for each held item, shown in the corner of the food holding it. */
-const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware', bouillon: 'heldBouillon', chopsticks: 'heldChopsticks', hotSauce: 'heldHotSauce' } as const;
+const HELD_ICON = { saltShaker: 'heldSaltShaker', toothpick: 'heldToothpick', tupperware: 'heldTupperware', bouillon: 'heldBouillon', chopsticks: 'heldChopsticks', hotSauce: 'heldHotSauce', chocolateCoin: 'heldChocolateCoin' } as const;
 
 /** A food's attack pattern, if it isn't a plain single-target attack. */
 const patternOf = (defId: string): AttackPattern | null => {
@@ -2158,8 +2159,9 @@ function orderTickets(): string {
   const rarityTip = tipBox('Buffet rarities', `<p>Newest in the buffet: ${rarityName(RARITY_BY_TIER[maxTier])}.${next ? ` Next: ${rarityName(RARITY_BY_TIER[next])} on day ${nextDay}.` : ' Every rarity is open.'}</p>${schedule}<p class="dim">${turnConfig(run.turn).unitSlots} food cubbies today.</p>`);
 
   const interest = interestOn(run, run.gold);
-  const tomorrow = INCOME + interest + run.bonusGoldNext;
-  const goldTip = tipBox(`${pix('coin')} Tomorrow: +${tomorrow} gold`, `<p>+${INCOME} income, +${interest} interest on the ${run.gold} gold you hold now${run.bonusGoldNext ? `, +${run.bonusGoldNext} from your foods` : ''}.</p><p class="dim">Spend less today to earn more interest (see the tip jar).</p>`);
+  const coins = coinGold(run);
+  const tomorrow = INCOME + interest + run.bonusGoldNext + coins;
+  const goldTip = tipBox(`${pix('coin')} Tomorrow: +${tomorrow} gold`, `<p>+${INCOME} income, +${interest} interest on the ${run.gold} gold you hold now${run.bonusGoldNext ? `, +${run.bonusGoldNext} from your foods` : ''}${coins ? `, +${coins} from Chocolate Coins` : ''}.</p><p class="dim">Spend less today to earn more interest (see the tip jar).</p>`);
 
 
   const freeLoss = run.turn < 3;
@@ -2606,6 +2608,7 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
     <div class="fighter side-${side} ${cls} ${u.token ? 'token' : ''} ${o.cheer ? 'cheer' : ''}" data-inspect="${side}:${slot}"
       style="left:${ax - 32}px;top:${ay - 60}px;z-index:${z};--bob:${Math.round(bob)}ms" data-k="f:${id}" data-in="${o.opening ? 'drop' : 'pop'}" data-out="eaten">
       <div class="f-art">${unitArt(u.defId, u.level === 3)}</div>
+      ${u.item ? `<div class="f-held ${heldFires(u.item, kinds, o) ? 'fire' : ''}" ${tip(`<p><b>${itemDef(u.item).name}</b>: ${itemDef(u.item).text}</p>`)}>${itemArt(u.item)}</div>` : ''}
       ${u.level > 1 && !u.token ? `<div class="f-lvl ${u.level === 3 ? 'cooked' : ''}" ${tip(u.level === 3 ? '<p>Cooked: level 3, with its cooked bonus.</p>' : '<p>Level 2.</p>')}>${u.level}</div>` : ''}
     </div>
     ${popups ? `<div class="f-pops" style="left:${ax - 32}px;top:${ay - 60}px;z-index:${90 + z}">${popups}</div>` : ''}
@@ -2615,6 +2618,18 @@ function fighter(side: 0 | 1, slot: number, u: UnitView | null, marks: Mark[], o
         u.crust || u.burn || u.rot || u.chill ? `<span class="f-sts">${(['crust', 'burn', 'rot', 'chill'] as const).filter((k) => u[k] > 0).map((k) => statBadge(k, u[k], 1, `data-k="f${k}:${id}" data-vk="f${k}:${id}" data-v="${u[k]}"`)).join('')}</span>` : ''}
     </div>
 `;
+}
+
+/** Whether a held item does its job this moment (its badge pops): Tupperware blocks, Salt Shaker crusts up, Toothpick and Chopsticks attack. */
+function heldFires(item: HeldItemId, kinds: Set<string>, o: FighterOpts): boolean {
+  if (!o.fresh) return false;
+  switch (item) {
+    case 'tupperware': return kinds.has('blocked');
+    case 'saltShaker': return kinds.has('crust') && o.opening === false;
+    case 'toothpick':
+    case 'chopsticks': return o.role === 'source';
+    default: return false;
+  }
 }
 
 /** Team plaque: the plate's name and one pip per food still on it. */
