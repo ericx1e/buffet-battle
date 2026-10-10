@@ -1062,3 +1062,5 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .plain-power.on { color: #3a2a22; }
 .set-links a { color: #8a7568; }
 .set-links a:hover { color: #b2401b; }
+/* The item cubby sits behind the thick divider on its left: its rarity gem moves in off the wood. */
+.unit.item .u-gem { left: 4px; }

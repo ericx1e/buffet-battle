@@ -135,7 +135,11 @@ for (let i = 0; i < 8; i++) {
   rect(ox, 36, 2, 64, shade);
   if (special) {
     frame(ox + 1, 37, 42, 61, P.brass); // a gold trim inside, like a display case
-    for (const [sx, sy] of [[ox + 6, 48], [ox + 37, 44], [ox + 9, 88], [ox + 34, 84], [ox + 21, 42]]) px(sx, sy, '#c9a24a'); // glints in the velvet
+    // Two little four-point sparkles in the velvet below the dish (single specks read as dirt, not shine).
+    for (const [sx, sy] of [[ox + 6, 91], [ox + 37, 89]]) {
+      px(sx, sy, '#fff6c8');
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) px(sx + dx, sy + dy, '#e6bd52');
+    }
   }
   frame(ox - 1, 35, 46, 66, P.outline);
   panel(ox - 1, 98, 46, 6, P.woodLight, P.woodHi, P.wood); // shelf lip
