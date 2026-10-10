@@ -1025,7 +1025,7 @@ html.turned .stage-wrap { position: fixed; left: 50%; top: 50%; transform: trans
 .f-lvl.cooked { color: #ffb36b; text-shadow: 0 2px 0 #a3361f; background: #4a2010; box-shadow: inset 0 2px 0 #8a3f22, inset 0 -3px 0 #2e130a, 0 2px 0 rgba(42, 27, 20, 0.45); }
 /* Battle layers: sprites, then stat rows (statuses as small chips stacked at the row's end), then pop-ups above all. */
 .f-sts { display: flex; flex-direction: column-reverse; align-self: flex-end; margin-left: 1px; }
-.f-tags .f-sts .stat-badge > b { font-size: 14px; line-height: 11px; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; padding: 0; }
+.f-tags .f-sts .stat-badge > b { font-size: 10px; line-height: 9px; text-shadow: 1px 0 #2a1b14, -1px 0 #2a1b14, 0 1px #2a1b14, 0 -1px #2a1b14; padding: 0; }
 .f-pops { position: absolute; width: 64px; height: 64px; pointer-events: none; }
 .f-pops .pop.st { top: 26px; }
 /* Buffs: a sparkle (with a trail) flies from the food that gave it and bursts, then the gain pops over the food. */
