@@ -798,6 +798,32 @@ const foods = {
     s.ball(18, 13, 2.5, 2, R('#d9a55a'));
     s.tube([[18, 14], [18, 17]], 0.9, C.cheese);
   },
+  shavedIce(s) {
+    s.shadow(17, 29, 9, 2);
+    // A paper cup heaped high with snowy shaved ice, streaked with strawberry and blue syrup, a spoon stuck in.
+    const cup = R('#e8f1f6');
+    cylinder(s, 16, 18, 28, 8, 6, 2.2, (t, v) => (v >= 3 && v <= 4 ? cyl(R('#5aa0d8'), t) : cyl(cup, t)), () => cup[1]);
+    s.ball(16, 13, 9, 7.5, R('#f6fbff'), { clip: (x, y) => y <= 19, tone: (nx, ny, x, y) => ((x * 7 + y * 5) % 9 === 0 ? 1 : 0) });
+    s.tube([[10, 9], [13, 14], [12, 18]], 1.2, R('#ef5a7a'));
+    s.tube([[19, 7], [21, 12], [22, 17]], 1.2, R('#5ab4ef'));
+    s.tube([[24, 2], [20, 10]], 0.8, R('#c9d1d6'));
+    s.ball(24, 2, 1.6, 1.2, R('#c9d1d6'));
+  },
+  bakedAlaska(s) {
+    s.shadow(17, 29, 13, 2);
+    // A dome of swirled meringue, its peaks toasted brown, on a round of sponge cake on a plate.
+    s.ball(16, 27, 13, 2.5, R('#e6edf3'));
+    cylinder(s, 16, 22, 25, 11, 11, 2.2, (t) => cyl(R('#e7b25a'), t), () => R('#e7b25a')[1]);
+    const meringue = R('#fbf1dc');
+    s.ball(16, 15, 10.5, 9, meringue, { clip: (x, y) => y <= 22 });
+    // Toasted peaks: browned swirls across the dome.
+    for (const [x, y] of [[11, 10], [15, 8], [20, 9], [9, 15], [14, 13], [19, 14], [23, 15], [12, 19], [17, 18], [21, 20]]) {
+      s.px(x, y, '#c98a3e');
+      s.px(x + 1, y, '#9a6024');
+      s.px(x, y - 1, '#e6b06a');
+    }
+    s.ball(16, 6, 1.6, 1.6, R('#e6b06a'));
+  },
   croquembouche(s) {
     s.shadow(17, 30, 12, 2);
     // A cone of golden cream puffs stacked on a plate, laced with threads of caramel.

@@ -355,6 +355,13 @@ export const UNITS: UnitDef[] = [
     text: 'Every turn: Rotting enemies Rot {v} more.',
     cooked: { text: 'Every turn: Rotting enemies lose 3 attack.', abilities: [{ trigger: 'round', effect: 'debuff', target: 'rottingEnemies', values: [3, 3, 3] }] },
     abilities: [{ trigger: 'round', effect: 'rot', target: 'rottingEnemies' }] },
+  { id: 'shavedIce', name: 'Shaved Ice', cookedName: 'Kakigori', emoji: '🍧', tier: 5, flavor: 'sweet', attack: 4, hp: 10, values: [1, 2, 3],
+    text: 'Every turn: the enemy with the most attack is Chilled 1 and loses {v} attack.',
+    cooked: { text: 'Every turn: the enemy across is Chilled 1 as well.', abilities: [{ trigger: 'round', effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
+    abilities: [
+      { trigger: 'round', effect: 'chill', target: 'highestAttackEnemy', fixed: 1 },
+      { trigger: 'round', effect: 'debuff', target: 'highestAttackEnemy' },
+    ] },
   { id: 'saltFish', name: 'Salt-Crusted Fish', cookedName: 'Salt-Baked Sea Bass', emoji: '🐟', tier: 5, flavor: 'salty', attack: 5, hp: 12, values: [4, 6, 8],
     text: 'Start of battle: gains {v} Crust. Every turn, before attacks, its Crust doubles.',
     cooked: { text: "Every turn, adjacent friends' Crust doubles too.", abilities: [{ trigger: 'roundStart', effect: 'doubleCrust', target: 'adjacentFriends', values: [1, 1, 1] }] },
@@ -407,6 +414,11 @@ export const UNITS: UnitDef[] = [
     text: 'Friend eaten: it gains +{v}/+{v}.',
     cooked: { text: 'Friend eaten: your other friends gain +1/+1 too.', abilities: [{ trigger: 'anyFriendEaten', effect: 'buff', target: 'allFriends', values: [1, 1, 1] }] },
     abilities: [{ trigger: 'anyFriendEaten', effect: 'buff' }] },
+  { id: 'bakedAlaska', name: 'Baked Alaska', cookedName: 'Flambéed Alaska', emoji: '🍰', tier: 6, flavor: 'sweet', flavor2: 'spicy', attack: 6, hp: 14, values: [3, 4, 5],
+    aura: 'thaw',
+    text: "Every 2 turns: the enemy across is Chilled 1. Fire under the ice: when an enemy's Chill melts away, it Burns {v}.",
+    cooked: { text: 'The Burn also catches the enemies beside it.', abilities: [], thawSplash: true },
+    abilities: [{ trigger: 'round', every: 2, effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
 
   // Mythic: never in the market; delivered by the special cubby late in a run (7 gold)
   // Each mythic bends one rule, and where it sits decides who it reaches (see Aura in types.ts). Cooked, the rule
@@ -537,9 +549,9 @@ export const PAIRS: { what: string; makes: string[]; uses: string[] }[] = [
   { what: 'summons', makes: ['egg', 'popcorn', 'mushroom', 'watermelon'], uses: ['steak', 'gravy'] },
   { what: 'HP gains', makes: ['apple', 'mochi', 'peanutButter', 'honey', 'breadDough'], uses: ['hotCocoa', 'cake'] },
   { what: 'Crust', makes: ['pretzel', 'anchovy', 'ramen', 'saltFish'], uses: ['porkCrackling', 'croutons', 'baguette', 'cremeBrulee'] },
-  { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni', 'jalapeno'], uses: ['ghostPepper', 'habaneroSalsa'] },
+  { what: 'Burn', makes: ['chili', 'garlic', 'mustard', 'kimchi', 'pepperoni', 'jalapeno', 'bakedAlaska'], uses: ['ghostPepper', 'habaneroSalsa'] },
   { what: 'Rot', makes: ['cabbage', 'blueCheese', 'durian', 'kimchi', 'cranberry'], uses: ['sweetSour', 'grapefruit', 'balsamic'] },
-  { what: 'Chill', makes: ['iceCream', 'popsicle', 'frozenPeas'], uses: ['sorbet'] },
+  { what: 'Chill', makes: ['iceCream', 'popsicle', 'frozenPeas', 'shavedIce', 'sorbet'], uses: ['sorbet', 'bakedAlaska'] },
   { what: 'friends eaten', makes: ['egg', 'popcorn', 'watermelon', 'jalapeno'], uses: ['cherry', 'pepperoni', 'croquembouche'] },
   { what: 'extra attacks', makes: ['coffee', 'kebab', 'spaghetti'], uses: ['spaghetti', 'kebab', 'nachos'] },
 ];

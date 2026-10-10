@@ -196,9 +196,9 @@ export interface AbilityDef {
  * tower (Chicken Tender Tower): the friend in its lane comes back once when eaten, with 50/75/100% of its starting HP (every friend, once cooked);
  * ferment (Black Garlic): enemies in its lane and the lanes beside it take double damage from Burn and Rot (every enemy, triple, once cooked).
  * Chill: brainFreeze (Popsicle): Chilled enemies' abilities don't go off; shatter (Sorbet): every time a Chilled enemy
- * skips a turn takes damage (its level number).
+ * attacks takes damage (its level number); thaw (Baked Alaska): an enemy whose Chill melts away Burns (its level number).
  */
-export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower' | 'brainFreeze' | 'shatter';
+export type Aura = 'echo' | 'rally' | 'soothe' | 'cook' | 'infuse' | 'baste' | 'ferment' | 'cellar' | 'tower' | 'brainFreeze' | 'shatter' | 'thaw';
 
 /** How special a food is. Mythic foods never appear in the market. */
 /** One rarity per buffet tier (1 common ... 6 exotic), and mythic for the special-cubby foods. */
@@ -241,6 +241,8 @@ export interface UnitDef {
     siphonHp?: boolean;
     /** Shatter also hits the enemies beside the shattering one, for half (Sorbet). */
     shatterSplash?: boolean;
+    /** A thawing enemy's Burn also catches the enemies beside it (Baked Alaska). */
+    thawSplash?: boolean;
   };
   /** Defaults from the tier: 1-2 common, 3-4 rare, 5 epic, 6 legendary. Mythic must be set by hand and keeps the food out of the market. */
   rarity?: Rarity;

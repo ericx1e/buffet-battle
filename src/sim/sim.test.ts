@@ -97,6 +97,16 @@ describe('battle', () => {
       expect(chills[0].text).toMatch(/enemy Cheese, enemy Cheese are Chilled 1/);
     });
 
+    it('Shaved Ice Chills and drains the strongest enemy every turn', () => {
+      const r = simulateBattle(plate({ 0: wall(), 3: unit('shavedIce') }), plate({ 0: wall({ attack: 9 }), 1: wall({ attack: 2 }) }), 1);
+      expect(text(r)).toContain('Shaved Ice: enemy Cheese is Chilled 1 · Shaved Ice: enemy Cheese -1 attack');
+    });
+
+    it('Baked Alaska: an enemy whose Chill melts away Burns', () => {
+      const r = simulateBattle(plate({ 0: unit('iceCream', { hp: 200 }), 3: unit('bakedAlaska') }), plate({ 0: wall() }), 1);
+      expect(text(r)).toContain('Baked Alaska: enemy Cheese thaws and Burns 3');
+    });
+
     it('a food that lobs in reaction throws each lob on its own', () => {
       // Two friends eaten at once: Cherries lob twice, as two moments.
       const r = simulateBattle(

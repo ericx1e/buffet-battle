@@ -507,6 +507,7 @@ class Battle {
             this.mark(u, 'chill', 0);
             this.snap(`${this.name(u)} is chilled: half damage`);
             this.shatter([u]);
+            this.thaw([u]);
             if (!this.onPlate(u) || this.over()) continue;
           }
           const enemy = (1 - side) as Side;
@@ -588,6 +589,7 @@ class Battle {
       for (const u of chilled) this.mark(u, 'chill', 0);
       this.snap(`${chilled.map((u) => this.name(u)).join(', ')} ${chilled.length > 1 ? 'are' : 'is'} chilled: half damage`);
       this.shatter(chilled);
+      this.thaw(chilled);
     }
 
     for (let lane = 0; lane < 3; lane++) {
@@ -1312,6 +1314,23 @@ class Battle {
         line += `, shards hit ${near.length > 2 ? `${near.length} enemies` : near.map((t) => this.name(t)).join(', ')} for ${half}`;
       }
       lines.push(line);
+    }
+    if (lines.length > 0) this.snap(joinLines(lines));
+  }
+
+  /** Fire under the ice (Baked Alaska): enemies whose Chill just melted away Burn; cooked, the enemies beside them too. */
+  private thaw(melted: BattleUnit[]) {
+    const lines: string[] = [];
+    for (const u of melted) {
+      if (u.chill > 0 || !this.onPlate(u)) continue;
+      const alaskas = this.units((1 - u.side) as Side).filter((f) => unitDef(f.defId).aura === 'thaw');
+      if (alaskas.length === 0) continue;
+      const best = alaskas.reduce((a, b) => (this.levelValue(b) > this.levelValue(a) ? b : a));
+      const n = this.levelValue(best);
+      this.mark(best, 'ability');
+      const caught = [u, ...(alaskas.some((f) => f.level === 3 && unitDef(f.defId).cooked?.thawSplash) ? this.adjacent(u) : [])];
+      for (const t of caught) this.addStatus(t, 'burn', n);
+      lines.push(`${this.name(best)}: ${this.name(u)} thaws and Burns ${n}${caught.length > 1 ? `, and ${caught.length - 1} beside it` : ''}`);
     }
     if (lines.length > 0) this.snap(joinLines(lines));
   }

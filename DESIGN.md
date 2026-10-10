@@ -172,7 +172,7 @@ Kitchen growth never stops: a permanent scaler grows every day for the whole run
 | Crust | Pretzel, Anchovy, Ramen, Salt-Crusted Fish | Pork Crackling (blocked hits bite back), Croutons (every 2 turns, friends with Crust gain attack, 3 times a battle), Baguette (attack when its Crust breaks), Crème Brûlée (any friend whose Crust breaks gains attack) |
 | Burn | Chili, Garlic, Mustard, Kimchi, Pepperoni, Jalapeño | Ghost Pepper (its attacks Burn, then double the Burn), Habanero Salsa (the most Burn spreads to its neighbours) |
 | Rot | Cabbage, Blue Cheese, Durian, Kimchi, Cranberry | Sweet & Sour Pork (+damage to Rotting enemies), Grapefruit (Rotting enemies lose attack every turn), Balsamic Vinegar (Rotting enemies Rot more every turn) |
-| Chill | Ice Cream, Popsicle, Frozen Peas (every 2 turns) | Sorbet (a Chilled enemy shatters for damage every time it attacks), Popsicle (Chilled enemies' abilities don't go off) |
+| Chill | Ice Cream, Popsicle, Frozen Peas (every 2 turns), Sorbet (every 3), Shaved Ice (every turn, the strongest enemy), Baked Alaska (every 2) | Sorbet (a Chilled enemy shatters for damage every time it attacks), Popsicle (Chilled enemies' abilities don't go off), Baked Alaska (an enemy Burns as its Chill melts away) |
 | Friends eaten | Egg, Popcorn, Watermelon (summons to lose), Jalapeño (wants to be eaten) | Cherries, Pepperoni, Croquembouche (+3/+3 per friend eaten) |
 | Extra attacks | Coffee Bean | Spaghetti (escalates per attack), Kebab, Nachos |
 
@@ -603,8 +603,10 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 5 | Habanero Salsa | Spicy | 6/11 | Every turn: the enemy with the most Burn spreads 2/3/4 Burn to each enemy beside it. | **Salsa Roja**: It spreads its full Burn. |
 | 5 | Macarons | Sweet | 4/10 | Start of battle: back-row friends gain +1/+1, +2/+2 or +3/+3 for every two Sweet friends. | **Macaron Tower**: The front row gains it too (+3/+3 for every two). |
 | 5 | Balsamic Vinegar | Sour | 5/10 | Every turn: Rotting enemies Rot 1/2/3 more. | **Aged Balsamic**: Every turn: Rotting enemies lose 3 attack. |
+| 5 | Shaved Ice | Sweet | 4/10 | Every turn: the enemy with the most attack is Chilled 1 and loses 1/2/3 attack. | **Kakigori**: Every turn: the enemy across is Chilled 1 as well. |
 | 5 | Salt-Crusted Fish | Salty | 5/12 | Start of battle: gains 4/6/8 Crust. Every turn, before attacks, its Crust doubles. | **Salt-Baked Sea Bass**: Adjacent friends' Crust doubles too. |
 | 6 | Fondue | Savory + Salty | 5/14 | Every turn: the enemy front row loses 1/2/3 attack, and your front row gains it. | **Fondue Feast**: It takes HP the same way (3 damage, +3 HP). |
+| 6 | Baked Alaska | Sweet + Spicy | 6/14 | Every 2 turns: the enemy across is Chilled 1. Fire under the ice: when an enemy's Chill melts away, it Burns 3/4/5. *(aura: thaw)* | **Flambéed Alaska**: The Burn also catches the enemies beside it. |
 | 6 | Croquembouche | Sweet | 5/12 | Friend eaten: it gains +3/+3, +4/+4 or +6/+6. | **Grand Croquembouche**: Friend eaten: your other friends gain +1/+1 too. |
 
 New rules they brought: a food that uses up Chill stays **frozen for the rest of that turn** (Chill melts as it attacks, so Chilled 1 means one frozen turn, for Popsicle's silence); a **start-of-turn** trigger that fires before throws and attacks (Salt-Crusted Fish); and **plain** foods (Rice), whose `flavor` is only colour: they have only the flavors they gain, with no cap, and a `flavorAbilities` power for each (battle and kitchen alike). Rice's powers are deliberately not the flavor's own theme: it becomes a sturdy hub that holds the line and feeds its neighbours. New hooks came with them: `neighbourAttacks`, `attacks` (this food has just attacked) and armor.
