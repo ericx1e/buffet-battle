@@ -520,7 +520,7 @@ For a truly unusual ability, add a new target, effect or modifier: the type goes
 | 1 | Edamame | Savory | 3/5 | 3 | Start of battle, shoots 1/2/3 random enemies for 2. *(shot attack)* | **Garlic Edamame**: Shoots twice at the start of battle. |
 | 2 | Popcorn | Salty | 2/8 | 3 | Hit or eaten: summon a 2/2 Kernel. | **Kettle Corn**: Hit: deal 1 damage to the attacker. |
 | 2 | Onion | Sour | 3/8 | 3 | Every 3rd time hit: all enemies lose 1/2/3 attack. | **Onion Rings**: Start of battle: all enemies lose 1 attack. |
-| 2 | Garlic | Spicy | 3/7 | 3 | Start of battle: the enemy across Burns 1/2/3, +1 per other Spicy friend. | **Garlic Bread**: Start of battle: the enemy front row Burns 1. |
+| 2 | Garlic | Spicy | 3/7 | 3 | Start of battle: the enemy front row Burns 1/2/3, +1 per other Spicy friend. | **Garlic Bread**: Start of battle: every enemy Burns 1 more. |
 | 2 | Marshmallow | Sweet | 2/8 | 3 | Hit: the friend behind gains +1/+1, +2/+2 or +3/+3, double if Sweet. | **S'more**: Start of battle: the friend behind gains 6 Crust. |
 | 2 | Potato | Savory | 1/4 | 3 | End of day: gain +1/+1, +2/+2 or +3/+3 if you didn't refill. | **Loaded Fries**: Eaten: adjacent friends gain +3/+3. |
 | 2 | Mustard | Spicy | 3/7 | 3 | When the friend ahead attacks, its target Burns 1/2/3. | **Honey Mustard**: Start of battle: the friend ahead gains +2 attack. |

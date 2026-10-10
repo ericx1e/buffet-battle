@@ -431,7 +431,7 @@ const TUTORIAL: { target?: Rect; card: Rect; title: string; text: string }[] = [
     target: LAYOUT.chalkboard as Rect,
     card: [452, 142, 182, 0],
     title: 'Flavors',
-    text: 'Every dish has a flavor. Two of a flavor on your plate unlock its bonus, and it grows at 4, 6 and 8. The chalkboard keeps count: hover a line to see the bonus.',
+    text: 'Every dish has a flavor. Two of a flavor on your plate unlock its bonus, and it grows at 4, 6 and 8. The chalkboard keeps count: hover a line or jar to see the bonus.',
   },
   {
     target: LAYOUT.magnets as Rect,
