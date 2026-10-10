@@ -1435,17 +1435,32 @@ const items = {
 // Special-cubby offers (art/specials/): packs and restocks bought once a turn.
 const specials = {
   spicePack(s) {
-    s.shadow(17, 29, 12, 2);
-    // A kraft-paper pouch from the side and a little above: its gathered neck tied with twine, the open top showing
-    // its dark inside, and a red flavor tag on the front. It bulges, so it is shaded like a cylinder.
-    const kraft = R('#c9925a');
-    cylinder(s, 16, 13, 27, 8.5, 11, 2, (t) => cyl(kraft, t));
-    cylinder(s, 16, 6, 12, 6.5, 5, 1.6, (t, v) => (v % 2 ? kraft[1] : cyl(kraft, t)), () => R('#5a3a1e')[2]);
-    s.rect(9, 11, 15, 2, '#efe0c3'); // twine
-    s.rect(9, 12, 15, 1, '#cbb894');
-    s.poly([[17, 16], [25, 15], [25, 22], [17, 23]], '#d8394f');
-    s.rect(17, 16, 1, 7, '#ec5a6e');
-    s.ball(21, 19, 1.8, 1.8, R('#ffd23f'));
+    s.shadow(16, 29, 11, 2);
+    // A burlap spice sack: a round bottom, a neck cinched with twine, the cloth above it flaring open in a ruffle, a
+    // heap of red spice inside with a chili and a cinnamon stick poking out, and a little flame label on the front.
+    const burlap = R('#b8844a'), spice = R('#d2452a'), cinnamon = R('#9a5a2c');
+    const weave = (nx, ny, x, y) => ((x + y * 3) % 9 === 0 ? 1 : 0);
+    s.ball(16, 21, 10, 8, burlap, { tone: weave });
+    // the neck, gathered into folds
+    s.poly([[11, 11], [21, 11], [19, 15], [13, 15]], (x) => (x % 3 === 0 ? burlap[3] : x < 14 ? burlap[1] : x > 18 ? burlap[3] : burlap[2]));
+    // the ruffle flaring open above it, scalloped along the top edge
+    s.poly([[8, 7], [24, 7], [21, 11], [11, 11]], (x, y) => (y === 7 && x % 4 === 1 ? null : x % 4 === 3 ? burlap[3] : x < 12 ? burlap[1] : x > 20 ? burlap[3] : burlap[2]));
+    // the opening and the spice heaped in it
+    s.ball(16, 7, 7, 1.6, R('#4a2a18'));
+    s.ball(16, 6, 6, 2.2, spice, { clip: (x, y) => y <= 7, tone: (nx, ny, x, y) => ((x * 5 + y * 3) % 7 === 0 ? -2 : (x + y) % 5 === 0 ? 1 : 0) });
+    // a cinnamon stick and a chili poking out
+    s.tube([[12, 6], [10, 1]], 1.1, cinnamon);
+    s.px(10, 1, cinnamon[0]);
+    s.tube([[18, 6], [21, 3], [25, 1]], (t) => 2 - 1.3 * t, R('#e0302a'));
+    s.ball(18, 6, 1.6, 1.2, C.stem);
+    // the twine round the neck, knotted, one end hanging
+    s.rect(11, 13, 11, 1, '#efe0c3');
+    s.rect(12, 14, 9, 1, '#cbb894');
+    s.px(21, 14, '#efe0c3'); s.px(22, 15, '#efe0c3'); s.px(22, 16, '#cbb894');
+    // the label: a cream patch with a red flame on it
+    s.poly([[12, 18], [20, 18], [20, 25], [12, 25]], (x, y) => (x === 12 || y === 18 ? '#fff6e0' : x === 20 || y === 25 ? '#d8c39a' : '#f4e6c4'));
+    s.poly([[16, 19], [18, 22], [18, 24], [14, 24], [14, 22]], '#e4502a');
+    s.px(16, 23, '#ffd23f'); s.px(15, 23, '#ffb03a'); s.px(17, 22, '#ff8a3a');
   },
   farmPack(s) {
     s.shadow(17, 29, 14, 2);
@@ -1460,20 +1475,33 @@ const specials = {
   },
   premium(s) {
     s.shadow(17, 29, 13, 2);
-    // A gilded gift box from the front and a little above: its front, the lid's top face narrowing to the back with
-    // the ribbon crossing it, and a red bow sitting on top.
-    const gold = R('#e5b93c'), ribbon = R('#d23a2c');
-    box(s, 6, 26, 16, 28, 0, gold, () => gold[1]);
-    box(s, 4, 28, 13, 16, 5, gold, (x, y) => (y <= 9 ? gold[1] : gold[0]));
-    s.rect(14, 13, 4, 16, ribbon[2]); // down the front
-    s.rect(14, 13, 1, 16, ribbon[1]);
-    s.rect(17, 13, 1, 16, ribbon[3]);
-    s.poly([[15, 8], [17, 8], [18, 13], [14, 13]], ribbon[2]); // across the lid, front to back
-    s.poly([[6, 10], [26, 10], [27, 11.5], [5, 11.5]], ribbon[2]); // and side to side
-    s.ball(12, 7, 4, 2.6, ribbon, { bias: 0.2 });
-    s.ball(20, 7, 4, 2.6, ribbon, { bias: 0.2 });
-    s.ball(16, 8, 2, 1.6, ribbon);
-    s.px(16, 7, R('#ffe27a')[1]);
+    // A gilded gift box seen from the front-left and a little above: a lit front face, a shaded right side, a lid that
+    // overhangs both, a red ribbon wrapping the front, side and top, and a two-loop bow with its tails on top.
+    const gold = R('#e8bd3e'), ribbon = R('#d8352a');
+    // the box: front face and right side (the side recedes, rising toward the back)
+    s.poly([[5, 16], [20, 16], [20, 28], [5, 28]], (x) => (x < 7 ? gold[1] : gold[2]));
+    s.poly([[20, 16], [27, 13], [27, 25], [20, 28]], (x) => (x > 25 ? gold[4] : gold[3]));
+    // the lid: its front band, side band and top
+    s.poly([[11, 9], [29, 9], [22, 12], [4, 12]], gold[0]);
+    s.poly([[4, 12], [22, 12], [22, 16], [4, 16]], (x) => (x < 6 ? gold[0] : gold[1]));
+    s.poly([[22, 12], [29, 9], [29, 13], [22, 16]], gold[3]);
+    s.rect(4, 16, 18, 1, gold[4]); // the lid's shadow on the box
+    // ribbon: down the front of the lid and box, down the side, and crossing the top both ways
+    s.poly([[11, 12], [14, 12], [14, 28], [11, 28]], (x) => (x === 11 ? ribbon[1] : x === 14 ? ribbon[3] : ribbon[2]));
+    s.poly([[24, 11], [26, 10], [26, 26], [24, 27]], ribbon[3]);
+    s.poly([[18, 9], [21, 9], [14, 12], [11, 12]], ribbon[1]);
+    s.poly([[7, 10.5], [26, 10.5], [25, 11.5], [6, 11.5]], ribbon[2]);
+    // the bow: two loops with their dark insides, a knot, two tails
+    s.ball(11, 6, 4, 3, ribbon, { bias: 0.2 });
+    s.ball(21, 6, 4, 3, ribbon, { bias: 0.2 });
+    s.ball(11, 6, 1.6, 1, R('#7a1810'));
+    s.ball(21, 6, 1.6, 1, R('#7a1810'));
+    s.poly([[15, 9], [13, 13], [12, 12], [14, 9]], ribbon[3]);
+    s.poly([[17, 9], [20, 12], [19, 13], [16, 9]], ribbon[3]);
+    s.ball(16, 8, 2, 1.8, ribbon);
+    s.px(15, 7, ribbon[0]);
+    // a glint on the lid's corner
+    s.px(6, 13, '#fff6c8'); s.px(5, 13, '#fff6c8');
   },
 };
 
