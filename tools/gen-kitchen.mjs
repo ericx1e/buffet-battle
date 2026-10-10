@@ -19,6 +19,7 @@ const P = {
   wall: '#f0e2c6', wallStripe: '#e8d7b6',
   woodDark: '#6e4024', wood: '#a3633a', woodMid: '#bd7c48', woodLight: '#d89c62', woodHi: '#ecbf86',
   cubby: '#4e2b17', cubbyShade: '#3c2011', cubbyTeal: '#2f5553', cubbyTealShade: '#24423f',
+  cubbySpecial: '#4a2346', cubbySpecialShade: '#371833',
   block1: '#d39a5f', block2: '#c78c53', block3: '#dba76d', blockGrain: '#b67b45', blockShade: '#a86f3e',
   tile: '#f6f2ea', tileShade: '#e3dccf', grout: '#bdb3a3',
   fridge: '#e6efec', fridgeShade: '#c4d3d0', fridgeDark: '#8ea4a3', fridgeHi: '#f7fbfa',
@@ -125,16 +126,25 @@ panel(80, 26, 400, 86, P.woodMid, P.woodHi, P.wood);
 panel(76, 24, 408, 7, P.woodLight, P.woodHi, P.wood); // crown molding
 for (let i = 0; i < 8; i++) {
   const ox = 86 + 48 * i;
-  const teal = i >= 6;
-  rect(ox, 36, 44, 64, teal ? P.cubbyTeal : P.cubby);
-  rect(ox, 36, 44, 6, teal ? P.cubbyTealShade : P.cubbyShade); // shadow under the shelf above
-  rect(ox, 36, 2, 64, teal ? P.cubbyTealShade : P.cubbyShade);
+  // Foods on brown, the item on teal, and the special cubby (the last) its own plum-and-gold showcase.
+  const special = i === 7;
+  const teal = i === 6;
+  const [back, shade] = special ? [P.cubbySpecial, P.cubbySpecialShade] : teal ? [P.cubbyTeal, P.cubbyTealShade] : [P.cubby, P.cubbyShade];
+  rect(ox, 36, 44, 64, back);
+  rect(ox, 36, 44, 6, shade); // shadow under the shelf above
+  rect(ox, 36, 2, 64, shade);
+  if (special) {
+    frame(ox + 1, 37, 42, 61, P.brass); // a gold trim inside, like a display case
+    for (const [sx, sy] of [[ox + 6, 48], [ox + 37, 44], [ox + 9, 88], [ox + 34, 84], [ox + 21, 42]]) px(sx, sy, '#c9a24a'); // glints in the velvet
+  }
   frame(ox - 1, 35, 46, 66, P.outline);
   panel(ox - 1, 98, 46, 6, P.woodLight, P.woodHi, P.wood); // shelf lip
 }
-// Thicker divider between foods and items
+// Thicker dividers: between foods and the item, and between the item and the special cubby
 rect(372, 34, 6, 70, P.woodDark);
 rect(373, 34, 1, 70, P.woodMid);
+rect(419, 34, 4, 70, P.woodDark);
+rect(420, 34, 1, 70, P.woodMid);
 panel(80, 104, 400, 8, P.wood, P.woodLight, P.woodDark); // bottom rail
 // Open glass doors folded back at both ends
 for (const x of [74, 480]) {

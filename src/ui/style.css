@@ -750,7 +750,7 @@ body[data-screen='battle'] {
 .jar.t3, .jar.t4 { outline: 1px solid #ff6a3a; animation: bonus-glint 1.4s steps(1) infinite; }
 .jar.t4 { outline: 2px solid #ff3a8a; }
 
-/* The special cubby: a gold tag over the last teal cubby; bundles wear an "x3". */
+/* The special cubby: a gold tag over the last cubby (plum with gold trim in the art); bundles wear an "x3". */
 .special-tag {
   height: 9px; padding: 0 2px 0 1px; display: flex; align-items: center; gap: 1px;
   font: 400 10px/9px var(--pixel); color: #2a1b14; background: #ffd23f; border: 1px solid #2a1b14; cursor: help;
