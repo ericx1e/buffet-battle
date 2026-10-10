@@ -1,54 +1,103 @@
 // Background music, sequenced live from the same marimba, glockenspiel and kitchen percussion as the sound effects
-// (so it is in their key and costs no extra download), with a soft synthesized bass: Prep Time in the kitchen,
-// Boss Plate in battles (more were auditioned on a jukebox page). Each bar is 16 sixteenth notes. Patterns: 'x' a hit,
+// (so it is in their key and costs no extra download), with a soft synthesized bass: Snack Time in the kitchen (a
+// longer piece in parts, see Track.form), Boss Plate in battles (more were auditioned on a jukebox page). Each bar is 16 sixteenth notes. Patterns: 'x' a hit,
 // 'o' a soft one, '.' a rest. Bass: R root, 5 fifth, O octave. Arp digits pick the chord's notes (0 lowest).
 // Melodies are [step, MIDI note] per bar and cycle.
 import { audioSettings, musicOut, musicVoice, onAudioChange } from './sound';
 
 export type Scene = 'kitchen' | 'battle';
 
-interface Track {
+type Chord = { name: string; root: number; notes: number[] };
+type Line = { inst: 'mar' | 'glock'; v: number; bars: [number, number][][] };
+
+/** What plays in a stretch of bars: chords, bass, stab, arpeggio, melody, sparkle and percussion. */
+interface Part {
+  chords: Chord[];
+  bass: string;
+  stab?: { pat: string; v: number };
+  arp?: { pat: string; v: number };
+  melody?: Line;
+  sparkle?: Line;
+  perc: { s: string; pat: string; v: number }[];
+}
+
+interface Track extends Part {
   id: string;
   name: string;
   scene: Scene;
   bpm: number;
   /** 0.5 is straight; more delays every second sixteenth. */
   swing: number;
-  chords: { name: string; root: number; notes: number[] }[];
-  bass: string;
-  stab?: { pat: string; v: number };
-  arp?: { pat: string; v: number };
-  melody: { inst: 'mar' | 'glock'; v: number; bars: [number, number][][] };
-  sparkle?: { inst: 'mar' | 'glock'; v: number; bars: [number, number][][] };
-  perc: { s: string; pat: string; v: number }[];
+  /** A longer piece: these parts in order (each `bars` long), then round again. Without it the track is one part. */
+  form?: (Partial<Part> & { bars: number; name: string })[];
 }
+
+// Shared pieces of Snack Time (below): its chords and grooves.
+const AM = { name: 'Am', root: 45, notes: [69, 72, 76] };
+const F = { name: 'F', root: 41, notes: [65, 69, 72] };
+const C = { name: 'C', root: 48, notes: [64, 67, 72] };
+const G = { name: 'G', root: 43, notes: [62, 67, 71] };
+const EM = { name: 'Em', root: 40, notes: [64, 67, 71] };
+const DM = { name: 'Dm', root: 38, notes: [62, 65, 69] };
+const E = { name: 'E', root: 40, notes: [64, 68, 71] };
+const GROOVE = 'R..R.O.RR..5.O..';
+const LIGHT_PERC = [
+  { s: 'bongoL', pat: 'x.....x...x.....', v: 0.2 },
+  { s: 'shake', pat: '..o...o...o...o.', v: 0.11 },
+];
+const FULL_PERC = [
+  { s: 'bongoL', pat: 'x.....x...x.....', v: 0.22 },
+  { s: 'bongoH', pat: '....o.......o..o', v: 0.18 },
+  { s: 'clap', pat: '....x.......x...', v: 0.1 },
+  { s: 'shake', pat: '..o...o...o...o.', v: 0.12 },
+];
+const THEME: [number, number][][] = [
+  [[0, 76], [3, 77], [4, 76], [6, 72], [8, 69], [10, 72], [12, 76], [14, 79]],
+  [[0, 77], [2, 76], [4, 72], [8, 69], [11, 72], [12, 77]],
+  [[0, 79], [3, 76], [6, 72], [8, 76], [10, 79], [12, 84]],
+  [[0, 83], [2, 81], [4, 79], [8, 74], [12, 71], [14, 74]],
+  [[0, 76], [3, 77], [4, 76], [6, 72], [8, 69], [10, 72], [12, 76], [14, 81]],
+  [[0, 84], [2, 81], [4, 77], [8, 81], [11, 84], [12, 86]],
+  [[0, 88], [3, 86], [6, 84], [8, 79], [12, 76]],
+  [[0, 79], [4, 83], [8, 86], [12, 83], [14, 79]],
+];
 
 export const TRACKS: Track[] = [
   {
-    id: 'prep', name: 'Prep Time', scene: 'kitchen', bpm: 100, swing: 0.6,
-    chords: [
-      { name: 'C', root: 36, notes: [64, 67, 72] },
-      { name: 'Am', root: 45, notes: [64, 69, 72] },
-      { name: 'F', root: 41, notes: [65, 69, 72] },
-      { name: 'G', root: 43, notes: [62, 67, 71] },
-    ],
-    bass: 'R..R..5.R.....5.',
-    stab: { pat: '....x.......x...', v: 0.16 },
-    melody: { inst: 'mar', v: 0.42, bars: [
-      [[0, 76], [3, 79], [6, 84], [8, 83], [10, 79], [12, 76]],
-      [[0, 72], [3, 76], [6, 81], [8, 79], [12, 76]],
-      [[0, 77], [3, 81], [6, 84], [8, 86], [10, 84], [12, 81]],
-      [[0, 79], [3, 83], [6, 86], [10, 83], [12, 79], [14, 74]],
-      [[0, 76], [2, 77], [3, 79], [6, 84], [8, 88], [12, 84]],
-      [[0, 81], [3, 79], [6, 76], [8, 72], [12, 76]],
-      [[0, 77], [3, 76], [6, 77], [8, 81], [10, 79], [12, 77]],
-      [[0, 74], [3, 79], [6, 83], [8, 86], [12, 84]],
-    ] },
-    sparkle: { inst: 'glock', v: 0.14, bars: [[[0, 96]], [], [], [], [[0, 100], [8, 103]], [], [], [[12, 108]]] },
-    perc: [
-      { s: 'bongoL', pat: 'x.......x.......', v: 0.22 },
-      { s: 'bongoH', pat: '......o.......o.', v: 0.18 },
-      { s: 'shake', pat: '..o...o...o...o.', v: 0.12 },
+    // A longer kitchen loop (about 90 seconds before it repeats), light and swung, led by a walking bass: a groove to
+    // settle in, the theme on marimba, the theme again with sparkle, a bridge that lifts, a breakdown, and round.
+    id: 'snack', name: 'Snack Time', scene: 'kitchen', bpm: 108, swing: 0.58,
+    chords: [AM, F, C, G],
+    bass: GROOVE,
+    perc: LIGHT_PERC,
+    form: [
+      { name: 'groove', bars: 8, stab: { pat: '....x.......x...', v: 0.13 } },
+      { name: 'theme', bars: 8, stab: { pat: '....x.......x...', v: 0.12 }, perc: FULL_PERC, melody: { inst: 'mar', v: 0.4, bars: THEME } },
+      {
+        name: 'theme again', bars: 8, perc: FULL_PERC,
+        arp: { pat: '0.1.2.1.0.1.2.1.', v: 0.08 },
+        melody: { inst: 'mar', v: 0.4, bars: THEME },
+        sparkle: { inst: 'glock', v: 0.12, bars: [[[0, 100]], [], [[8, 103]], [], [[0, 100]], [], [[4, 108], [8, 103]], [[12, 107]]] },
+      },
+      {
+        name: 'bridge', bars: 8, chords: [F, G, EM, AM, DM, G, C, E], bass: 'R...R.5.R...O.5.', perc: FULL_PERC,
+        stab: { pat: 'x.......x.......', v: 0.11 },
+        melody: { inst: 'glock', v: 0.2, bars: [
+          [[0, 81], [4, 84], [8, 81], [12, 77]],
+          [[0, 79], [4, 83], [8, 86], [12, 83]],
+          [[0, 79], [4, 76], [8, 71], [12, 76]],
+          [[0, 81], [6, 79], [8, 76], [12, 72]],
+          [[0, 77], [4, 81], [8, 86], [12, 84]],
+          [[0, 83], [4, 79], [8, 74], [12, 79]],
+          [[0, 84], [4, 88], [8, 91], [12, 88]],
+          [[0, 92], [4, 88], [8, 83], [12, 80]],
+        ] },
+      },
+      {
+        name: 'breakdown', bars: 8, chords: [DM, G, C, AM], bass: 'R.......R...5...', perc: LIGHT_PERC,
+        arp: { pat: '0.2.1.2.0.2.1.2.', v: 0.09 },
+        sparkle: { inst: 'glock', v: 0.12, bars: [[[0, 98]], [], [[8, 100]], [], [[0, 98]], [], [[8, 103]], [[4, 100], [12, 96]]] },
+      },
     ],
   },
   {
@@ -86,14 +135,27 @@ let playing: { track: Track; bus: GainNode; step: number; next: number; timer: n
 
 const stepLen = (t: Track) => 60 / t.bpm / 4;
 
-function playStep(t: Track, step: number, at: number, bus: GainNode) {
+/** The part playing at this bar, and the bar within it. */
+function partAt(t: Track, bar: number): [Part, number] {
+  if (!t.form) return [t, bar];
+  const total = t.form.reduce((n, p) => n + p.bars, 0);
+  let b = bar % total;
+  for (const p of t.form) {
+    // Each part takes the track's settings for whatever it doesn't set itself (and no melody unless it has one).
+    if (b < p.bars) return [{ chords: p.chords ?? t.chords, bass: p.bass ?? t.bass, stab: p.stab, arp: p.arp, melody: p.melody, sparkle: p.sparkle, perc: p.perc ?? t.perc }, b];
+    b -= p.bars;
+  }
+  return [t, bar];
+}
+
+function playStep(track: Track, step: number, at: number, bus: GainNode) {
   const voice = musicVoice();
   if (!voice) return;
-  const bar = Math.floor(step / 16);
+  const [t, bar] = partAt(track, Math.floor(step / 16));
   const s = step % 16;
   const chord = t.chords[bar % t.chords.length];
   const b = t.bass[s];
-  if (b !== '.') voice.bass(chord.root + (b === '5' ? 7 : b === 'O' ? 12 : 0), at, 0.32, stepLen(t) * 3.2, bus);
+  if (b !== '.') voice.bass(chord.root + (b === '5' ? 7 : b === 'O' ? 12 : 0), at, 0.32, stepLen(track) * 3.2, bus);
   if (t.stab && t.stab.pat[s] !== '.') for (const n of chord.notes) voice.note('mar', n, at, t.stab.v, bus);
   if (t.arp && t.arp.pat[s] !== '.') {
     const i = Number(t.arp.pat[s]);

@@ -911,6 +911,7 @@ function onSpecial() {
   if (s?.kind === 'freeItem' || s?.kind === 'mythic') return onOffer({ area: 'special', index: 0 });
   const same = app.selected?.kind === 'special';
   app.selected = same || !s ? null : { kind: 'special' };
+  if (!same && s) sfx('page');
   app.message = same || !s ? '' : s.kind === 'premium' ? 'Drag it onto the refill sign or the counter tray.' : 'Drag it onto the counter tray to open it.';
   render();
 }
@@ -918,6 +919,7 @@ function onSpecial() {
 function onPick(index: number) {
   const same = app.selected?.kind === 'pick' && app.selected.index === index;
   app.selected = same ? null : { kind: 'pick', index };
+  if (!same) sfx('page'); // the cookbook turns to it
   app.message = same ? '' : app.run.pack?.kind === 'spice' ? 'Drag it onto one of your foods to use it, free.' : 'Drag it onto your plate or into the fridge.';
   render();
 }
