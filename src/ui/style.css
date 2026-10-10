@@ -124,10 +124,13 @@ body.dragging .slot.empty { outline: 1px dashed rgba(224, 100, 47, 0.9); outline
 .u-art .sprite { width: 32px; height: 32px; }
 .u-art .emoji { font-size: 24px; line-height: 1; }
 .u-stats { position: absolute; left: 3px; top: 31px; width: 34px; display: flex; justify-content: space-between; }
-.u-pips { position: absolute; left: 8px; top: 45px; display: flex; gap: 1px; }
-.u-pips i { width: 3px; height: 2px; background: rgba(42, 27, 20, 0.35); }
-.u-pips i.on { background: #e0642f; }
-.u-pips i:nth-child(3) { margin-right: 2px; }
+/* Merge progress: two groups of three copies (3 makes level 2, 6 cooks it). Each pip is outlined; a group lights gold
+   once it is complete, so the halfway mark and cooking read at a glance. */
+.u-pips { position: absolute; left: 8px; top: 44px; display: flex; gap: 3px; }
+.u-pips .pg { display: flex; gap: 1px; padding: 1px; background: #2a1b14; }
+.u-pips i { width: 3px; height: 3px; background: #6b5446; }
+.u-pips i.on { background: #e0642f; box-shadow: inset 0 1px 0 #ff9a5c; }
+.u-pips .pg.full i { background: #ffd23f; box-shadow: inset 0 1px 0 #fff2a8; }
 .u-lvl { position: absolute; left: 0; top: 0; min-width: 7px; height: 9px; padding: 0 1px; display: grid; place-items: center; background: #2a1b14; color: #ffd27a; font: 400 10px/9px var(--pixel); text-align: center; }
 .unit.cooked .u-lvl { color: #ff9b6a; }
 .u-item { position: absolute; right: 0; top: 0; display: flex; }

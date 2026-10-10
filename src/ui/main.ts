@@ -1467,7 +1467,9 @@ function unitTile(u: UnitData, attrs: string, extra = '', uid?: number): string 
   const atk = u.attack + (u.tempAttack ?? 0);
   const vk = (name: string, v: string | number, more = '') => (uid === undefined ? '' : `data-vk="${name}:${uid}" data-v="${v}" ${more}`);
   const pips = u.copies !== undefined
-    ? `<div class="u-pips" ${vk('cp', u.copies)}>${[1, 2, 3, 4, 5, 6].map((i) => `<i class="${i <= u.copies! ? 'on' : ''}"></i>`).join('')}</div>`
+    ? `<div class="u-pips" ${vk('cp', u.copies)}>${[0, 3]
+        .map((from) => `<span class="pg ${u.copies! >= from + 3 ? 'full' : ''}">${[1, 2, 3].map((k) => `<i class="${from + k <= u.copies! ? 'on' : ''}"></i>`).join('')}</span>`)
+        .join('')}</div>`
     : '';
   return `
     <div class="unit flavor-${unitDef(u.defId).plain && !u.flavors?.length ? 'plain' : u.flavor} ${u.level === 3 ? 'cooked' : ''} ${extra}" ${attrs} ${vk('lvl', u.level, 'data-va="levelup"')}>
