@@ -82,7 +82,11 @@ describe('battle', () => {
     it('Sorbet shatters a Chilled enemy every turn it skips', () => {
       const r = simulateBattle(plate({ 0: unit('iceCream', { copies: 3, hp: 200 }), 3: unit('sorbet') }), plate({ 0: wall() }), 1);
       // Ice Cream at level 2 Chills it 2: two skipped turns, two shatters.
-      expect(r.frames.filter((f) => f.text.includes('Sorbet: enemy Cheese shatters for 3')).length).toBe(2);
+      expect(r.frames.filter((f) => f.round <= 2 && f.text.includes('Sorbet: enemy Cheese shatters for 3')).length).toBe(2);
+      // On its own, it Chills the enemy across every 3 turns, and shatters it.
+      const solo = simulateBattle(plate({ 0: unit('sorbet', { hp: 200 }) }), plate({ 0: wall() }), 1);
+      expect(text(solo)).toContain('Sorbet: enemy Cheese is Chilled 1');
+      expect(text(solo)).toContain('Sorbet: enemy Cheese shatters for 3');
     });
 
     it('Frozen Peas Chill random enemies every 2 turns', () => {

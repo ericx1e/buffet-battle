@@ -282,11 +282,12 @@ export const UNITS: UnitDef[] = [
     text: 'Interest cap +{v}.',
     interestCap: [1, 2, 3],
     cooked: { text: 'End of day: +2 gold tomorrow.', abilities: [{ trigger: 'endTurn', effect: 'gold', values: [2, 2, 2] }] },
-    abilities: [] },  { id: 'sorbet', name: 'Sorbet', cookedName: 'Sorbet Trio', emoji: '🍧', tier: 4, flavor: 'sour', flavor2: 'sweet', attack: 5, hp: 9, values: [3, 4, 5],
-    aura: 'shatter',
-    text: 'Shatter: every turn a Chilled enemy skips, it takes {v} damage.',
-    cooked: { text: 'Shatter also hits the enemies beside it, for half.', abilities: [], shatterSplash: true },
     abilities: [] },
+  { id: 'sorbet', name: 'Sorbet', cookedName: 'Sorbet Trio', emoji: '🍧', tier: 4, flavor: 'sour', flavor2: 'sweet', attack: 5, hp: 9, values: [3, 4, 5],
+    aura: 'shatter',
+    text: 'Every 3 turns: the enemy across is Chilled 1. Shatter: every turn a Chilled enemy skips, it takes {v} damage.',
+    cooked: { text: 'Shatter also hits the enemies beside it, for half.', abilities: [], shatterSplash: true },
+    abilities: [{ trigger: 'round', every: 3, effect: 'chill', target: 'enemyInLane', values: [1, 1, 1] }] },
 
   // Rich foods: one flavor, counted several times over.
   { id: 'curry', name: 'Curry', cookedName: 'Katsu Curry', emoji: '🍛', tier: 4, flavor: 'spicy', attack: 5, hp: 9, values: [2, 3, 4], rich: true,
