@@ -8,7 +8,7 @@
   "scripts": {
     "build:game": "node build-game.mjs",
     "start": "npm run build:game && electron .",
-    "dist": "npm run build:game && electron-builder"
+    "dist": "node dist.mjs"
   },
   "build": {
     "appId": "com.buffetbattle.game",
